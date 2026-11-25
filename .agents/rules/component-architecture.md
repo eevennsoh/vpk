@@ -74,8 +74,10 @@ interface BadgeProps extends React.ComponentProps<"span">, VariantProps<typeof b
 
 `eslint.config.mjs` owns the `@shadcn/lint` policy. The initial `no-restyle`
 pilot covers Button and Badge consumers in Team EU26 and Agent Session
-Column. One repo-wide contract enforces established policy: overlay
-`*Content` surfaces may not add border/ring widths (`overlaySurfaceContract`).
+Column. Repo-wide contracts enforce established policy: overlay `*Content`
+surfaces may not add border/ring widths or `shadow-xl`
+(`overlaySurfaceContract`), and `DropdownMenu*` rows may not carry section
+borders (`menuRowSeparatorContract`).
 Other primitives and features remain outside enforcement until their
 customization is reviewed. Primitive implementations under
 `components/ui/**` own their styling and are exempt from `no-restyle`.

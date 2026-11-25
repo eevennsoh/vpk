@@ -31,15 +31,27 @@ const overlaySurfaceContract = {
 	deny: [
 		"border", "border-x", "border-y", "border-s", "border-e", "border-t", "border-r", "border-b", "border-l",
 		"border-2", "border-4", "border-8", "border-[*", "ring", "ring-1", "ring-2", "ring-4", "ring-8", "ring-[*",
+		// DESIGN.md › Shadow vocabulary: shadow-xl adds a second 1px perimeter to the ADS overlay shadow.
+		"shadow-xl",
 	],
 	message: {
 		shape: "{{file}} surfaces are defined by overlay elevation; drop the outer border/ring (gotchas-ui.md) and keep separators on children.",
+		effects: "Overlay elevation is shadow-2xl; shadow-xl doubles the 1px perimeter (DESIGN.md › Shadow vocabulary).",
+	},
+};
+// DESIGN.md › Menu and picker separators: DropdownMenuSeparator, not a border on a row.
+const menuRowSeparatorContract = {
+	pattern: "^DropdownMenu(Item|Label|Group|CheckboxItem|RadioItem|SubTrigger)$",
+	allow: ["*"],
+	deny: ["border-t", "border-b", "border-y"],
+	message: {
+		shape: "Separate menu sections with DropdownMenuSeparator instead of a row border (DESIGN.md › Menu and picker separators).",
 	},
 };
 const designSystemRestyleOptions = {
 	// Other primitives remain flexible until their contracts are reviewed.
 	allow: ["*"],
-	contracts: [buttonRestyleContract, badgeRestyleContract, overlaySurfaceContract],
+	contracts: [buttonRestyleContract, badgeRestyleContract, overlaySurfaceContract, menuRowSeparatorContract],
 };
 
 const vpkIconRestrictedImportNames = [
@@ -221,6 +233,10 @@ const vpkTokens = {
 		"no-undefined-overlay-shadow": builtinRules.get("no-restricted-syntax"),
 		"no-mismatched-underline-color": builtinRules.get("no-restricted-syntax"),
 		"no-off-grid-spacing": builtinRules.get("no-restricted-syntax"),
+		"no-arbitrary-radius": builtinRules.get("no-restricted-syntax"),
+		"no-fractional-border": builtinRules.get("no-restricted-syntax"),
+		"no-viewport-type": builtinRules.get("no-restricted-syntax"),
+		"no-uppercase-tracking": builtinRules.get("no-restricted-syntax"),
 	},
 };
 // gotchas-ui.md: the root layout's MainLandmark is the page's only main landmark. Its own rule id
@@ -246,6 +262,17 @@ const undefinedOverlayShadowSelector = `Literal[value=/${undefinedOverlayShadowP
 // DESIGN.md spacing: padding, margin and gap are multiples of 4px or 6px. 10px (*-2.5) and 14px (*-3.5)
 // are off that grid; responsive and state prefixes (sm:px-2.5, hover:p-2.5) count too.
 const offGridSpacingPattern = "(^|[\\s:])-?(p|px|py|pt|pb|pl|pr|ps|pe|m|mx|my|mt|mb|ml|mr|ms|me|gap|gap-x|gap-y|space-x|space-y)-(2\\.5|3\\.5|\\[10px\\]|\\[14px\\])($|\\s)";
+// DESIGN.md › Radius by component: map a Figma radius to the nearest step, never rounded-[10px].
+const arbitraryRadiusPattern = "(^|[\\s:])rounded(-[a-z]{1,2})?-\\[\\d";
+// DESIGN.md › Border width: resting borders are 1px; no fractional widths such as 1.5px.
+const fractionalBorderPattern = "(^|[\\s:])border(-[a-z]{1,2})?-\\[\\d*\\.\\d+px\\]";
+// DESIGN.md › Typography: type sizes come from the scale, never viewport-scaled.
+const viewportTypePattern = "(^|[\\s:])text-\\[[^\\]]*(vw|vh|vmin|vmax|clamp\\()";
+// DESIGN.md › No all caps or eyebrows: product UI does not uppercase or letter-space text.
+const uppercaseTrackingPattern = "(^|[\\s:])(uppercase|tracking-(wide|wider|widest|\\[\\d))($|\\s)";
+// Art, website, and motion-led stages may opt into expressive type and geometry (DESIGN.md › Signature surfaces).
+const productTsxFiles = ["components/projects/**/*.tsx", "components/blocks/**/*.tsx", "components/ui/**/*.tsx", "components/ui-custom/**/*.tsx"];
+const signatureSurfaceIgnores = ["**/finale/**", "**/*.test.tsx"];
 function classStringSelector(pattern) {
 	return `Literal[value=/${pattern}/], TemplateElement[value.raw=/${pattern}/]`;
 }
@@ -258,7 +285,7 @@ const eslintConfig = defineConfig([
 		plugins: { shadcn },
 		rules: {
 			// Repo-wide contracts only for established policy; the pilot blocks below add the rest.
-			"shadcn/no-restyle": ["error", { allow: ["*"], contracts: [overlaySurfaceContract] }],
+			"shadcn/no-restyle": ["error", { allow: ["*"], contracts: [overlaySurfaceContract, menuRowSeparatorContract] }],
 			// Theme-token contracts. A class Tailwind cannot generate, or a color the theme does not
 			// declare (`text-danger`, `shadow-raised`), renders nothing, so these catch silent no-ops.
 			"shadcn/no-raw-colors": "error",
@@ -496,6 +523,29 @@ const eslintConfig = defineConfig([
 			"vpk-tokens/no-off-grid-spacing": ["error", {
 				selector: classStringSelector(offGridSpacingPattern),
 				message: "Spacing is a multiple of 4px or 6px: use 8px (*-2) or 12px (*-3) instead of 10px (*-2.5), 12px or 16px instead of 14px (*-3.5) (DESIGN.md › Spacing rhythm).",
+			}],
+		},
+	},
+	{
+		files: productTsxFiles,
+		ignores: signatureSurfaceIgnores,
+		plugins: { "vpk-tokens": vpkTokens },
+		rules: {
+			"vpk-tokens/no-arbitrary-radius": ["error", {
+				selector: classStringSelector(arbitraryRadiusPattern),
+				message: "Map the radius to the nearest step (rounded-xs … rounded-2xl, rounded-full, rounded-tile) instead of an arbitrary value (DESIGN.md › Radius by component).",
+			}],
+			"vpk-tokens/no-fractional-border": ["error", {
+				selector: classStringSelector(fractionalBorderPattern),
+				message: "Resting borders are 1px (border); 2px only for a selected marker. No fractional widths (DESIGN.md › Border width).",
+			}],
+			"vpk-tokens/no-viewport-type": ["error", {
+				selector: classStringSelector(viewportTypePattern),
+				message: "Use the type scale or an ADS font token instead of viewport-scaled text (DESIGN.md › Typography).",
+			}],
+			"vpk-tokens/no-uppercase-tracking": ["error", {
+				selector: classStringSelector(uppercaseTrackingPattern),
+				message: "Product UI does not uppercase or letter-space text; use sentence case, or a Lozenge or Tag beside the heading (DESIGN.md › No all caps or eyebrows).",
 			}],
 		},
 	},

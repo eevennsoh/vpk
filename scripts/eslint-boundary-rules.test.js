@@ -352,6 +352,51 @@ export const Tokens = ({ tone }: { tone: string }) => (
 	assert.ok(findings.every(({ severity }) => severity === 2), "theme-token rules are errors");
 });
 
+test("DESIGN.md geometry and type checks reject arbitrary radius, fractional borders, viewport type and caps", async () => {
+	const rules = ["vpk-tokens/no-arbitrary-radius", "vpk-tokens/no-fractional-border", "vpk-tokens/no-viewport-type", "vpk-tokens/no-uppercase-tracking"];
+	const source = `
+export const Geometry = () => (
+	<>
+		<div className="rounded-[10px] rounded-t-[6px]" />
+		<div className="border-[1.5px]" />
+		<p className="text-[4vw] md:text-[clamp(1rem,2vw,2rem)]" />
+		<p className="uppercase tracking-widest" />
+		<div className="rounded-lg rounded-tile rounded-[inherit] border border-2 text-[11px] tracking-tight normal-case" />
+	</>
+);
+`;
+	const findings = await ruleFindings(source, "components/blocks/demo/lint-contract-fixture.tsx", rules);
+	const byRule = (ruleId) => [...new Set(findings.filter((finding) => finding.ruleId === ruleId).map(({ line }) => line))];
+	assert.deepEqual(byRule("vpk-tokens/no-arbitrary-radius"), [4]);
+	assert.deepEqual(byRule("vpk-tokens/no-fractional-border"), [5]);
+	assert.deepEqual(byRule("vpk-tokens/no-viewport-type"), [6]);
+	assert.deepEqual(byRule("vpk-tokens/no-uppercase-tracking"), [7]);
+	assert.deepEqual(await ruleFindings(source, "components/projects/jira-team-eu26-end/finale/lint-contract-fixture.tsx", rules), [], "motion-led stages opt out");
+	assert.deepEqual(await ruleFindings(source, "components/arts/demo/lint-contract-fixture.tsx", rules), [], "art surfaces opt out");
+});
+
+test("overlay surfaces use shadow-2xl and menu sections use DropdownMenuSeparator", async () => {
+	const findings = await ruleFindings(`
+import { PopoverContent } from "@/components/ui/popover";
+import { DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+export const Menus = () => (
+	<>
+		<PopoverContent className="w-80 shadow-xl" />
+		<DropdownMenuContent className="shadow-2xl">
+			<DropdownMenuLabel className="border-b border-border" />
+			<DropdownMenuItem className="border-t" />
+			<DropdownMenuSeparator />
+			<DropdownMenuItem className="gap-2" />
+		</DropdownMenuContent>
+	</>
+);
+`, "components/blocks/demo/lint-contract-fixture.tsx", ["shadcn/no-restyle"]);
+	assert.deepEqual([...new Set(findings.map(({ line }) => line))], [6, 8, 9]);
+	assert.ok(findings.every(({ severity }) => severity === 2));
+	assert.match(findings[0].message, /shadow-2xl/u);
+	assert.match(findings.at(-1).message, /DropdownMenuSeparator/u);
+});
+
 test("primitives may compose dynamic classes and art scenes may pass literal colors", async () => {
 	const rules = ["shadcn/no-raw-colors", "shadcn/require-static-classes", "shadcn/no-arbitrary-values"];
 	const primitive = await ruleFindings(`

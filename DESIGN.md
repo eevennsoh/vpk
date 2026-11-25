@@ -92,6 +92,15 @@ applicable nested `DESIGN.md`, if present. Otherwise, use this file and the
 existing surface. Component recipes summarize defaults; shared component source
 owns supported variants, states, and slot geometry.
 
+When adding a rule here, decide first whether matching code can find a
+violation (a class, token, prop, or component restyle). If it can, enforce it
+as a lint error in `eslint.config.mjs` with a case in
+`scripts/eslint-boundary-rules.test.js` and existing hits baselined in
+`eslint-suppressions.json`, following
+[Design-system lint maintenance](.agents/rules/component-architecture.md#design-system-lint-maintenance),
+and keep a one-line rule plus its reason here. Only judgment-only rules live
+here as prose alone.
+
 ## 1. Overview
 
 VPK is a prototyping toolkit for product surfaces, agent workflows, and
@@ -220,7 +229,7 @@ font shorthand. The finesse theme gives medium through xxsmall headings a
 ordinary UI text, `text-sm` pairs 14px type with 20px line
 height and `text-xs` pairs 12px with 16px; use mapped utilities for weight and
 color. Avoid viewport-scaled type for fixed tool surfaces because it makes
-compact controls unpredictable.
+compact controls unpredictable. Lint: `vpk-tokens/no-viewport-type`.
 
 ### Hierarchy
 
@@ -265,7 +274,9 @@ step obvious without adding explanatory chrome.
   heading. When a heading needs a category, put a Lozenge (status) or Tag
   (classification) beside it, or a byline under it. Art and website surfaces
   can opt in as part of their own identity, as can motion-led stages (see
-  [Signature surfaces](#signature-surfaces)).
+  [Signature surfaces](#signature-surfaces)). Lint:
+  `vpk-tokens/no-uppercase-tracking` (product, blocks, `ui`, `ui-custom`;
+  finale stages excluded).
 - **Actions:** Buttons and calls to action use imperative verbs such as "Save",
   "Delete", "Connect", or "Create agent". Avoid "Submit", "OK", "Click here",
   and generic action labels that do not describe the result.
@@ -327,7 +338,9 @@ repo's semantic Tailwind classes whenever a class exists.
   left edge to its right edge, including separators inside scrollable lists.
   Its shared treatment uses `bg-border`, a 1px line, and `--menu-inset` for
   edge-to-edge alignment and equal vertical margins; set `--menu-inset` to the
-  surrounding menu's inset without introducing horizontal scrolling.
+  surrounding menu's inset without introducing horizontal scrolling. Lint:
+  `shadcn/no-restyle` (`menuRowSeparatorContract`) rejects row borders on
+  `DropdownMenu*` items, labels, and groups.
   <!-- 2026-11-14: "for any separators, rather than a border bottom, we should be using this treatment" -->
   <!-- 2026-11-18: "it should be extending all the way left and right in the new styling guide" -->
 - **Dropdown menus scroll vertically only:** Fit menu content within the available
@@ -341,7 +354,7 @@ repo's semantic Tailwind classes whenever a class exists.
 - **Border width:** Resting borders, dividers, and outlines are 1px. Use 2px
   only for a selected marker, such as the tab underline, together with the
   selected colors. Do not thicken a resting border for emphasis or use
-  fractional widths such as 1.5px.
+  fractional widths such as 1.5px. Lint: `vpk-tokens/no-fractional-border`.
 - **Focus anatomy:** Preserve shared Button, Input, and Textarea focused borders
   and 3px rings. Native controls and links use the global 2px outline with a 2px
   offset. Keep the applicable treatment visible and shaped to the control.
@@ -382,7 +395,7 @@ Sizes are the default values of the mapped `--ds-radius-*` tokens.
 | `rounded-tile` | 25% | Tile and IconTile only |
 
 Map a Figma radius to the nearest step instead of adding an arbitrary value such
-as `rounded-[10px]`.
+as `rounded-[10px]`. Lint: `vpk-tokens/no-arbitrary-radius`.
 
 ### Responsive behavior
 
@@ -412,7 +425,8 @@ or overlay affordance.
   popovers, command surfaces, and floating controls. Shared primitive defaults
   and consumer restyling must use `shadow-2xl` for overlay elevation. Never use
   `shadow-xl` on overlay surfaces: it adds a second 1px perimeter to the ADS
-  overlay shadow. There is no `shadow-overlay` class.
+  overlay shadow. There is no `shadow-overlay` class. Lint: the
+  `overlaySurfaceContract` rejects `shadow-xl` on overlay `*Content`.
 
 ### Named rules
 
