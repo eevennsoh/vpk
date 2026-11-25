@@ -1,4 +1,18 @@
-export type JiraIssueActiveAgentState = "working" | "awaiting-input";
+export type JiraIssueActiveAgentState = "working" | "awaiting-input" | "ready-for-review";
+
+export const JIRA_ISSUE_ACTIVE_AGENT_STATE_LABEL: Readonly<Record<JiraIssueActiveAgentState, string>> = {
+	"awaiting-input": "Needs input",
+	"ready-for-review": "Ready for review",
+	working: "Working",
+};
+
+/**
+ * States that wait on a person. They share the Needs input treatment (blue
+ * information dot, no shimmer) and differ only in their label.
+ */
+export function isJiraIssueAgentWaitingOnPerson(state: JiraIssueActiveAgentState | "completed"): boolean {
+	return state === "awaiting-input" || state === "ready-for-review";
+}
 
 type RelatedAgentActivityMode = "none" | JiraIssueActiveAgentState | "completed";
 
@@ -75,18 +89,27 @@ export function summarizeJiraIssueAgentActivities(
 			priorityState: "working",
 		};
 	}
+	// A question blocks the agent, so it outranks output waiting on review;
+	// both outrank plain work.
 	const awaitingInputActivities = activeActivities.filter(({ activity }) => activity.state === "awaiting-input");
-	const awaitingInputCount = awaitingInputActivities.length;
-	const priorityState = awaitingInputCount > 0 ? "awaiting-input" : "working";
-	const priorityCount = awaitingInputCount > 0 ? awaitingInputCount : activeActivities.length;
+	const readyForReviewActivities = activeActivities.filter(({ activity }) => activity.state === "ready-for-review");
+	const priorityState: JiraIssueActiveAgentState = awaitingInputActivities.length > 0
+		? "awaiting-input"
+		: readyForReviewActivities.length > 0
+			? "ready-for-review"
+			: "working";
+	const priorityActivities = priorityState === "awaiting-input"
+		? awaitingInputActivities
+		: priorityState === "ready-for-review"
+			? readyForReviewActivities
+			: activeActivities;
+	const priorityCount = priorityActivities.length;
 	const featuredActivityIndex = activeActivities.length === 1
 		? activeActivities[0]?.index ?? null
-		: awaitingInputActivities.length === 1
-			? awaitingInputActivities[0]?.index ?? null
+		: priorityState !== "working" && priorityActivities.length === 1
+			? priorityActivities[0]?.index ?? null
 			: null;
-	const label = priorityState === "awaiting-input"
-		? "Needs input"
-		: "Working";
+	const label = JIRA_ISSUE_ACTIVE_AGENT_STATE_LABEL[priorityState];
 
 	return {
 		activityCount: activeActivities.length,

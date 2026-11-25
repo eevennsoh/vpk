@@ -137,7 +137,9 @@ export function toButterAgentActivityFromSession(
 		...(session.invokedAtMs ?? session.startedAtMs ? { startedAtMs: session.invokedAtMs ?? session.startedAtMs } : {}),
 		state: session.state === "needs-input" || session.state === "attention"
 			? "awaiting-input"
-			: session.state === "complete"
+			: session.state === "ready-for-review"
+				? "ready-for-review"
+				: session.state === "complete"
 				? "completed"
 				: "working",
 		...(session.invokedBy ? { invokedBy: session.invokedBy } : {}),
@@ -159,7 +161,9 @@ export function toButterDetachedAgentSession(
 		title: activity.sessionTitle ?? activity.label,
 		state: activity.state === "awaiting-input"
 			? "needs-input"
-			: activity.state === "completed"
+			: activity.state === "ready-for-review"
+				? "ready-for-review"
+				: activity.state === "completed"
 				? "complete"
 				: "running",
 		agent: {

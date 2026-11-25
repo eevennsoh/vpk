@@ -134,6 +134,8 @@ function assignedStatusFromActivityState(
 		case "awaiting-input":
 		case "needs-input":
 			return { statusKind: "needs-input", statusLabel: "Needs input" };
+		case "ready-for-review":
+			return { statusKind: "ready-for-review", statusLabel: "Ready for review" };
 		case "completed":
 		case "finished":
 		case "done":

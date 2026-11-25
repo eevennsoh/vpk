@@ -40,33 +40,13 @@ import { token } from "@/lib/tokens";
 import { ProjectButterPlayground, type ProjectButterDemoIssueProps } from "./project-butter-demo";
 import { BOARD_CARD_FINISHED_RUN, useBoardCardFinishedReplay } from "./project-butter-finished-demo";
 import { EXPERIMENTAL_DEMO_PULL_REQUEST_PREVIEW } from "./jira-issue-demo-pull-request";
+import { JIRA_ISSUE_DEMO_SUBTASKS, JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS, PROJECT_BUTTER_DEMO_SUBTASKS } from "./jira-issue-demo-people";
 import type { RovoAgentProfile } from "@/app/data/directory/agents";
 
 const JIRA_ISSUE_DEMO_TAGS = [
 	{ text: "Acmecorp", color: "discovery" },
 	{ text: "qualification", color: "blue" },
 	{ text: "enterprise", color: "discovery" },
-] as const;
-
-const JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS = [
-	{
-		id: "andrea-wilson",
-		name: "Andrea Wilson",
-		avatarSrc: "/avatar-user/andrea-wilson/color/asow-service-yellow.png",
-		avatarShape: "circle",
-	},
-	{
-		id: "andrew-park",
-		name: "Andrew Park",
-		avatarSrc: "/avatar-user/andrew-park/color/asow-dev-lime.png",
-		avatarShape: "circle",
-	},
-	{
-		id: "priya-hansra",
-		name: "Priya Hansra",
-		avatarSrc: "/avatar-user/priya-hansra/color/asow-service-yellow.png",
-		avatarShape: "circle",
-	},
 ] as const;
 
 const JIRA_ISSUE_UNCAPTURED_GITHUB_VISUAL = { kind: "third-party", name: "github" } as const;
@@ -174,58 +154,6 @@ const JIRA_ISSUE_UNCAPTURED_WORK_EXAMPLES = [
 	},
 ] as const satisfies readonly { id: string; suggestedWorkItemKey: string; summary: string; sourceLink: SmartLinkItem }[];
 
-const JIRA_ISSUE_DEMO_SUBTASKS = [
-	{
-		summary: "Review Venn's test design pattern proposal",
-		issueKey: "JDSN-230",
-		status: "To Do",
-		assigneeUnassignedKind: "person",
-	},
-] as const;
-
-const PROJECT_BUTTER_DEMO_SUBTASKS = [
-	...JIRA_ISSUE_DEMO_SUBTASKS,
-	{
-		issueKey: "PD-41",
-		summary: "Build the date-range picker",
-		status: "Done",
-		priority: "major",
-		assigneeAvatarSrc: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[0].avatarSrc,
-		assigneeAvatarLabel: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[0].name,
-	},
-	{
-		issueKey: "PD-42",
-		summary: "Support keyboard navigation",
-		status: "In Progress",
-		priority: "critical",
-		assigneeAvatarSrc: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[1].avatarSrc,
-		assigneeAvatarLabel: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[1].name,
-	},
-	{
-		issueKey: "PD-43",
-		summary: "Add preset date ranges",
-		status: "Done",
-		priority: "medium",
-		assigneeAvatarSrc: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[2].avatarSrc,
-		assigneeAvatarLabel: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[2].name,
-	},
-	{
-		issueKey: "PD-44",
-		summary: "Handle timezone boundaries",
-		status: "In Progress",
-		priority: "major",
-		assigneeAvatarSrc: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[1].avatarSrc,
-		assigneeAvatarLabel: JIRA_ISSUE_UNCAPTURED_WORK_PARTICIPANTS[1].name,
-	},
-	{
-		issueKey: "PD-45",
-		summary: "Test date-range edge cases",
-		status: "To Do",
-		priority: "minor",
-		assigneeUnassignedKind: "person",
-	},
-] as const;
-
 const SERVICE_IMPACT_AGENT_LABELS = [
 	"Figuring out which services are affected",
 	"Reading linked design notes",
@@ -280,6 +208,16 @@ const JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES = [
 	JIRA_ISSUE_AGENT_ACTIVITIES[1],
 ] as const satisfies readonly JiraIssueAgentActivity[];
 
+/** The agent has generated its output; it keeps the session title it worked under. */
+const JIRA_ISSUE_READY_FOR_REVIEW_ACTIVITIES = [
+	{
+		...JIRA_ISSUE_AGENT_ACTIVITIES[0],
+		label: "Ready for review",
+		sessionTitle: JIRA_ISSUE_AGENT_ACTIVITIES[0].label,
+		state: "ready-for-review",
+	},
+] as const satisfies readonly JiraIssueAgentActivity[];
+
 const JIRA_ISSUE_COMPLETED_AGENT_RUNS = [
 	{
 		id: "PD-40:service-impact-agent",
@@ -326,6 +264,7 @@ const JIRA_ISSUE_COMPLETED_AGENT_RUNS = [
 type JiraIssueAgentActivityDemoState =
 	| "default"
 	| "finished"
+	| "ready-for-review"
 	| "mixed-agents-working"
 	| "single-agent-working"
 	| "multiple-agents-working"
@@ -333,6 +272,7 @@ type JiraIssueAgentActivityDemoState =
 	| "multiple-agents-working-viewer"
 	| "agent-session-expired"
 	| "awaiting-user-input"
+	| "agent-ready-for-review"
 	| "agent-completed-work"
 	| "agent-dismissed-work"
 	| "agent-session-unlink"
@@ -362,7 +302,9 @@ const JIRA_ISSUE_AGENT_ACTIVITY_V2_DEMO_STATES = [
 	})),
 	{ value: "single-agent-working-viewer", label: "1 agent, not owner" },
 	{ value: "multiple-agents-working-viewer", label: "1-n agents, not owner" },
-	...JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES.slice(3),
+	JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES[3],
+	{ value: "agent-ready-for-review", label: "Ready for review" },
+	...JIRA_ISSUE_AGENT_ACTIVITY_DEMO_STATES.slice(4),
 	{ value: "agent-session-expired", label: "Expired" },
 ] as const satisfies readonly { value: JiraIssueAgentActivityDemoState; label: string }[];
 
@@ -465,6 +407,8 @@ function getDemoAgentActivities(
 			return [...JIRA_ISSUE_AGENT_ACTIVITIES, { ...JIRA_ISSUE_AGENT_ACTIVITIES[1], id: "third-agent" }];
 		case "awaiting-user-input":
 			return JIRA_ISSUE_AWAITING_INPUT_ACTIVITIES;
+		case "agent-ready-for-review":
+			return JIRA_ISSUE_READY_FOR_REVIEW_ACTIVITIES;
 		default:
 			return undefined;
 	}
@@ -488,6 +432,10 @@ function getDemoAgentActivityMode(
 		return "none";
 	}
 
+	if (state === "agent-ready-for-review") {
+		return "ready-for-review";
+	}
+
 	return state === "awaiting-user-input" || state === "agent-session-expired" ? "awaiting-input" : "working";
 }
 
@@ -508,6 +456,8 @@ function getExperimentalDemoPullRequest(
 		case "multiple-agents-working-viewer":
 		case "mixed-agents-working":
 		case "finished":
+		case "ready-for-review":
+		case "agent-ready-for-review":
 		case "agent-session-expired":
 		case "agent-session-unlink":
 		case "agent-session-running-unlink":
@@ -699,10 +649,15 @@ function JiraIssueAgentActivityStatesDemo({
 	subtaskChrome,
 }: Readonly<JiraIssueAgentActivityStatesDemoProps> = {}): React.ReactElement {
 	const [internalActivityState, setAgentActivityState] = useState<JiraIssueAgentActivityDemoState>("default");
-	const finished = useBoardCardFinishedReplay(boardCardState === "finished");
+	// Finished and Ready for review both replay from working, so the same
+	// session visibly moves into its end state.
+	const replaysFromWorking = boardCardState === "finished" || boardCardState === "ready-for-review";
+	const replayed = useBoardCardFinishedReplay(replaysFromWorking);
 	const agentActivityState = boardCardState === "finished"
-		? finished ? "agent-completed-work" : "single-agent-working"
-		: boardCardState ?? internalActivityState;
+		? replayed ? "agent-completed-work" : "single-agent-working"
+		: boardCardState === "ready-for-review"
+			? replayed ? "agent-ready-for-review" : "single-agent-working"
+			: boardCardState ?? internalActivityState;
 	// View chat / question submit / generative actions all drop into the shared
 	// Rovo floating chat with the activity's agent already selected — matching the
 	// ASX Kanban "View chat" behavior instead of a blank vanilla Rovo chat.
@@ -730,8 +685,8 @@ function JiraIssueAgentActivityStatesDemo({
 	const fixtureActivities = assignedDemoActivities ?? getDemoAgentActivities(agentActivityState)?.map<JiraIssueAgentActivity>((activity, index) => (
 		demoSessionRole && agentActivityState !== "agent-session-expired" ? {
 			...activity,
-			...(boardCardState !== undefined ? { sessionTitle: activity.label } : {}),
-			...(boardCardState === "finished" ? { stateTransition: "agent-session" as const } : {}),
+			...(boardCardState !== undefined ? { sessionTitle: activity.sessionTitle ?? activity.label } : {}),
+			...(replaysFromWorking ? { stateTransition: "agent-session" as const } : {}),
 			name: index === 0 ? "Claude" : index === 1 ? "Cursor" : "Service impact agent",
 			avatarSrc: undefined,
 			agentBrandName: index === 0 ? "claude" : index === 1 ? "cursor" : undefined,

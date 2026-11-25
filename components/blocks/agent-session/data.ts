@@ -381,6 +381,23 @@ export const AGENT_SESSION_ATTACHED_NEEDS_INPUT_ITEMS: readonly AgentSessionItem
 	},
 ];
 
+/** One attached session whose generated output is waiting on a person's review. */
+export const AGENT_SESSION_ATTACHED_READY_FOR_REVIEW_ITEMS: readonly AgentSessionItem[] = [
+	{
+		agent: CLAUDE_AGENT,
+		host: "cloud",
+		id: "PAY-112:ready-for-review",
+		sessionDetails: {
+			host: "cloud",
+			issueKey: "PAY-112",
+			issueSummary: "Confirm the sandbox key retention window before replay",
+		},
+		state: "ready-for-review",
+		timeLabel: "36s",
+		title: "Ready for review",
+	},
+];
+
 /** A completed attached session with the shared success treatment. */
 export const AGENT_SESSION_ATTACHED_FINISHED_ITEMS: readonly AgentSessionItem[] = [
 	{

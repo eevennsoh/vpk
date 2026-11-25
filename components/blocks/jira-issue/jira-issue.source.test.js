@@ -317,8 +317,8 @@ test("Jira issue suppresses the Rovo sparkle while the more actions menu is open
 });
 
 test("Jira issue exposes agent activity state props", () => {
-	assert.match(AGENT_ACTIVITY_SOURCE, /export type JiraIssueAgentActivityMode = "none" \| "working" \| "awaiting-input" \| "completed";/);
-	assert.match(AGENT_ACTIVITY_SOURCE, /export type JiraIssueAgentActivityState = "working" \| "awaiting-input" \| "completed";/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /export type JiraIssueAgentActivityMode = "none" \| "working" \| "awaiting-input" \| "ready-for-review" \| "completed";/);
+	assert.match(AGENT_ACTIVITY_SOURCE, /export type JiraIssueAgentActivityState = "working" \| "awaiting-input" \| "ready-for-review" \| "completed";/);
 	assert.match(AGENT_ACTIVITY_SOURCE, /export interface JiraIssueAgentActivity \{[\s\S]*id: string;[\s\S]*name: string;[\s\S]*avatarSrc\?: string;[\s\S]*label: string;[\s\S]*labels\?: readonly string\[\];[\s\S]*message\?: string;[\s\S]*cycleIntervalJitterMs\?: number;[\s\S]*cycleIntervalMs\?: number;[\s\S]*question\?: QuestionCardQuestion;[\s\S]*state: JiraIssueAgentActivityState;/);
 	assert.match(SOURCE, /export type \{[\s\S]*JiraIssueAgentActivity,[\s\S]*JiraIssueAgentActivityMode,[\s\S]*JiraIssueAgentActivityState,[\s\S]*\} from "@\/components\/blocks\/jira-issue\/agent-activity";/);
 	assert.match(SOURCE, /agentActivities\?: readonly JiraIssueAgentActivity\[\];/);
@@ -656,7 +656,7 @@ test("Jira issue renders one aggregate Figma-sized agent row and always exposes 
 	assert.match(AGENT_ACTIVITY_SOURCE, /const summary = summarizeJiraIssueAgentActivities\(visibleActivities\);/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const isSingleAgent = summary\.activityCount === 1;/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /const featuredActivity = summary\.featuredActivityIndex !== null[\s\S]*\? visibleActivities\[summary\.featuredActivityIndex\][\s\S]*: undefined;/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /const isAwaitingInput = !isCompletedRow && summary\.priorityState === "awaiting-input";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /const isAwaitingInput = !isCompletedRow && isJiraIssueAgentWaitingOnPerson\(summary\.priorityState\);/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /shouldCycleSingleAgentLabel|JiraIssueCyclingAgentLabel/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /status: activity\.label,[\s\S]*statusSequence: activity\.state === "working" \? getJiraIssueAgentWorkingLabels\(activity\) : undefined,[\s\S]*statusCycleIntervalMs: activity\.cycleIntervalMs[\s\S]*statusCycleJitterMs: activity\.cycleIntervalJitterMs/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /\{rowLabel\}[\s\S]*<AnimatedDot/u);

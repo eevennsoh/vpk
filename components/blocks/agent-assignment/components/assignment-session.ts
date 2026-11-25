@@ -20,6 +20,8 @@ function assignmentSessionState(
 			return "running";
 		case "needs-input":
 			return "needs-input";
+		case "ready-for-review":
+			return "ready-for-review";
 		case "finished":
 		case "idle":
 			return "complete";
@@ -38,6 +40,8 @@ function assignmentActivityState(
 			return "working";
 		case "needs-input":
 			return "awaiting-input";
+		case "ready-for-review":
+			return "ready-for-review";
 		case "finished":
 		case "idle":
 			return "completed";
@@ -54,6 +58,8 @@ function assignmentActivityLabel(kind: AgentAssignmentStatusKind, agent: AgentAs
 			return "Working";
 		case "needs-input":
 			return "Needs input";
+		case "ready-for-review":
+			return "Ready for review";
 		case "finished":
 			return "Finished";
 		case "idle":

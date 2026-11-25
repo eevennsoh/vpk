@@ -13,6 +13,7 @@ const statusPresentation = {
 	running: { Glyph: TaskInProgressIcon, tone: "text-icon-subtle" },
 	complete: { Glyph: StatusSuccessIcon, tone: "text-icon-success" },
 	"needs-input": { Glyph: StatusInformationIcon, tone: "text-icon-information" },
+	"ready-for-review": { Glyph: StatusInformationIcon, tone: "text-icon-information" },
 	attention: { Glyph: StatusWarningIcon, tone: "text-icon-warning" },
 } satisfies Record<AgentSessionItem["state"], { Glyph: typeof TaskInProgressIcon; tone: string }>;
 

@@ -13,6 +13,7 @@ import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 function getAssignmentAvatarStatus(kind: AgentAssignmentStatusKind): AvatarStatus | undefined {
 	switch (kind) {
 		case "needs-input":
+		case "ready-for-review":
 			return "needs-input";
 		case "finished":
 			return "finished";
@@ -33,6 +34,8 @@ function getAssignmentAvatarTooltipLabel(
 	switch (kind) {
 		case "needs-input":
 			return "Needs input";
+		case "ready-for-review":
+			return "Ready for review";
 		case "finished":
 			return "Finished";
 		case "working":

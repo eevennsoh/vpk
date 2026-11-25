@@ -399,7 +399,9 @@ function JiraIssueDefault({
 	const nonCompletedAgentActivities = (agentActivities ?? []).filter((activity) => activity.state !== "completed");
 	const inferredAgentActivityMode: JiraIssueAgentActivityMode = nonCompletedAgentActivities.some((activity) => activity.state === "awaiting-input")
 		? "awaiting-input"
-		: nonCompletedAgentActivities.length > 0
+		: nonCompletedAgentActivities.some((activity) => activity.state === "ready-for-review")
+			? "ready-for-review"
+			: nonCompletedAgentActivities.length > 0
 			? "working"
 			: agentDoneRuns.length > 0
 				? "completed"
@@ -461,6 +463,7 @@ function JiraIssueDefault({
 	const hasActiveAgentActivityShell = resolvedAgentActivityMode === "working"
 		|| isInvocationPreview
 		|| resolvedAgentActivityMode === "awaiting-input"
+		|| resolvedAgentActivityMode === "ready-for-review"
 		|| hasCompletedAgentChin
 		|| isAttachingSession
 		|| agentSessionTargetHighlighted

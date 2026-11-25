@@ -119,6 +119,7 @@ const NOTCH_STATE_LABEL: Record<AgentListState, string> = {
 	attention: "needs attention",
 	complete: "finished",
 	"needs-input": "needs input",
+	"ready-for-review": "ready for review",
 	running: "running",
 };
 
@@ -328,7 +329,7 @@ function useAgentSessionUserNotchLifecycle({
 	shouldReduceMotion: boolean | null;
 	state: AgentSessionItem["state"];
 }>) {
-	const hasStateGlyph = state === "needs-input" || state === "complete";
+	const hasStateGlyph = state === "needs-input" || state === "ready-for-review" || state === "complete";
 	const hasArrivalVisual = Boolean(avatarSrc) || hasStateGlyph;
 	const reducedArrivalStateRef = useRef<AgentSessionItem["state"] | null>(null);
 	const finishReducedArrival = useEffectEvent(() => onArrivalComplete?.());
@@ -377,7 +378,8 @@ function AgentSessionUserNotchStateGlyph({
 	showStateGlyph: boolean;
 	state: AgentSessionItem["state"];
 }>) {
-	if (state !== "needs-input" && state !== "complete") return null;
+	if (state !== "needs-input" && state !== "ready-for-review" && state !== "complete") return null;
+	const isWaiting = state !== "complete";
 	return (
 		<span
 			aria-hidden="true"
@@ -403,9 +405,9 @@ function AgentSessionUserNotchStateGlyph({
 				aria-hidden
 				className={cn(
 					"size-3 [&>span]:size-3! [&_svg]:size-3!",
-					state === "needs-input" ? "text-icon-information" : "text-icon-success",
+					isWaiting ? "text-icon-information" : "text-icon-success",
 				)}
-				render={state === "needs-input"
+				render={isWaiting
 					? <StrokeWeightLargeIcon color="currentColor" label="" size="small" />
 					: <StatusSuccessIcon color="currentColor" label="" size="small" />}
 			/>

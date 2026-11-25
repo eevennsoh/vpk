@@ -25,6 +25,7 @@ import {
 	AGENT_SESSION_ITEMS,
 	AGENT_SESSION_ATTACHED_MULTI_WORKING_ITEMS,
 	AGENT_SESSION_ATTACHED_NEEDS_INPUT_ITEMS,
+	AGENT_SESSION_ATTACHED_READY_FOR_REVIEW_ITEMS,
 	AGENT_SESSION_ATTACHED_WORKING_ITEMS,
 	AgentSession,
 	type AgentSessionDensity,
@@ -44,6 +45,7 @@ const AGENT_SESSION_ATTACHED_STATES = [
 	{ items: AGENT_SESSION_ATTACHED_WORKING_ITEMS, label: "1 agent working" },
 	{ items: AGENT_SESSION_ATTACHED_MULTI_WORKING_ITEMS, label: "1–n agents working" },
 	{ items: AGENT_SESSION_ATTACHED_NEEDS_INPUT_ITEMS, label: "Needs input" },
+	{ items: AGENT_SESSION_ATTACHED_READY_FOR_REVIEW_ITEMS, label: "Ready for review" },
 	{ items: AGENT_SESSION_ATTACHED_FINISHED_ITEMS, label: "Finished" },
 ] as const;
 
@@ -120,7 +122,9 @@ function sessionAssignmentId(item: AgentSessionItem): string {
 function toDemoAssignedAgentFromSession(item: AgentSessionItem): AgentAssignmentAgent {
 	const statusKind = item.state === "needs-input" || item.state === "attention"
 		? "needs-input"
-		: item.state === "complete"
+		: item.state === "ready-for-review"
+			? "ready-for-review"
+			: item.state === "complete"
 			? "finished"
 			: "working";
 

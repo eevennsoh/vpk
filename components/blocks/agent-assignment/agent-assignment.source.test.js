@@ -27,7 +27,7 @@ test("Agent Assignment exposes a reusable controlled block contract", () => {
 	assert.match(source, /role\?: AgentSessionRole;/u);
 	assert.match(source, /export type \{ AgentAssignmentStatusKind \} from "@\/components\/blocks\/agent-assignment\/components\/assigned-agent-status";/u);
 	const statusHelper = readProjectFile("components/blocks/agent-assignment/components/assigned-agent-status.ts");
-	assert.match(statusHelper, /export type AgentAssignmentStatusKind = "working" \| "needs-input" \| "finished" \| "idle";/u);
+	assert.match(statusHelper, /export type AgentAssignmentStatusKind = "working" \| "needs-input" \| "ready-for-review" \| "finished" \| "idle";/u);
 	assert.match(statusHelper, /export function resolveAssignedAgentStatusKind\(/u);
 	assert.doesNotMatch(source, /export function resolveAssignedAgentStatusKind\(/u);
 	assert.match(source, /statusCycleIntervalMs\?: number;/u);
@@ -59,7 +59,7 @@ test("Agent Assignment exposes a reusable controlled block contract", () => {
 
 	const avatar = readProjectFile("components/blocks/agent-assignment/components/assignment-avatar.tsx");
 	assert.match(avatar, /function getAssignmentAvatarStatus\(kind: AgentAssignmentStatusKind\): AvatarStatus \| undefined/u);
-	assert.match(avatar, /case "needs-input":\s*return "needs-input";/u);
+	assert.match(avatar, /case "needs-input":\s*case "ready-for-review":\s*return "needs-input";/u);
 	assert.match(avatar, /case "finished":\s*return "finished";/u);
 	assert.match(avatar, /case "working":\s*case "idle":\s*return undefined;/u);
 	assert.match(avatar, /status=\{avatarStatus\}/u);

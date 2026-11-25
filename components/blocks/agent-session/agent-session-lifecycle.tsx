@@ -49,6 +49,7 @@ function IndicatorGlyph({
 				/>
 			);
 		case "needs-input":
+		case "ready-for-review":
 			if (uncontained) return <span className="inline-flex size-4 items-center justify-center text-icon-information"><StrokeWeightLargeIcon color="currentColor" label="" size="small" /></span>;
 			return (
 				<IconTile
@@ -58,7 +59,7 @@ function IndicatorGlyph({
 					iconSize={compact ? "small" : "medium"}
 					label=""
 					size="small"
-					title="Needs input"
+					title={LIFECYCLE_LABELS[state]}
 					variant="transparent"
 				/>
 			);

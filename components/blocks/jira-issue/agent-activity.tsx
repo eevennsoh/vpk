@@ -38,6 +38,7 @@ import { AgentSessionShortLifecycleIcon } from "@/components/blocks/agent-sessio
 import {
 	getJiraIssueVisibleActivities,
 	groupJiraIssueAgentActivityRows,
+	isJiraIssueAgentWaitingOnPerson,
 	summarizeJiraIssueAgentActivities,
 	type JiraIssueAgentActivityLayout,
 } from "@/components/blocks/jira-issue/agent-activity-model";
@@ -70,8 +71,8 @@ import { motionDuration, motionEase } from "@/lib/motion";
 
 export type { JiraIssueAgentAssignment } from "./agent-activity-row-presentation";
 
-export type JiraIssueAgentActivityMode = "none" | "working" | "awaiting-input" | "completed";
-export type JiraIssueAgentActivityState = "working" | "awaiting-input" | "completed";
+export type JiraIssueAgentActivityMode = "none" | "working" | "awaiting-input" | "ready-for-review" | "completed";
+export type JiraIssueAgentActivityState = "working" | "awaiting-input" | "ready-for-review" | "completed";
 export type JiraIssueAgentActivityAvatarLayout = "animated" | "horizontal-group";
 /**
  * The chin-row glyph states a host may override. `working` and `awaiting-input`
@@ -201,6 +202,8 @@ function toAssignedAgentStatusKind(
 			return "working";
 		case "awaiting-input":
 			return "needs-input";
+		case "ready-for-review":
+			return "ready-for-review";
 		case "completed":
 			return "finished";
 		default: {
@@ -309,7 +312,12 @@ function resolveJiraIssueAgentRowPresentation(
 		&& activities.some((activity) => linkFlash.activityIds.includes(activity.id))
 		? linkFlash
 		: null;
-	const isAwaitingInput = !isCompletedRow && summary.priorityState === "awaiting-input";
+	const isAwaitingInput = !isCompletedRow && isJiraIssueAgentWaitingOnPerson(summary.priorityState);
+	const lifecycleState = isCompletedRow
+		? "complete" as const
+		: summary.priorityState === "ready-for-review"
+			? "ready-for-review" as const
+			: isAwaitingInput ? "needs-input" as const : "running" as const;
 	const featuredActivity = summary.featuredActivityIndex !== null
 		? visibleActivities[summary.featuredActivityIndex]
 		: undefined;
@@ -334,6 +342,7 @@ function resolveJiraIssueAgentRowPresentation(
 		isCompletedRow,
 		isFailedRow,
 		isViewerRow,
+		lifecycleState,
 		rowAriaLabel,
 		rowLabel,
 		rowLinkFlash,
@@ -570,13 +579,13 @@ function JiraIssueAgentActivityRow({
 		isCompletedRow,
 		isFailedRow,
 		isViewerRow,
+		lifecycleState,
 		rowAriaLabel,
 		rowLabel,
 		rowLinkFlash,
 		startupSequenceKey,
 	} = resolveJiraIssueAgentRowPresentation(activities, linkFlash);
 	const animateStateTransition = activities.length === 1 && featuredActivity?.stateTransition === "agent-session";
-	const lifecycleState = isCompletedRow ? "complete" : isAwaitingInput ? "needs-input" : "running";
 	const catalogAgents = useMemo(
 		() => mergeJiraIssueAgentCatalog(activities, assignment?.agents),
 		[activities, assignment?.agents],
@@ -658,6 +667,7 @@ function JiraIssueAgentActivityRow({
 					renderGlyph={(state) => <JiraIssueAgentStatusIcon
 						iconScale={iconScale}
 						isAwaitingInput={state === "needs-input"}
+						isReadyForReview={state === "ready-for-review"}
 						isCompletedRow={state === "complete"}
 						isFailedRow={isFailedRow}
 						renderAgentActivityIndicator={renderAgentActivityIndicator}
@@ -666,6 +676,7 @@ function JiraIssueAgentActivityRow({
 				/> : <JiraIssueAgentStatusIcon
 					iconScale={iconScale}
 					isAwaitingInput={isAwaitingInput}
+					isReadyForReview={lifecycleState === "ready-for-review"}
 					isCompletedRow={isCompletedRow}
 					isFailedRow={isFailedRow}
 					renderAgentActivityIndicator={renderAgentActivityIndicator}

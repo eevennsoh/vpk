@@ -46,7 +46,9 @@ export function toJiraIssueAgentActivityFromSession(item: AgentSessionItem): Jir
 		name: item.agent.name,
 		state: item.state === "needs-input" || item.state === "attention"
 			? "awaiting-input"
-			: item.state === "complete"
+			: item.state === "ready-for-review"
+				? "ready-for-review"
+				: item.state === "complete"
 				? "completed"
 				: "working",
 		...(item.invokedBy ? { invokedBy: item.invokedBy } : {}),

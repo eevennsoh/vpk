@@ -101,6 +101,7 @@ test("status copy stays available for trailing indicators", () => {
 		attention: "Needs attention",
 		complete: "Finished",
 		"needs-input": "Needs input",
+		"ready-for-review": "Ready for review",
 		running: "Working",
 	});
 });

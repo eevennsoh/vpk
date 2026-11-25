@@ -73,12 +73,13 @@ test("running drops the redundant label; awaiting swaps the title to the Needs i
 	assert.doesNotMatch(CARD_SOURCE, /titleOverride/u);
 	// Awaiting sessions name the blocked state instead of the task title, matching
 	// the Jira queue card's JiraSessionLabel.
-	assert.match(CARD_SOURCE, /const AWAITING_INPUT_TITLE = "Needs input";/u);
+	assert.match(SESSION_SOURCE, /state === "needs-input" \? "Needs input" : state === "ready-for-review" \? "Ready for review" : undefined/u);
+	assert.match(CARD_SOURCE, /"ready-for-review": \{ shimmerTitle: true, showDots: true, showLifecycle: true \}/u);
 	assert.match(DETAIL_SOURCE, /an awaiting session replaces the title with "Needs input" plus animated dots/u);
 	assert.doesNotMatch(DETAIL_SOURCE, /Awaiting user response/u);
 	assert.match(
 		CARD_SOURCE,
-		/return item\.state === "needs-input" \? AWAITING_INPUT_TITLE : item\.title;/u,
+		/return getWaitingStatusLabel\(item\.state\) \?\? item\.title;/u,
 	);
 	// The helper drives both native card title slots and remains the default for
 	// the shared header when a consumer does not lead with the agent identity.
@@ -196,18 +197,18 @@ test("agent attribution groups share the same explicit order contract", () => {
 test("the attention state keeps the row's own title and warns instead of shimmering", () => {
 	// `needs-input` swaps a task title for the blocked state; an attention row's
 	// title already is the news, so swapping it would erase the row's content.
-	assert.match(TYPES_SOURCE, /export type AgentListState = "running" \| "complete" \| "needs-input" \| "attention";/u);
+	assert.match(TYPES_SOURCE, /export type AgentListState = "running" \| "complete" \| "needs-input" \| "ready-for-review" \| "attention";/u);
 	assert.match(CARD_SOURCE, /attention:\s*\{\s*shimmerTitle: false,\s*showDots: false,\s*showLifecycle: true,/u);
 	assert.match(
 		CARD_SOURCE,
-		/return item\.state === "needs-input" \? AWAITING_INPUT_TITLE : item\.title;/u,
+		/return getWaitingStatusLabel\(item\.state\) \?\? item\.title;/u,
 	);
 	assert.match(
 		CARD_SOURCE,
 		/case "attention":[\s\S]*text-icon-warning[\s\S]*<StatusWarningIcon color="currentColor" label="" size="small" \/>[\s\S]*label="Needs attention"/u,
 	);
-	assert.match(CARD_SOURCE, /case "needs-input":\s*case "attention":\s*return "awaiting-input";/u);
-	assert.match(SESSION_SOURCE, /case "needs-input":\s*case "attention":\s*return "awaiting-input";/u);
+	assert.match(CARD_SOURCE, /case "needs-input":\s*case "ready-for-review":\s*case "attention":\s*return "awaiting-input";/u);
+	assert.match(SESSION_SOURCE, /case "needs-input":\s*case "ready-for-review":\s*case "attention":\s*return "awaiting-input";/u);
 });
 
 test("rows carry an optional summary below metadata, leading metadata, and a static time", () => {
@@ -264,7 +265,7 @@ test("the metadata line uses elapsed runtime, agent name, and asx PR-status colo
 	// rows read as a relative timestamp rather than a ticking runtime.
 	assert.match(
 		CARD_SOURCE,
-		/const isLive = !isLocalAgentListItem\(item\)\s*&& \(item\.state === "running" \|\| item\.state === "needs-input"\);/u,
+		/const isLive = !isLocalAgentListItem\(item\)\s*&& \(item\.state === "running" \|\| getWaitingStatusLabel\(item\.state\) !== undefined\);/u,
 	);
 	assert.match(
 		CARD_SOURCE,
@@ -359,7 +360,7 @@ test("the session adapter derives flyout payloads the row model does not carry",
 	assert.match(TYPES_SOURCE, /branch\?: string;/u);
 	// Lifecycle mapping: the row model has no "PR open" state, so a finished
 	// session borrows it from prStatus.
-	assert.match(SESSION_SOURCE, /case "needs-input":\s*case "attention":\s*return "awaiting-input";/u);
+	assert.match(SESSION_SOURCE, /case "needs-input":\s*case "ready-for-review":\s*case "attention":\s*return "awaiting-input";/u);
 	assert.match(SESSION_SOURCE, /case "running":\s*return "running";/u);
 	assert.match(TYPES_SOURCE, /export type AgentListPrStatus = "created" \| "merged" \| "failed";/u);
 	assert.match(CARD_SOURCE, /failed:[\s\S]*MergeFailureIcon[\s\S]*PR failed[\s\S]*text-icon-danger/u);
@@ -667,7 +668,7 @@ test("exports a session activity header whose optional View action requires a ha
 	assert.match(CARD_SOURCE, /title=\{timeSlotTitle\(item\)\}/u);
 	assert.match(
 		CARD_SOURCE,
-		/function timeSlotTitle\(item: AgentListItem\): string \{\s*if \(isLocalAgentListItem\(item\)\) \{\s*return "Last update";\s*\}\s*return item\.state === "running" \|\| item\.state === "needs-input"\s*\? "Agent runtime"\s*: "Last update";/u,
+		/function timeSlotTitle\(item: AgentListItem\): string \{\s*if \(isLocalAgentListItem\(item\)\) \{\s*return "Last update";\s*\}\s*return item\.state === "running" \|\| getWaitingStatusLabel\(item\.state\) !== undefined\s*\? "Agent runtime"\s*: "Last update";/u,
 	);
 	assert.match(
 		CARD_SOURCE,
@@ -770,8 +771,7 @@ test("activity-header Working for truncates when hover actions expand", () => {
 });
 
 test("needs-input activity headers shimmer Needs input with trailing Rovo dots instead of Working for", () => {
-	assert.match(CARD_SOURCE, /const NEEDS_INPUT_STATUS_LABEL = "Needs input";/u);
-	assert.match(CARD_SOURCE, /const needsInput = item\.state === "needs-input";/u);
+	assert.match(CARD_SOURCE, /const waitingLabel = getWaitingStatusLabel\(item\.state\);/u);
 	assert.match(
 		CARD_SOURCE,
 		/const showTitleDots = stateMeta\.showDots && !leadWithAgentName;/u,
@@ -779,12 +779,12 @@ test("needs-input activity headers shimmer Needs input with trailing Rovo dots i
 	assert.match(CARD_SOURCE, /\{showTitleDots \? <AnimatedDot \/> : null\}/u);
 	assert.match(
 		CARD_SOURCE,
-		/needsInput \? \(\s*<span[\s\S]*title=\{NEEDS_INPUT_STATUS_LABEL\}[\s\S]*<Shimmer as="span" duration=\{1\.4\} spread=\{2\}>[\s\S]*\{NEEDS_INPUT_STATUS_LABEL\}[\s\S]*<\/Shimmer>\s*<AnimatedDot \/>/u,
+		/waitingLabel !== undefined \? \(\s*<span[\s\S]*title=\{waitingLabel\}[\s\S]*<Shimmer as="span" duration=\{1\.4\} spread=\{2\}>[\s\S]*\{waitingLabel\}[\s\S]*<\/Shimmer>\s*<AnimatedDot \/>/u,
 	);
 	// Running sessions still surface the Working for duration; needs-input does not.
 	assert.match(
 		CARD_SOURCE,
-		/needsInput \? \([\s\S]*\) : !messageTimestamp \|\| item\.state !== "complete" \? \([\s\S]*\{messageTimestamp \? "Working for " : null\}/u,
+		/waitingLabel !== undefined \? \([\s\S]*\) : !messageTimestamp \|\| item\.state !== "complete" \? \([\s\S]*\{messageTimestamp \? "Working for " : null\}/u,
 	);
 });
 

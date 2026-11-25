@@ -8,6 +8,7 @@ const BOARD_CARD_STATES = [
 	{ value: "multiple-agents-working", label: "1-n agents (Owner)" },
 	{ value: "multiple-agents-working-viewer", label: "1-n agent (Viewer)" },
 	{ value: "mixed-agents-working", label: "1-n agents (Owner + Viewer)" },
+	{ value: "ready-for-review", label: "Ready for review" },
 	{ value: "finished", label: "Finished" },
 ] as const;
 

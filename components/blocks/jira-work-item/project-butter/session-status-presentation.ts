@@ -1,6 +1,6 @@
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 
-export const SESSION_URGENCY: Readonly<Record<AgentSessionItem["state"], number>> = { "needs-input": 0, attention: 0, running: 1, complete: 2 };
+export const SESSION_URGENCY: Readonly<Record<AgentSessionItem["state"], number>> = { "needs-input": 0, attention: 0, "ready-for-review": 0, running: 1, complete: 2 };
 
 export function sessionStatusPresentation(sessions: readonly AgentSessionItem[]) {
 	const personal = sessions.filter((session) => session.role !== "viewer");

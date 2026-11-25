@@ -36,7 +36,7 @@ import { InvokerBy } from "./agent-list-invoker";
 import { AgentListCardActions } from "./agent-list-card-actions";
 import { AgentListRowBody } from "./agent-list-row-body";
 import type { AgentListRowAction } from "./agent-list-row-action";
-import { isLocalAgentListItem, toAgentSessionFlyoutItem } from "./agent-list-session";
+import { getWaitingStatusLabel, isLocalAgentListItem, toAgentSessionFlyoutItem } from "./agent-list-session";
 import type {
 	AgentListCustomFlyoutActions,
 	AgentListFlyout,
@@ -87,6 +87,7 @@ const STATE_META: Record<
 		showDots: true,
 		showLifecycle: true,
 	},
+	"ready-for-review": { shimmerTitle: true, showDots: true, showLifecycle: true },
 	attention: {
 		shimmerTitle: false,
 		showDots: false,
@@ -99,8 +100,6 @@ const STATE_META: Record<
 	},
 };
 
-/** Status copy for activity headers while a session is blocked on the viewer. */
-const NEEDS_INPUT_STATUS_LABEL = "Needs input";
 
 /**
  * Pull-request status → icon + color, matching the Jira queue card
@@ -153,8 +152,6 @@ function MetadataDot() {
 	);
 }
 
-/** Copy shown on the title line while a session is blocked awaiting a reply. */
-const AWAITING_INPUT_TITLE = "Needs input";
 
 /**
  * Title-line text for a session row. `needs-input` swaps the work-item title for
@@ -163,7 +160,7 @@ const AWAITING_INPUT_TITLE = "Needs input";
  * names the state the session is blocked on. Other states show the task title.
  */
 function getSessionTitle(item: AgentListItem): string {
-	return item.state === "needs-input" ? AWAITING_INPUT_TITLE : item.title;
+	return getWaitingStatusLabel(item.state) ?? item.title;
 }
 
 function getAgentStateState(state: AgentListState): AgentStateState {
@@ -171,6 +168,7 @@ function getAgentStateState(state: AgentListState): AgentStateState {
 		case "running":
 			return "working";
 		case "needs-input":
+		case "ready-for-review":
 		case "attention":
 			return "awaiting-input";
 		case "complete":
@@ -200,6 +198,7 @@ function LifecycleIndicator({
 				</span>
 			);
 		case "needs-input":
+		case "ready-for-review":
 			return (
 				<IconTile
 					icon={
@@ -212,9 +211,9 @@ function LifecycleIndicator({
 						</span>
 					}
 					iconSize="small"
-					label="Needs input"
+					label={getWaitingStatusLabel(state)}
 					size="small"
-					title="Needs input"
+					title={getWaitingStatusLabel(state)}
 					variant="transparent"
 				/>
 			);
@@ -261,7 +260,7 @@ export function AgentListTime({
 	}
 
 	const isLive = !isLocalAgentListItem(item)
-		&& (item.state === "running" || item.state === "needs-input");
+		&& (item.state === "running" || getWaitingStatusLabel(item.state) !== undefined);
 
 	return isLive ? (
 		<ElapsedTime startedAtMs={item.startedAtMs ?? seededStartedAtMs} />
@@ -283,7 +282,7 @@ function timeSlotTitle(item: AgentListItem): string {
 		return "Last update";
 	}
 
-	return item.state === "running" || item.state === "needs-input"
+	return item.state === "running" || getWaitingStatusLabel(item.state) !== undefined
 		? "Agent runtime"
 		: "Last update";
 }
@@ -355,12 +354,10 @@ export function AgentListActivityHeader({
 	const prMeta = item.prStatus ? PR_STATUS_META[item.prStatus] : null;
 	const PrIcon = prMeta?.Icon ?? null;
 	const title = leadWithAgentName ? item.agent.name : getSessionTitle(item);
-	const needsInput = item.state === "needs-input";
+	const waitingLabel = getWaitingStatusLabel(item.state);
 	const activityTimeTitle = item.state === "running"
 		? "Agent runtime"
-		: needsInput
-			? NEEDS_INPUT_STATUS_LABEL
-			: "Last update";
+		: waitingLabel ?? "Last update";
 	const hasTrailingActions = Boolean(onView || action);
 	// When the title already leads with the agent name, keep dots off that line —
 	// the needs-input status in metadata owns the Rovo animated-dot indicator.
@@ -429,13 +426,13 @@ export function AgentListActivityHeader({
 						<InvokerBy invoker={item.invokedBy} />
 					) : null}
 					{messageTimestamp && item.state !== "complete" ? <MetadataDot /> : null}
-					{needsInput ? (
+					{waitingLabel !== undefined ? (
 						<span
 							className="inline-flex min-w-0 shrink-0 items-baseline"
-							title={NEEDS_INPUT_STATUS_LABEL}
+							title={waitingLabel}
 						>
 							<Shimmer as="span" duration={1.4} spread={2}>
-								{NEEDS_INPUT_STATUS_LABEL}
+								{waitingLabel}
 							</Shimmer>
 							<AnimatedDot />
 						</span>

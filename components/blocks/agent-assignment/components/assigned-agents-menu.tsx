@@ -74,6 +74,8 @@ function getAssignedAgentHoverByline(
 			return <AssignedAgentStatus agent={agent} rowIndex={rowIndex} />;
 		case "needs-input":
 			return getAssignedAgentStaticByline(agent, "Needs input");
+		case "ready-for-review":
+			return getAssignedAgentStaticByline(agent, "Ready for review");
 		case "finished":
 			return getAssignedAgentStaticByline(agent, "Finished");
 		case "idle":
@@ -103,6 +105,12 @@ function AssignedAgentTrailingStatus({
 			return (
 				<span className="grid size-6 shrink-0 place-items-center text-icon-information">
 					<StatusInformationIcon label={`${agent.name} needs input`} size="small" />
+				</span>
+			);
+		case "ready-for-review":
+			return (
+				<span className="grid size-6 shrink-0 place-items-center text-icon-information">
+					<StatusInformationIcon label={`${agent.name} ready for review`} size="small" />
 				</span>
 			);
 		case "finished":

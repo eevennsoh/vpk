@@ -3,7 +3,7 @@ import type {
 	JiraSidebarSessionStatus,
 } from "@/components/blocks/product-sidebar/variants/jira";
 
-import type { AgentListHost, AgentListItem } from "./agent-list-types";
+import type { AgentListHost, AgentListItem, AgentListState } from "./agent-list-types";
 
 /**
  * Where a row's session runs. The row field wins; `sessionDetails.host` is the
@@ -87,6 +87,16 @@ export function deriveIssueKeyFromBranch(branch: string | undefined): string {
 }
 
 /**
+ * Status copy for the states that wait on the viewer. Both share the
+ * needs-input treatment (shimmer, dots, information icon) and differ only here.
+ */
+export function getWaitingStatusLabel(state: "needs-input" | "ready-for-review"): string;
+export function getWaitingStatusLabel(state: AgentListState): string | undefined;
+export function getWaitingStatusLabel(state: AgentListState): string | undefined {
+	return state === "needs-input" ? "Needs input" : state === "ready-for-review" ? "Ready for review" : undefined;
+}
+
+/**
  * Row lifecycle → flyout lifecycle. The row model has no dedicated "PR open"
  * state, so a finished session borrows it from `prStatus`; a finished session
  * that never opened a PR reads as `merged` (work item Done) because that is the
@@ -96,6 +106,7 @@ export function deriveIssueKeyFromBranch(branch: string | undefined): string {
 export function toAgentSessionStatus(item: AgentListItem): JiraSidebarSessionStatus {
 	switch (item.state) {
 		case "needs-input":
+		case "ready-for-review":
 		case "attention":
 			return "awaiting-input";
 		case "running":

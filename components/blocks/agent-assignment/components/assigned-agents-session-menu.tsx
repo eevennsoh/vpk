@@ -70,7 +70,7 @@ export function AgentSessionsMenu({
 	teammateSessionsPresentation?: "expanded" | "count";
 }>) {
 	const containerRef = useRef<HTMLDivElement>(null);
-	const orderedItems = [...items].sort((left, right) => Number(right.state === "needs-input") - Number(left.state === "needs-input"));
+	const orderedItems = [...items].sort((left, right) => Number(right.state === "needs-input" || right.state === "ready-for-review") - Number(left.state === "needs-input" || left.state === "ready-for-review"));
 	const personalItems = orderedItems.filter((item) => item.role !== "viewer");
 	const teammateItems = orderedItems.filter((item) => item.role === "viewer");
 	const hasActionableSession = items.some((item) => item.role === undefined || item.role === "owner");

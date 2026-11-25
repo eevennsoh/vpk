@@ -140,23 +140,26 @@ function JiraIssueCompletedAgentStatusIcon({
 function JiraIssueActiveAgentStatusIcon({
 	iconScale,
 	isAwaitingInput,
+	isReadyForReview = false,
 	renderAgentActivityIndicator,
 	workingSpinnerVariant,
 }: Readonly<{
 	iconScale: JiraIssueIconScale;
 	isAwaitingInput: boolean;
+	/** Paints the Needs input glyph; only a host renderer can tell the two apart. */
+	isReadyForReview?: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
 	workingSpinnerVariant?: "default" | "bloom-avatar";
 }>): ReactElement {
 	if (renderAgentActivityIndicator) {
 		return (
 			<span aria-hidden="true" className="grid size-6 shrink-0 place-items-center text-icon">
-				{renderAgentActivityIndicator(isAwaitingInput ? "awaiting-input" : "working")}
+				{renderAgentActivityIndicator(isReadyForReview ? "ready-for-review" : isAwaitingInput ? "awaiting-input" : "working")}
 			</span>
 		);
 	}
 
-	if (isAwaitingInput) {
+	if (isAwaitingInput || isReadyForReview) {
 		return (
 			<JiraIssueAgentStatusIconTile
 				className="text-icon-information"
@@ -184,6 +187,7 @@ function JiraIssueActiveAgentStatusIcon({
 export function JiraIssueAgentStatusIcon({
 	iconScale,
 	isAwaitingInput,
+	isReadyForReview,
 	isCompletedRow,
 	isFailedRow,
 	renderAgentActivityIndicator,
@@ -191,6 +195,7 @@ export function JiraIssueAgentStatusIcon({
 }: Readonly<{
 	iconScale: JiraIssueIconScale;
 	isAwaitingInput: boolean;
+	isReadyForReview?: boolean;
 	isCompletedRow: boolean;
 	isFailedRow: boolean;
 	renderAgentActivityIndicator?: JiraIssueAgentActivityIndicatorRenderer;
@@ -209,6 +214,7 @@ export function JiraIssueAgentStatusIcon({
 		<JiraIssueActiveAgentStatusIcon
 			iconScale={iconScale}
 			isAwaitingInput={isAwaitingInput}
+			isReadyForReview={isReadyForReview}
 			renderAgentActivityIndicator={renderAgentActivityIndicator}
 			workingSpinnerVariant={workingSpinnerVariant}
 		/>

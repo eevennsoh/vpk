@@ -6,5 +6,5 @@ export function assignmentSessionRole(
 	statusKind: AgentAssignmentStatusKind,
 	role?: AgentSessionRole,
 ): AgentSessionRole | undefined {
-	return role ?? (statusKind === "needs-input" ? "owner" : undefined);
+	return role ?? (statusKind === "needs-input" || statusKind === "ready-for-review" ? "owner" : undefined);
 }

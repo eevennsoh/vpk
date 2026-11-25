@@ -7,6 +7,6 @@ export const renderButterAgentActivityIndicator: JiraIssueAgentActivityIndicator
 ) => (
 	<AgentSessionShortLifecycleIcon
 		showWorkingSpinner
-		state={state === "finished" ? "complete" : state === "awaiting-input" ? "needs-input" : "running"}
+		state={state === "finished" ? "complete" : state === "awaiting-input" ? "needs-input" : state === "ready-for-review" ? "ready-for-review" : "running"}
 	/>
 );

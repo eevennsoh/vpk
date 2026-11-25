@@ -46,7 +46,7 @@ export interface AgentSessionMetadataInput {
 
 /** Lifecycle states with ongoing work. */
 export function isActiveAgentSessionState(state: AgentListState | undefined): boolean {
-	return state === "running" || state === "needs-input" || state === "attention";
+	return state === "running" || state === "needs-input" || state === "ready-for-review" || state === "attention";
 }
 
 /** Status copy per lifecycle state, used by trailing indicators and tooltips. */
@@ -54,6 +54,7 @@ export const AGENT_SESSION_STATUS_LABEL: Readonly<Record<AgentListState, string>
 	attention: "Needs attention",
 	complete: "Finished",
 	"needs-input": "Needs input",
+	"ready-for-review": "Ready for review",
 	running: "Working",
 };
 

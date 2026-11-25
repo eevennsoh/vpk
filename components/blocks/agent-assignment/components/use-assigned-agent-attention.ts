@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { AgentAssignmentStatusKind } from "@/components/blocks/agent-assignment/components/assigned-agent-status";
 
 export function isAssignedAgentAttentionKind(kind: AgentAssignmentStatusKind): boolean {
-	return kind === "needs-input" || kind === "finished";
+	return kind === "needs-input" || kind === "ready-for-review" || kind === "finished";
 }
 
 export function resolveAssignedAgentAttentionChanges(

@@ -76,6 +76,23 @@ test("multiple agents needing input use the direct Needs input label", () => {
 	);
 });
 
+test("output waiting on review outranks work but yields to a question", () => {
+	assert.deepEqual(
+		summarizeJiraIssueAgentActivities([{ state: "working" }, { state: "ready-for-review" }]),
+		{
+			activityCount: 2,
+			featuredActivityIndex: 1,
+			label: "Ready for review",
+			priorityCount: 1,
+			priorityState: "ready-for-review",
+		},
+	);
+	const blocked = summarizeJiraIssueAgentActivities([{ state: "ready-for-review" }, { state: "awaiting-input" }]);
+	assert.equal(blocked.label, "Needs input");
+	assert.equal(blocked.priorityState, "awaiting-input");
+	assert.equal(blocked.featuredActivityIndex, 1);
+});
+
 test("merged layout keeps every active agent in one prioritized row", () => {
 	assert.deepEqual(
 		groupJiraIssueAgentActivityRows(

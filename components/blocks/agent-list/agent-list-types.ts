@@ -13,9 +13,11 @@ import type { ThirdPartyLogoName } from "@/components/ui/data/logo-third-party-d
  * viewer — an agent blocked on an answer, or a teammate who @mentioned them.
  * It keeps the row's own `title` (unlike `needs-input`, whose title is a task
  * name and is therefore swapped for the blocked state) because on those rows
- * the title already is the news.
+ * the title already is the news. `ready-for-review` is the agent's output
+ * waiting on a person's review; it shares the `needs-input` treatment and
+ * differs only in its label.
  */
-export type AgentListState = "running" | "complete" | "needs-input" | "attention";
+export type AgentListState = "running" | "complete" | "needs-input" | "ready-for-review" | "attention";
 
 /**
  * Whether the leading identity is an agent or a person. `agent` (the default)

@@ -24,6 +24,7 @@ function isActivityVisible(
 		case "working":
 			return visibility.showWorking;
 		case "awaiting-input":
+		case "ready-for-review":
 			return visibility.showNeedsInput;
 		case "completed":
 			return visibility.showFinished;
@@ -40,6 +41,9 @@ function resolveVisibleAgentActivityMode(
 ): JiraKanbanCardData["agentActivityMode"] {
 	if (activities.some((activity) => activity.state === "awaiting-input")) {
 		return "awaiting-input";
+	}
+	if (activities.some((activity) => activity.state === "ready-for-review")) {
+		return "ready-for-review";
 	}
 	if (activities.some((activity) => activity.state === "working")) {
 		return "working";

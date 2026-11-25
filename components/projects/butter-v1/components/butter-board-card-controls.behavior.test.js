@@ -19,7 +19,7 @@ test("board card presets select and wrap with arrow keys", async () => {
 	const view = await renderComponent({ source: PROBE });
 	const idle = view.getByRole("button", { name: "Idle" });
 	const owner = view.getByRole("button", { name: "1 agent (Owner)" });
-	const mixed = view.getByRole("button", { name: "1-n agents (Owner + Viewer)" });
+	const readyForReview = view.getByRole("button", { name: "Ready for review" });
 	const finished = view.getByRole("button", { name: "Finished" });
 	assert.equal(idle.getAttribute("aria-pressed"), "true");
 	await view.focus(idle);
@@ -31,8 +31,49 @@ test("board card presets select and wrap with arrow keys", async () => {
 	assert.equal(finished.getAttribute("aria-pressed"), "true");
 	assert.equal(view.isFocused(finished), true);
 	await view.press(finished, "ArrowLeft");
-	assert.equal(mixed.getAttribute("aria-pressed"), "true");
+	assert.equal(readyForReview.getAttribute("aria-pressed"), "true");
 	await view.unmount();
+});
+
+test("ready for review preset moves the same session from working to ready for review", async () => {
+	const originalSet = window.setTimeout;
+	const originalClear = window.clearTimeout;
+	let replayTimer;
+	window.setTimeout = (callback, delay, ...args) => {
+		if (delay === 1000) { replayTimer = callback; return 123457; }
+		return originalSet(callback, delay, ...args);
+	};
+	window.clearTimeout = (id) => { if (id !== 123457) originalClear(id); };
+	try {
+		const view = await renderComponent({
+			entry: "components/blocks/jira-issue/page.tsx",
+			props: { variant: "project-butter", boardCardState: "ready-for-review" },
+			mocks: {
+				"@/app/contexts": "export function RovoChatProvider({ children }) { return children; } export function useOptionalRovoChat() { return null; }",
+				"@/components/projects/jira-golden-journey-v0/components/jira-golden-journey-v0-rovo-overlay": "export function AsxRovoOverlay() { return null; }",
+				"@/components/projects/jira-golden-journey-v0/hooks/use-jira-golden-journey-v0-agent-chat-demo": "export function useAsxAgentChatDemo() { return { openAgentChat() {} }; }",
+				"@/components/blocks/jira-issue": `export function JiraIssue({ agentActivities, agentActivityMode }) {
+					return <output>{JSON.stringify({ agentActivities, agentActivityMode })}</output>;
+				}`,
+			},
+		});
+		const before = JSON.parse(view.container.querySelector("output").textContent);
+		assert.equal(before.agentActivityMode, "working");
+		assert.equal(typeof replayTimer, "function");
+		await act(async () => replayTimer());
+		const after = JSON.parse(view.container.querySelector("output").textContent);
+		assert.equal(after.agentActivityMode, "ready-for-review");
+		assert.equal(after.agentActivities.length, 1);
+		assert.equal(after.agentActivities[0].id, before.agentActivities[0].id);
+		assert.equal(after.agentActivities[0].state, "ready-for-review");
+		assert.equal(after.agentActivities[0].label, "Ready for review");
+		assert.equal(after.agentActivities[0].sessionTitle, before.agentActivities[0].sessionTitle);
+		assert.equal(after.agentActivities[0].stateTransition, "agent-session");
+		await view.unmount();
+	} finally {
+		window.setTimeout = originalSet;
+		window.clearTimeout = originalClear;
+	}
 });
 
 test("finished preset moves the same session from working to finished", async () => {

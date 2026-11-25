@@ -10,7 +10,7 @@ import type { JiraIssueAgentActivity } from "@/components/blocks/jira-issue/agen
 export interface JiraIssueDemoAttachableSession {
 	id: string;
 	title: string;
-	state: "running" | "complete" | "needs-input" | "attention";
+	state: "running" | "complete" | "needs-input" | "ready-for-review" | "attention";
 	agent: {
 		name: string;
 		avatarSrc?: string;
@@ -41,7 +41,9 @@ export function toJiraIssueDemoAttachedActivity(
 		sessionTitle: session.title,
 		state: session.state === "needs-input" || session.state === "attention"
 			? "awaiting-input"
-			: "working",
+			: session.state === "ready-for-review"
+				? "ready-for-review"
+				: "working",
 		...(session.agent.avatarSrc ? { avatarSrc: session.agent.avatarSrc } : {}),
 		...(session.agent.brandName ? { agentBrandName: session.agent.brandName } : {}),
 		...(session.agent.vpkLogo ? { agentVpkLogo: session.agent.vpkLogo } : {}),

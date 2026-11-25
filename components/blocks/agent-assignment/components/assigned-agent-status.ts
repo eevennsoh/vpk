@@ -1,4 +1,4 @@
-export type AgentAssignmentStatusKind = "working" | "needs-input" | "finished" | "idle";
+export type AgentAssignmentStatusKind = "working" | "needs-input" | "ready-for-review" | "finished" | "idle";
 
 export function resolveAssignedAgentStatusKind(
 	agent: Pick<{ statusKind?: AgentAssignmentStatusKind; statusSequence?: readonly string[] }, "statusKind" | "statusSequence">,
