@@ -2,14 +2,16 @@
  * `measuring` lays the list out unseen to learn the panel's full height, then hands it to the stage named by `then`:
  * `expanding` for an open (finished by the open animation) or `unpacking` for cards arriving in an already open panel.
  * Both hold the panel at that height while the stack unpacks, so the cards fan down into room that is already there.
- * While a check runs, `checking` gathers the list into a stack as the panel folds down to its header and footer, the
- * cards fading out of view, and remembers the list's height. When the check ends (with finds or none, or cancelled),
- * `reopening` grows the panel back to that height with the stack in it, and `unpacking` spreads the stack into the list.
+ * While a check runs, `checking` folds the panel down to its header and footer and remembers the list's height. The
+ * cards fade out in place while it `folding`s, and only become a stack once `folded`, out of view, so no card layout
+ * work competes with the fold. When the check ends (with finds or none, or cancelled), `reopening` grows the panel
+ * back to that height with the stack in it, and `unpacking` spreads the stack into the list.
  */
 export type FloatingPanelStage =
 	| { phase: "closed" | "list" | "caught-up" | "closing" }
 	| { phase: "measuring"; then: "expanding" | "unpacking" }
-	| { phase: "expanding" | "unpacking" | "reopening" | "checking"; height: number };
+	| { phase: "expanding" | "unpacking" | "reopening"; height: number }
+	| { phase: "checking"; step: "folding" | "folded"; height: number };
 
 /**
  * The stage the floating panel must move to when the pending count changes under it, or null to stay. Opening

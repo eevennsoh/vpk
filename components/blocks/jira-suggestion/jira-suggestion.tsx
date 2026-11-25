@@ -32,8 +32,9 @@ export const SUGGESTION_ANALYSIS_MS = 2600;
 
 /** How long cards found while the panel is already open (Undo, Check again) rest as a stack before unpacking. */
 const IN_PLACE_UNPACK_MS = 260;
-/** How long the panel takes to grow back with the stack after a check, matching its height transition (slower). */
+/** How long the panel takes to fold or grow back around a check, matching its height transition (slower). */
 const CHECK_REOPEN_MS = 420;
+const CHECK_FOLD_MS = CHECK_REOPEN_MS;
 /** The folded panel during a check: the list header's inset, the header and the footer. */
 const CHECK_FOLDED_HEIGHT = CHROME_HEIGHT + LIST_HEADER_TOP_INSET;
 
@@ -72,8 +73,15 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	// A check gathers the list into an inert stack as the panel folds to its header and footer, and reopens once it ends.
 	const isChecking = phase === "checking";
 	const isReopening = phase === "reopening";
-	const introHeight = isChecking ? CHECK_FOLDED_HEIGHT : panelStage.phase === "expanding" || panelStage.phase === "unpacking" || panelStage.phase === "checking" || panelStage.phase === "reopening" ? panelStage.height : undefined;
-	const listStage = isMeasuring ? "measuring" : isExpanding || isUnpacking || isChecking || isReopening ? "intro" : "list";
+	const introHeight = isChecking ? CHECK_FOLDED_HEIGHT : panelStage.phase === "expanding" || panelStage.phase === "unpacking" || panelStage.phase === "reopening" ? panelStage.height : undefined;
+	// While folding, the faded cards keep their list layout; they become a stack only once the fold has finished.
+	const isFolding = panelStage.phase === "checking" && panelStage.step === "folding";
+	const listStage = isMeasuring ? "measuring" : isFolding ? "list" : isExpanding || isUnpacking || isChecking || isReopening ? "intro" : "list";
+	useEffect(() => {
+		if (!isFolding) return undefined;
+		const timer = window.setTimeout(() => setPanelStage((stage) => stage.phase === "checking" ? { ...stage, step: "folded" } : stage), CHECK_FOLD_MS);
+		return () => window.clearTimeout(timer);
+	}, [isFolding]);
 	useEffect(() => {
 		if (!isReopening) return undefined;
 		const timer = window.setTimeout(() => setPanelStage((stage) => stage.phase === "reopening" ? { phase: "unpacking", height: stage.height } : stage), CHECK_REOPEN_MS);
@@ -108,7 +116,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	const recheck = () => {
 		if (running) return;
 		feed.rerun();
-		if (phase === "list" || phase === "unpacking") setPanelStage({ phase: "checking", height: panelRef.current?.offsetHeight || FLOATING_PANEL_MAX_HEIGHT });
+		if (phase === "list" || phase === "unpacking") setPanelStage({ phase: "checking", step: "folding", height: panelRef.current?.offsetHeight || FLOATING_PANEL_MAX_HEIGHT });
 	};
 	const finishClose = useCallback(() => {
 		setPanelStage({ phase: "closed" });

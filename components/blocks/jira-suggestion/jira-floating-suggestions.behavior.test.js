@@ -33,7 +33,7 @@ async function openPanel(view) {
 	assert.equal(view.queryByRole("dialog", { name: /Review suggestions for PAY-999/ }) !== null, true, "the panel opens");
 }
 
-test("a header check gathers the list into an inert stack with only Cancel, and Cancel unpacks it again", async () => {
+test("a header check folds the cards away inert with only Cancel, and Cancel unpacks them again", async () => {
 	const view = await renderComponent({ source: SOURCE });
 	await openPanel(view);
 	assert.equal(listShown(view), true, "the open panel lists its suggestions");
@@ -41,8 +41,13 @@ test("a header check gathers the list into an inert stack with only Cancel, and 
 
 	await view.click(check);
 	await wait(100);
-	assert.equal(listShown(view), false, "the list folds back into a stack while the check runs");
-	assert.equal(document.querySelector("[data-scrollport]").inert, true, "…and the stacked cards are inert");
+	assert.equal(document.querySelector("[data-scrollport]").inert, true, "the fading cards are inert at once");
+	// The cards fade out in their list layout; they only re-form as a stack once the fold is done, out of view.
+	// Inert rows leave the accessibility tree, so look at the DOM.
+	const listInDom = () => document.querySelector('[role="list"][aria-label="Suggestions"]') !== null;
+	assert.equal(listInDom(), true, "no card morph competes with the fold");
+	await wait(900);
+	assert.equal(listInDom(), false, "once folded, the cards wait as a stack");
 	assert.equal(view.queryByRole("button", { name: "Accept all" }) === null, true, "the bulk decisions step aside");
 	assert.equal(view.queryByRole("button", { name: "Discard all" }) === null, true);
 	const cancel = view.getByRole("button", { name: "Cancel" });

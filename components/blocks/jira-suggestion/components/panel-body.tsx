@@ -74,7 +74,7 @@ export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, 
 	}, [listed]);
 
 	return (
-		<motion.div className={cn("relative overscroll-contain", floating ? "-mt-4 min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-gutter-stable" : "shrink-0")} ref={scroller} data-scrollport="" inert={mode === "stack" && !stackInteractive} style={floating ? undefined : { height, ...overflow }}>
+		<motion.div className={cn("relative overscroll-contain", floating ? "-mt-4 min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-gutter-stable" : "shrink-0")} ref={scroller} data-scrollport="" inert={checking || (mode === "stack" && !stackInteractive)} style={floating ? undefined : { height, ...overflow }}>
 			<div aria-busy={checking || undefined} className={cn(floating ? "px-4 pt-6 pb-4" : listed ? "px-4 pt-2 pb-4" : "px-5 pt-3 pb-5", floating ? "transition-[opacity,translate]" : null, folded ? "translate-y-2 opacity-0 duration-fast ease-in" : "duration-medium ease-out")} ref={content}>
 				<AnimatePresence initial={false} mode="popLayout">
 					{listed && running ? (

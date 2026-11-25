@@ -23,8 +23,9 @@ test("an empty panel closes unless it is caught up or closing", () => {
 });
 
 test("a check stays folded until it ends, then reopens before unpacking", () => {
-	assert.equal(reconcileFloatingPanelStage({ phase: "checking", height: 420 }, 5, false, true), null);
+	assert.equal(reconcileFloatingPanelStage({ phase: "checking", step: "folded", height: 420 }, 5, false, true), null);
 	// Finished or cancelled: the panel grows back with the stack before it unpacks.
-	assert.deepEqual(reconcileFloatingPanelStage({ phase: "checking", height: 420 }, 7, false, false), { phase: "reopening", height: 420 });
-	assert.deepEqual(reconcileFloatingPanelStage({ phase: "checking", height: 420 }, 5, true, false), { phase: "list" });
+	assert.deepEqual(reconcileFloatingPanelStage({ phase: "checking", step: "folded", height: 420 }, 7, false, false), { phase: "reopening", height: 420 });
+	assert.deepEqual(reconcileFloatingPanelStage({ phase: "checking", step: "folding", height: 420 }, 7, false, false), { phase: "reopening", height: 420 });
+	assert.deepEqual(reconcileFloatingPanelStage({ phase: "checking", step: "folded", height: 420 }, 5, true, false), { phase: "list" });
 });
