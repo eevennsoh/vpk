@@ -89,7 +89,9 @@ export function SuggestionCard({
 	const showTopReason = top && !floating;
 	// A class, not an inline Motion style: Motion leaves a stale inline shadow behind once the value turns undefined,
 	// which kept rear sheets bordered and shadowless after they unpacked into elevated rows.
-	const floatingSheetEdge = floating && !parked && !elevated ? "inset-ring inset-ring-border" : null;
+	// The edge stays an inset ring whose colour fades, never a removed layer: an inset shadow cannot interpolate with an
+	// outer one, so dropping it as the row's elevation arrives would swap the two at once instead of easing between them.
+	const floatingSheetEdge = floating ? cn("inset-ring", !parked && !elevated ? "inset-ring-border" : "inset-ring-transparent") : null;
 
 	const { dragX, progress, dragging, handlers } = useCardDrag({
 		enabled: top && isPresent,
@@ -231,7 +233,9 @@ export function SuggestionCard({
 				className={cn(
 					"relative",
 					CARD_PAPER,
-					floating ? "dark:bg-surface-overlay dark:ring-0" : "transition-shadow duration-slower ease-in-out",
+					// Rows only take their elevation once the morph settles, so ease it (and a sheet's inset edge) in rather than snap.
+					floating ? "dark:bg-surface-overlay dark:ring-0" : null,
+					"transition-shadow duration-slower ease-in-out",
 					role === "row" ? "group/suggestion-card" : null,
 					previewing ? "bg-surface-overlay-hovered dark:bg-surface-overlay-hovered" : null,
 					parked || !elevated ? "shadow-none" : floating || role === "row" || sheet ? "shadow-sm" : null,
