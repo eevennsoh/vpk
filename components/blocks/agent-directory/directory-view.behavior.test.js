@@ -88,9 +88,9 @@ test("directory lanyards respond to hover while selection and actions stay indep
 	const grid = card.querySelector('[data-slot="agent-lanyard-grid"]');
 	assert.equal(grid.getAttribute("data-animated"), "false");
 	await act(async () => { cardButton.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" })); });
-	// Lanyard previews stay static (animateGrid defaults to false); hover only lifts the surface.
 	assert.equal(grid.getAttribute("data-animated"), "false");
-	assert.equal(card.querySelector('[data-slot="agent-lanyard-surface"]').classList.contains("bg-surface-hovered"), true);
+	assert.equal(card.querySelector('[data-slot="agent-lanyard-surface"]').classList.contains("bg-surface"), true);
+	assert.equal(card.querySelector('[data-slot="agent-lanyard-surface"]').classList.contains("shadow-2xl"), true);
 	await view.click(view.getByRole("button", { name: "Chat with Alpha" }));
 	await view.click(cardButton);
 	assert.deepEqual(selections, ["alpha", "alpha"]);
@@ -100,7 +100,8 @@ test("directory lanyards respond to hover while selection and actions stay indep
 	const templateButton = view.getByRole("button", { name: "Use Weekly summary template" });
 	const template = templateButton.closest('[data-slot="agent-lanyard"]');
 	await act(async () => { templateButton.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" })); });
-	assert.equal(template.querySelector('[data-slot="agent-lanyard-surface"]').classList.contains("bg-surface-hovered"), true);
+	assert.equal(template.querySelector('[data-slot="agent-lanyard-surface"]').classList.contains("bg-surface"), true);
+	assert.equal(template.querySelector('[data-slot="agent-lanyard-surface"]').classList.contains("shadow-2xl"), true);
 	await view.click(templateButton);
 	assert.deepEqual(selections, ["alpha", "alpha", "template"]);
 });
