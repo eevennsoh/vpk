@@ -3,6 +3,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import AddIcon from "@atlaskit/icon/core/add";
+import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import AiChatIcon from "@atlaskit/icon/core/ai-chat";
 import CloudIcon from "@atlaskit/icon-lab/core/cloud";
 import { InlineAgentSelector } from "@/components/blocks/agent-selector";
@@ -197,7 +198,16 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 		if (!next) { setView("sessions"); onPreviewSession?.(null); }
 		if (!next && open) setAddVisualEntry((entry) => entry + 1);
 	}
-	const emptyFieldIcon = addVisualEntry > 0 ? <span className="flex shrink-0 transition-opacity duration-normal ease-linear motion-reduce:transition-none starting:opacity-0" key={addVisualEntry}><AgentAddVisual className="transition-transform duration-medium ease-out-practical motion-reduce:transition-none starting:scale-90" selected={open} /></span> : <AgentAddVisual selected={open} />;
+	// After the selector closes, the open state's agent glyph leaves and the hexagon + arrives in the same 24px slot, both on the
+	// board card's hover reveal (150ms linear fade, 200ms 90%↔100% scale) so the swap reads as one crossfade, not a cut.
+	const emptyFieldIcon = addVisualEntry > 0 ? (
+		<span className="relative flex size-6 shrink-0" key={addVisualEntry}>
+			<span aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center text-icon-subtle opacity-0 transition-opacity duration-normal ease-linear motion-reduce:hidden starting:opacity-100" data-slot="agent-field-exiting-icon">
+				<span className="flex scale-90 transition-transform duration-medium ease-out-practical starting:scale-100"><AiAgentIcon label="" color="currentColor" /></span>
+			</span>
+			<span className="flex transition-opacity duration-normal ease-linear motion-reduce:transition-none starting:opacity-0"><AgentAddVisual className="transition-transform duration-medium ease-out-practical motion-reduce:transition-none starting:scale-90" selected={open} /></span>
+		</span>
+	) : <AgentAddVisual selected={open} />;
 	const teammateIdentity = viewerOnly ? (
 		<>
 			<TeammateSessionAvatarCycle sizePx={24} sessions={sessions.map(({ agent, id, invokedBy, state }) => ({
@@ -229,7 +239,7 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 								onAnimationComplete={() => { if (entering) setEnteringAgent(null); }}
 								transition={entering?.isNew ? { duration: motionDuration.slowest, ease: motionEase.outPractical, times: [0, 0.4, 0.55, 1] } : { duration: motionDuration.slowest * 2, ease: motionEase.inOut }}
 							><AgentAvatarLanyard agent={identity} onOpenPicker={() => pickerTriggerRef.current?.click()}><AgentAvatarVisual {...avatar} label="" sizePx={24} /></AgentAvatarLanyard></motion.span>;
-						})}</AvatarGroup> : <>{emptyFieldIcon}<span className="text-sm text-text-subtlest">{onStartAgent ? "Add agent" : "No agent sessions"}</span></>}
+						})}</AvatarGroup> : <>{emptyFieldIcon}<span className={cn("text-sm text-text-subtlest", addVisualEntry > 0 && "transition-colors duration-normal ease-linear motion-reduce:transition-none starting:text-text")} key={addVisualEntry}>{onStartAgent ? "Add agent" : "No agent sessions"}</span></>}
 						{!open && !showSessionStatus && agentAvatars.length === 1 ? <span aria-hidden="true" className="text-sm text-text">{agentAvatars[0].name}</span> : null}
 					</div>
 				</div>
