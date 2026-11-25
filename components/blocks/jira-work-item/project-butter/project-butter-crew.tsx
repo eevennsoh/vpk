@@ -95,6 +95,8 @@ export function ProjectButterCrew(props: ProjectButterCrewProps) {
 function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelector = false, currentUser, field = false, fieldSessionMenu = false, showFieldLabel = true, showSessionStatus = false, onBrowseAgents, onCreateAgent, onOpenSession, onPreviewSession, onStartAgent, sessions, useReferenceCrew = true }: ProjectButterCrewProps) {
 	const teammateNamesId = useId();
 	const [open, setOpen] = useState(false);
+	/** Bumped on each close so the hexagon + re-enters like the board card's hover reveal. */
+	const [addVisualEntry, setAddVisualEntry] = useState(0);
 	const [enteringAgent, setEnteringAgent] = useState<{ name: string; isNew: boolean } | null>(null);
 	const [scrollEdges, setScrollEdges] = useState({ start: false, end: false });
 	const fieldScrollRef = useRef<HTMLDivElement>(null);
@@ -193,8 +195,9 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 		if (next) setView(onStartAgent && !field ? "picker" : "sessions");
 		if (field && !fieldSessionMenu) { if (next) invocation?.open("footer"); else invocation?.close(); }
 		if (!next) { setView("sessions"); onPreviewSession?.(null); }
+		if (!next && open) setAddVisualEntry((entry) => entry + 1);
 	}
-	const emptyFieldIcon = <AgentAddVisual selected={open} />;
+	const emptyFieldIcon = addVisualEntry > 0 ? <motion.span animate={{ opacity: 1, scale: 1 }} className="flex shrink-0" initial={{ opacity: 0, scale: 0.9 }} key={addVisualEntry} style={{ willChange: "transform, opacity" }} transition={{ opacity: { duration: motionDuration.normal, ease: motionEase.linear }, scale: { duration: motionDuration.medium, ease: motionEase.outPractical } }}><AgentAddVisual selected={open} /></motion.span> : <AgentAddVisual selected={open} />;
 	const teammateIdentity = viewerOnly ? (
 		<>
 			<TeammateSessionAvatarCycle sizePx={24} sessions={sessions.map(({ agent, id, invokedBy, state }) => ({
@@ -244,7 +247,7 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 					{onStartAgent ? <Avatar animate={false} borderTone={open ? "selected" : "default"} className="size-7.5" label="Add agent" shape="hexagon" size="default"><AvatarFallback className="bg-transparent text-icon-subtle group-hover/crew:bg-bg-neutral-subtle-hovered"><AddIcon label="" size="small" /></AvatarFallback></Avatar> : null}
 				</AvatarGroup>
 			</PopoverTrigger>}
-			<PopoverContent align={field ? "start" : "end"} aria-label={fieldSessionMenu ? "Agent assignment" : picking ? "Add agent" : "Agent sessions"} className={cn(field && !fieldSessionMenu ? "w-80 max-w-(--available-width) gap-0 overflow-visible bg-transparent p-0 shadow-none" : picking ? "w-[360px] gap-0 overflow-hidden p-0" : "w-[280px] gap-0 overflow-hidden p-0", !(field && !fieldSessionMenu) && dropdownStyles.surface)} finalFocus={() => !selectedAgentRef.current} onKeyDownCapture={(event) => { if (field && event.key === "Escape" && event.target instanceof HTMLInputElement) { event.stopPropagation(); changeOpen(false); } }} onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); if (field) changeOpen(false); } }} positionerClassName="z-[650]" side={fieldSessionMenu ? "bottom" : undefined} sideOffset={field ? 8 : undefined}>
+			<PopoverContent align={field ? "start" : "end"} aria-label={fieldSessionMenu ? "Agent assignment" : picking ? "Add agent" : "Agent sessions"} className={cn(field && !fieldSessionMenu ? "w-80 max-w-(--available-width) gap-0 overflow-visible bg-transparent p-0 shadow-none" : picking ? "w-[360px] gap-0 overflow-hidden p-0" : "w-[280px] gap-0 overflow-hidden p-0", !(field && !fieldSessionMenu) && dropdownStyles.surface)} finalFocus={(closeType) => !selectedAgentRef.current && (!field || fieldSessionMenu || (closeType !== "mouse" && closeType !== "touch" && closeType !== "pen"))} onKeyDownCapture={(event) => { if (field && event.key === "Escape" && event.target instanceof HTMLInputElement) { event.stopPropagation(); changeOpen(false); } }} onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); if (field) changeOpen(false); } }} positionerClassName="z-[650]" side={fieldSessionMenu ? "bottom" : undefined} sideOffset={field ? 8 : undefined}>
 				{fieldSessionMenu ? <AgentSessionsMenu items={orderedSessions} teammateSessionsPresentation={viewerOnly ? "count" : "expanded"} onSelectSession={(session) => { onOpenSession(session); changeOpen(false); }} /> : field && onStartAgent && cloudAgentSelector ? <ProjectButterCloudAgentPicker extraAgents={extraAgents} onAssign={(agent) => { startFieldAgent({ id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }); changeOpen(false); }} onBrowseAgents={onBrowseAgents ? () => { changeOpen(false); onBrowseAgents(); } : undefined} onCreateAgent={onCreateAgent ? () => { changeOpen(false); onCreateAgent(); } : undefined} /> : field && onStartAgent ? <ProjectButterAgentPreviewBoundary agents={fieldPickerAgents}><InlineAgentSelector
 					agents={fieldPickerAgents}
 					softwareAgentIds={["jira-coding", "claude-code", "test-agent", "review-agent", "release-agent"]}
