@@ -303,6 +303,7 @@ export function AgentSessionCard({
 	sessionDrag,
 	showMoreMenu = true,
 	showLifecycleLabel = true,
+	showLifecycle = true,
 	lifecycleLabelPlacement = "trailing",
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
@@ -400,6 +401,7 @@ export function AgentSessionCard({
 	showMoreMenu?: boolean;
 	/** Keep false only for compact consumers that borrow long-density title geometry. */
 	showLifecycleLabel?: boolean;
+	showLifecycle?: AgentSessionProps["showLifecycle"];
 	lifecycleLabelPlacement?: AgentSessionProps["lifecycleLabelPlacement"];
 	/** Shows the Link work item row without changing the underlying link capabilities. */
 	showLinkWorkItemMenuItem?: boolean;
@@ -617,7 +619,7 @@ export function AgentSessionCard({
 	})();
 	// `null`, not `undefined`: the shared row treats `undefined` as "no opinion"
 	// and falls back to its own `STATE_META` indicator.
-	const lifecycleIndicator = role === "expired"
+	const lifecycleIndicator = role === "expired" || !showLifecycle
 		? null
 		: (isLongDensity || density === "jira-for-you") && lifecycleLabelPlacement === "trailing"
 			? <AgentSessionLifecycle
