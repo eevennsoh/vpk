@@ -2,7 +2,7 @@
 
 // oxlint-disable react-doctor/no-layout-property-animation -- Vohmann's 40px slot and -4px inset must reserve real space for adjacent cards; browser tests measure the reveal and handoff geometry.
 
-import { useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
@@ -125,24 +125,31 @@ export function ProjectButterInvocationChin<TActivity extends Readonly<{ id: str
 	retainCompletedContent = false,
 	flushPreview = false,
 	children,
-}: Readonly<{ hasChin: boolean; iconScale?: JiraIssueIconScale; activities?: readonly TActivity[]; /** Size of the host's attached-row avatars; browsing and handoff match it. */ avatarSizePx?: InvocationAvatarSize; /** The attached row's identity for an activity, so the handoff ends on exactly what the row shows. */ renderIdentity?: (activity: TActivity, sizePx: InvocationAvatarSize, badgeEntrance: boolean) => ReactNode; allowPuzzle?: boolean; retainCompletedContent?: boolean; flushPreview?: boolean; children: ReactNode }>) {
+}: Readonly<{ hasChin: boolean; iconScale?: JiraIssueIconScale; activities?: readonly TActivity[]; /** Size of the host's attached-row avatars; browsing and handoff match it. */ avatarSizePx?: InvocationAvatarSize; /** The attached row's identity for an activity, so the handoff ends on exactly what the row shows. */ renderIdentity?: (activity: TActivity, sizePx: InvocationAvatarSize, badgeEntrance: boolean, onBadgeReadyChange?: (ready: boolean) => void) => ReactNode; allowPuzzle?: boolean; retainCompletedContent?: boolean; flushPreview?: boolean; children: ReactNode }>) {
 	const phase = useProjectButterInvocationPhase();
 	const actions = useProjectButterInvocationActions();
 	const preview = useProjectButterInvocationPreview();
 	const reduce = useReducedMotion();
+	const [badgePending, setBadgePending] = useState(false);
+	const onBadgeReadyChange = useCallback((ready: boolean) => setBadgePending(!ready), []);
 	const previewing = phase === "choosing" || phase === "handoff";
 	const selectedAgent = preview.agent;
 	const selectedActivity = selectedAgent ? activities?.find((activity) => matchesInvocationAgent(activity, selectedAgent)) : undefined;
 	const selectedAttached = selectedAgent && activities ? selectedActivity !== undefined : hasChin;
 	const intoPuzzle = Boolean(phase === "handoff" && allowPuzzle && selectedAttached && activities && activities.length > 1);
 	useEffect(() => {
-		if (phase !== "handoff" || !actions) return;
+		if (!badgePending) return;
+		const timer = setTimeout(() => setBadgePending(false), 3000);
+		return () => clearTimeout(timer);
+	}, [badgePending]);
+	useEffect(() => {
+		if (phase !== "handoff" || !actions || badgePending) return;
 		const timer = setTimeout(
 			() => selectedAttached ? actions.settle(preview.sequence) : actions.abort(preview.sequence),
-			selectedAttached ? (reduce ? 0 : (intoPuzzle ? BUTTER_INVOCATION_PUZZLE_DURATION + motionDuration.xxshort : BUTTER_INVOCATION_CYCLE.duration + BUTTER_INVOCATION_HANDOFF.duration) * 1000) : 3000,
+			selectedAttached ? (reduce ? 0 : (intoPuzzle ? BUTTER_INVOCATION_PUZZLE_DURATION + motionDuration.xxshort : BUTTER_INVOCATION_CYCLE.duration + motionDuration.slower) * 1000) : 3000,
 		);
 		return () => clearTimeout(timer);
-	}, [actions, phase, preview.sequence, reduce, selectedAttached, intoPuzzle]);
+	}, [actions, phase, preview.sequence, reduce, selectedAttached, intoPuzzle, badgePending]);
 	if (phase === null) return children;
 	return (
 		<motion.div
@@ -163,7 +170,7 @@ export function ProjectButterInvocationChin<TActivity extends Readonly<{ id: str
 				{children}
 			</motion.div>
 			{previewing && !intoPuzzle ? <div className={cn("pointer-events-none absolute inset-x-0 top-0", !flushPreview && "p-1")}>
-				{phase === "choosing" ? <ProjectButterInvocationPreview avatarSizePx={avatarSizePx} iconScale={iconScale} flush={flushPreview} /> : <InvocationHandoff avatarSizePx={avatarSizePx} identity={selectedActivity && renderIdentity ? renderIdentity(selectedActivity, avatarSizePx, true) : undefined} iconScale={iconScale} className={flushPreview ? "px-0" : undefined} showStatus={!activities?.length} />}
+				{phase === "choosing" ? <ProjectButterInvocationPreview avatarSizePx={avatarSizePx} iconScale={iconScale} flush={flushPreview} /> : <InvocationHandoff avatarSizePx={avatarSizePx} identity={selectedActivity && renderIdentity ? renderIdentity(selectedActivity, avatarSizePx, true, onBadgeReadyChange) : undefined} iconScale={iconScale} className={flushPreview ? "px-0" : undefined} showStatus={!activities?.length} />}
 			</div> : null}
 		</motion.div>
 	);

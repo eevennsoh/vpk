@@ -81,7 +81,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MerchantJourneyCompactControls, MerchantJourneyControls } from "./components/merchant-journey-controls";
 import { applyMerchantJourneyToBoard, merchantJourneyAuthoredCard, merchantJourneyChatSnapshot, workItemChatSnapshot, type MerchantJourneyPhase } from "./data/merchant-journey";
 import { MERCHANT_PROGRESS_DELAY_MS } from "@/components/blocks/jira-work-item/project-butter/merchant-journey-activity";
-import { BUTTER_DEFAULT_REPORTER } from "./data/current-user";
+import { BUTTER_DEFAULT_REPORTER, BUTTER_PAY_CURRENT_USER } from "./data/current-user";
 import { BUTTER_GALLERY_ITEMS } from "./data/gallery-items";
 import { BUTTER_SAVED_FILTERS } from "./data/saved-filters";
 import { BUTTER_GALLERY_SESSIONS, BUTTER_WORK_ITEM_SESSIONS } from "./data/gallery-work-item-sessions";
@@ -501,7 +501,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 			host: "cloud",
 			startedAtMs: Date.now(),
 			timeLabel: "Just now",
-			invokedBy: { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" },
+			invokedBy: { name: BUTTER_PAY_CURRENT_USER.name, avatarSrc: BUTTER_PAY_CURRENT_USER.avatarSrc },
 		};
 		const activity = { ...toButterAgentActivityFromSession(session), waitingForPrompt: true };
 		startAgentSession(card.code, activity);
