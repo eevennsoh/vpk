@@ -181,7 +181,6 @@
 		"media-chrome": "^4.19.4",
 		"metal-fx": "1.0.2",
 		"motion": "^13.5.1",
-		"motion-plus": "npm:@motionplus/core@^3.0.0",
 		"nanoid": "^6.0.2",
 		"next": "16.4.6",
 		"p5": "^2.3.4",
@@ -206,6 +205,9 @@
 		"voice-glow": "0.4.0",
 		"ws": "^8.22.0",
 		"zod": "^4.6.7"
+	},
+	"optionalDependencies": {
+		"motion-plus": "npm:@motionplus/core@^3.0.0"
 	},
 	"devDependencies": {
 		"@happy-dom/global-registrator": "^21.0.4",

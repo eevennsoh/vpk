@@ -108,7 +108,7 @@ test("child rows offer the reference actions; Clone copies with a new key and De
 	assert.equal(document.querySelectorAll('[data-related-type="linked"] button[aria-label^="More actions for "]').length, 0, "linked rows have no row menu");
 });
 
-test("created children default to Annie Cook with a parent-prefix key; matches keep their own fields", async () => {
+test("created children default to Venn with a parent-prefix key; matches keep their own fields", async () => {
 	const view = await renderRelated({ workItemKey: "PAY-12" });
 	await view.click(view.getByRole("button", { name: "Add child work item" }));
 	const composer = view.getByRole("combobox", { name: "Create child work item" });
@@ -120,7 +120,7 @@ test("created children default to Annie Cook with a parent-prefix key; matches k
 	const created = rowsOf(view, "Child work items")[0];
 	const key = created.querySelector('[aria-label^="Edit summary for "]').getAttribute("aria-label").replace("Edit summary for ", "");
 	assert.match(key, /^PAY-\d{4}$/u);
-	assert.equal(created.querySelector('button[aria-label$=": Annie Cook. Edit"]') !== null, true);
+	assert.equal(created.querySelector('button[aria-label$=": Venn. Edit"]') !== null, true);
 	assert.equal(view.getByRole("button", { name: `Edit status for ${key}, To do` }) !== null, true);
 	assert.equal(view.getByRole("button", { name: `Edit priority for ${key}: Medium. Edit` }) !== null, true);
 	await view.click(view.getByRole("button", { name: "Add child work item" }));

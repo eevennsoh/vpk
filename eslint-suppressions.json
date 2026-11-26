@@ -1402,7 +1402,7 @@
   },
   "components/blocks/jira-suggestion/components/why-card.tsx": {
     "vpk-tokens/no-off-grid-spacing": {
-      "count": 4
+      "count": 3
     }
   },
   "components/blocks/jira-suggestion/components/work-item-preview-shell.tsx": {

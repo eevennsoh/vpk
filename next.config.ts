@@ -1,4 +1,6 @@
 import type { NextConfig } from "next";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 import packageMetadata from "./package.json";
 import { DEV_STALE_OUTPUT_MAX_AGE_MS } from "./scripts/lib/next-dev-output.js";
@@ -8,8 +10,15 @@ assertStaticExportThroughWrapper();
 
 const projectRoot = process.cwd();
 const projectName = packageMetadata.name.replace(/^@[^/]+\//, "");
+const motionPlusAvailable = process.env.VPK_DISABLE_MOTION_PLUS !== "1"
+	&& existsSync(join(projectRoot, "node_modules/motion-plus/dist/react-entry.d.ts"));
+const motionFallbackAliases: Record<string, string> = motionPlusAvailable ? {} : {
+	"motion-plus/react": "./components/visual/motion-plus-fallback.tsx",
+	"@/components/visual/scrolling/scrolling-viewport": "./components/visual/scrolling/scrolling-viewport-fallback.tsx",
+};
 
 const nextConfig: NextConfig = {
+	...(process.env.VPK_DISABLE_MOTION_PLUS === "1" && { distDir: "output/next-motion-fallback" }),
 	devIndicators: false,
 	allowedDevOrigins: [
 		// control-vpk and Playwright fall back to the IPv4 loopback when Portless is off;
@@ -50,6 +59,7 @@ const nextConfig: NextConfig = {
 		// 16.3 Turbopack memory eviction is default-on; disable with experimental.turbopackMemoryEviction: false if it regresses.
 		// Prevent Turbopack from inferring the wrong workspace root.
 		root: projectRoot,
+		resolveAlias: motionFallbackAliases,
 	},
 
 	images: {
@@ -67,6 +77,13 @@ const nextConfig: NextConfig = {
 	// loader per logo; they are small enough that the default split copied them into every chunk
 	// that renders a logo, so they get one named chunk as well.
 	webpack: (config, { isServer }) => {
+		if (!motionPlusAvailable) {
+			config.resolve.alias = {
+				...config.resolve.alias,
+				"motion-plus/react$": join(projectRoot, "components/visual/motion-plus-fallback.tsx"),
+				"@/components/visual/scrolling/scrolling-viewport$": join(projectRoot, "components/visual/scrolling/scrolling-viewport-fallback.tsx"),
+			};
+		}
 		if (!isServer && config.optimization?.splitChunks && typeof config.optimization.splitChunks === "object") {
 			const splitChunks = config.optimization.splitChunks as { cacheGroups?: Record<string, unknown> };
 			splitChunks.cacheGroups = {

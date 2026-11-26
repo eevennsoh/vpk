@@ -1,7 +1,8 @@
 "use client";
 
 import { SCROLLING_ITEMS, SCROLLING_VIEWPORT_PX } from "./data";
-import { ScrollingViewport, type ScrollingProps } from "./scrolling-viewport";
+import { ScrollingViewport } from "@/components/visual/scrolling/scrolling-viewport";
+import type { ScrollingProps } from "./scrolling-viewport";
 import { ScrollingEntranceProvider } from "./use-scrolling-entrance";
 
 export type {

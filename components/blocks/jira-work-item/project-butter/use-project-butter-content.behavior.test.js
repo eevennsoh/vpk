@@ -386,15 +386,14 @@ test("the hosted coding action uses Venn attribution without opting into auto-as
 	assert.equal(field("assignee"), "Unassigned");
 });
 
-test("the shared work item keeps Annie attribution in the one Activity feed without Butter host context", async () => {
+test("the shared work item keeps Venn attribution in the one Activity feed without Butter host context", async () => {
 	const view = await renderComponent({ source: JOURNEY_HARNESS, props: { host: false } });
 	await view.click(view.getByRole("button", { name: "Accept suggestions" }));
 	await expandUpdates(view);
-	assert.equal(view.queryByRole("button", { name: /Venn\s*updated description/u }) === null, true);
-	assert.equal(view.queryByRole("button", { name: /Annie Cook\s*updated description\s*Just now/u }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: /Venn\s*updated description\s*Just now/u }) !== null, true);
 	await view.click(view.getByRole("button", { name: "Start Claude" }));
 	assert.equal(field("assignee"), "Unassigned");
-	assert.equal(field("invoker"), "Annie Cook");
+	assert.equal(field("invoker"), "Venn");
 });
 
 test("Butter audit and assignment survive switching to another item and back", async () => {

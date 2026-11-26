@@ -19,7 +19,7 @@ import { RELATED_PRIORITY_OPTIONS, RELATED_RELATIONSHIPS, type ProjectButterRela
 import { cn } from "@/lib/utils";
 
 const PRIORITY_ICONS = { High: PriorityHighIcon, Highest: PriorityHighestIcon, Medium: PriorityMediumIcon, Low: PriorityLowIcon, Lowest: PriorityLowestIcon };
-const PEOPLE = ["Unassigned", "Automatic", "Annie Cook", "Sarah Lim", "Marcus Kim", "Elena Rodriguez", "Sia Vale", "Amara Okafor", "Zoe Loft", "Marcus Aurelius", "Liam Wilson", "Oliver Knight", "Hiroshi Tanaka"];
+const PEOPLE = ["Unassigned", "Automatic", "Venn", "Sarah Lim", "Marcus Kim", "Elena Rodriguez", "Sia Vale", "Amara Okafor", "Zoe Loft", "Marcus Aurelius", "Liam Wilson", "Oliver Knight", "Hiroshi Tanaka"];
 const UNASSIGNED = new Set(["Unassigned", "Automatic"]);
 const stopEscape = (event: { key: string; stopPropagation: () => void }) => { if (event.key === "Escape") event.stopPropagation(); };
 

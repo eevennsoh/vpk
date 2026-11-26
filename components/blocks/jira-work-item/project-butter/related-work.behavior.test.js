@@ -370,9 +370,9 @@ test("the details agent stack shows each agent once while retaining every sessio
 test("empty crew shows the current viewer and adds the chosen searchable agent", async () => {
 	const selected = [];
 	const view = await renderCrew({ onStartAgent: (agent) => selected.push(agent) });
-	assert.equal(view.queryByRole("img", { name: "Annie Cook, Currently viewing" }) !== null, true);
+	assert.equal(view.queryByRole("img", { name: "Venn, Currently viewing" }) !== null, true);
 	assert.equal(view.queryByRole("img", { name: "Add agent" }) !== null, true);
-	await view.click(view.getByRole("button", { name: "Annie Cook, Currently viewing. Add agent" }));
+	await view.click(view.getByRole("button", { name: "Venn, Currently viewing. Add agent" }));
 	await view.fill(view.getByRole("combobox", { name: "Search agents" }), "Codex");
 	await view.click(view.getByRole("option", { name: /^Codex/u }));
 	await view.click(view.getByRole("menuitem", { name: "Run on cloud" }));

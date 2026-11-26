@@ -31,7 +31,7 @@ function sessionChatSnapshot(item: AgentSessionItem): { messages: RovoUIMessage[
 			messages: [
 				{ id: `${id}-user`, role: "user", parts: [{ type: "text", text: item.title, state: "done" }] },
 				{ id: `${id}-${item.state}`, role: "assistant", parts: [{ type: "text", text: summary, state: "done" }] },
-				...(item.state === "complete" && id === "cloud-figma-with-austin" ? [{ id: `${id}-handoff`, role: "assistant" as const, parts: [
+				...(id === "cloud-figma-with-austin" ? [{ id: `${id}-handoff`, role: "assistant" as const, parts: [
 					{ type: "text" as const, text: "I’ve prepared the off-road suspension controls for engineering, including the design, handoff notes, and acceptance criteria.", state: "done" as const },
 					{ type: "data-widget-data" as const, data: { type: "agent-session-demo-artifacts", payload: "off-road-handoff" } },
 				] }] : []),

@@ -78,21 +78,17 @@ test("CLI fails clearly without a token and leaves the file untouched", () => {
 	fs.rmSync(dir, { recursive: true, force: true });
 });
 
-test("CLI fails clearly without a Motion+ token and leaves the file untouched", () => {
+test("CLI succeeds without a Motion+ token", () => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "write-npmrc-"));
 	const target = path.join(dir, ".npmrc");
 	fs.writeFileSync(target, "keep=me\n");
-	let stderr = "";
-	try {
-		execFileSync(process.execPath, [SCRIPT], {
-			env: { ...process.env, ATLASSIAN_NPM_TOKEN: "tok", MOTION_TOKEN: "", NPMRC_PATH: target },
-			stdio: "pipe",
-		});
-	} catch (error) {
-		stderr = String(error.stderr);
-	}
-	assert.ok(stderr.includes("MOTION_TOKEN is empty"), stderr);
-	assert.equal(fs.readFileSync(target, "utf8"), "keep=me\n");
+	execFileSync(process.execPath, [SCRIPT], {
+		env: { ...process.env, ATLASSIAN_NPM_TOKEN: "tok", MOTION_TOKEN: "", NPMRC_PATH: target },
+		stdio: "pipe",
+	});
+	const written = fs.readFileSync(target, "utf8");
+	assert.ok(written.includes("keep=me"));
+	assert.ok(!written.includes("api.motion.dev"));
 	fs.rmSync(dir, { recursive: true, force: true });
 });
 

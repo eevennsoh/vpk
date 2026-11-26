@@ -164,6 +164,8 @@ export interface AgentSessionProps {
 	showWorkingSpinner?: boolean;
 	/** Long rows: show the lifecycle label beside its glyph. Narrow hosts drop it to the glyph alone. */
 	showLifecycleLabel?: boolean;
+	/** Show the trailing lifecycle at all. Off leaves the slot to the hover more-actions button, e.g. for the viewer's own local sessions. */
+	showLifecycle?: boolean;
 	/** Title-led rows can show lifecycle text beside the avatar stack. */
 	lifecycleLabelPlacement?: "trailing" | "metadata";
 	/**
