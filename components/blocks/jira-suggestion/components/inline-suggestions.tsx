@@ -8,6 +8,7 @@ import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
 
+import { AgentSessionColumnCountMorph } from "@/components/blocks/agent-session-column/agent-session-column-count-swap";
 import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Button } from "@/components/ui/button";
@@ -101,7 +102,7 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 				<PopoverContent
 					align="end"
 					anchor={anchored}
-					aria-label={`AI suggestion for ${field}, ${index + 1} of ${pending.length}`}
+					aria-label={`AI suggestion for ${field}, ${pending.length} left to review`}
 					// ADS overlay elevation without its 1px perimeter: just the overlay's 8px spread, per theme (no token has it alone).
 					className={cn("gap-0 overflow-hidden p-0 shadow-[0px_8px_12px_#1E1F2126] dark:shadow-[0px_8px_12px_#0104045C]", expanded ? "w-80" : "w-auto")}
 					initialFocus={false}
@@ -127,7 +128,11 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 							<ToolbarButton disabled={index === 0} label="Previous suggestion" onClick={() => page(-1)}>
 								<ChevronLeftIcon color="currentColor" label="" size="small" />
 							</ToolbarButton>
-							<span aria-live="polite" className="text-xs whitespace-nowrap text-text-subtlest tabular-nums">{index + 1}/{pending.length}</span>
+							{/* What is left to review, not a position: the digit rolls like the Unlinked sessions column count. */}
+							<span aria-hidden className="flex min-w-4 justify-center text-xs whitespace-nowrap text-text-subtlest tabular-nums">
+								<AgentSessionColumnCountMorph count={pending.length} />
+							</span>
+							<span aria-live="polite" className="sr-only">{pending.length} {pending.length === 1 ? "suggestion" : "suggestions"} left to review</span>
 							<ToolbarButton disabled={index === pending.length - 1} label="Next suggestion" onClick={() => page(1)}>
 								<ChevronRightIcon color="currentColor" label="" size="small" />
 							</ToolbarButton>
