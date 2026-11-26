@@ -121,6 +121,25 @@ test("agent previews avoid the originating issue when the picker is near the vie
 	expect(previewBounds.x + previewBounds.width).toBeLessThanOrEqual(1280);
 });
 
+test("list agent preview stays beside the selector", async ({ page }) => {
+	await page.setViewportSize({ width: 2000, height: 1100 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select List", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.getByRole("button", { name: "Add agent to PAY-127" }).click();
+	const picker = page.getByRole("dialog", { name: "Agents" });
+	await picker.getByRole("button", { name: "Claude (Recommended)" }).hover();
+	const preview = page.locator('[data-slot="agent-lanyard"]');
+	await expect(preview.getByRole("heading", { name: "Claude" })).toBeVisible();
+	await expect.poll(async () => {
+		const menu = await picker.boundingBox();
+		const card = await preview.boundingBox();
+		if (!menu || !card) return Infinity;
+		return Math.min(Math.abs(card.x - (menu.x + menu.width)), Math.abs(menu.x - (card.x + card.width)));
+	}).toBeLessThanOrEqual(16);
+});
+
 test("board agent preview follows the hovered and focused row", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1400 });
 	await page.emulateMedia({ reducedMotion: "reduce" });

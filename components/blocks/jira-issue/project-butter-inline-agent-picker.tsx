@@ -107,7 +107,8 @@ export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseA
 		status={status}
 	/><HoverCard handle={handle}>{({ payload: agent }) => <AgentLanyardHoverContent variant={agent?.id === RECOMMENDED_AGENT_ID ? "recommended" : "agent"} side="right" align="start" sideOffset={({ side }) => {
 		const row = [...(pickerRef.current?.querySelectorAll<HTMLButtonElement>("button[data-agent-id]") ?? [])].find((item) => item.dataset.agentId === agent?.id);
-		const issue = issueTriggerRef?.current?.closest("[data-butter-agent-surface], article");
+		const trigger = issueTriggerRef?.current;
+		const issue = trigger?.closest("[data-butter-agent-surface]") ? pickerRef.current : trigger?.closest("article");
 		if (!row || !issue) return 8;
 		const rowRect = row.getBoundingClientRect();
 		const issueRect = issue.getBoundingClientRect();

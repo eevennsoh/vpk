@@ -284,13 +284,14 @@ export function useButterList({
 		issueKey: string,
 		agentIds: readonly string[],
 	) => {
+		setListOrder((order) => applyListOrder(createListRows(boardColumns, BUTTER_AGENT_CATALOG), order).map((row) => row.issueKey));
 		setBoardColumns((columns) => applyAssignedAgentIdsToColumns(
 			columns,
 			issueKey,
 			agentIds,
 			BUTTER_AGENT_CATALOG,
 		));
-	}, [setBoardColumns, BUTTER_AGENT_CATALOG]);
+	}, [boardColumns, setBoardColumns, setListOrder, BUTTER_AGENT_CATALOG]);
 
 	// One drop can carry several marked sessions, and the transfer plan replays
 	// this callback once per session inside a single event. Every read is

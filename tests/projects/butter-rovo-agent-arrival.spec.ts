@@ -37,6 +37,20 @@ for (const surface of ["Board", "List", "Work item"] as const) {
 	});
 }
 
+test("starting an agent keeps its list row in place", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select List", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	const list = page.getByRole("region", { name: "Payments SDK v2 migration work items list" });
+	const row = list.getByRole("row").filter({ has: page.getByRole("button", { name: "PAY-118", exact: true }) });
+	const before = await row.boundingBox();
+	await addAgent(page, "List", "Claude (Recommended)");
+	await expect(row.getByRole("button", { name: "Change status for PAY-118. Current status: In progress" })).toBeVisible();
+	await expect(row.getByRole("button", { name: "Claude: Working" })).toBeVisible();
+	await expect.poll(async () => (await row.boundingBox())?.y).toBe(before?.y);
+});
+
 test("another agent addition restarts an in-progress Rovo cycle", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));

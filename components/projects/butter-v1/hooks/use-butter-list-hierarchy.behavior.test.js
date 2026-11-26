@@ -42,3 +42,26 @@ test("expand all includes nested parents and restores partially collapsed hierar
 	assert.deepEqual(visibleKeys(), ["PAY-113", "PAY-4"]);
 	await view.unmount();
 });
+
+test("starting an agent keeps the list order while advancing its status", async () => {
+	const view = await renderComponent({ source: `
+		import { useState } from "react";
+		import { useButterList } from "@/components/projects/butter-v1/hooks/use-butter-list";
+		const initial = [
+			{ title: "To do", count: 2, cards: [
+				{ code: "PAY-1", title: "First", priority: "medium", tags: [] },
+				{ code: "PAY-2", title: "Second", priority: "medium", tags: [] },
+			] },
+			{ title: "In progress", count: 1, cards: [{ code: "PAY-3", title: "Third", priority: "medium", tags: [] }] },
+		];
+		export default function Probe() {
+			const [boardColumns, setBoardColumns] = useState(initial);
+			const { getProps, onAssignedAgentIdsChange } = useButterList({ boardColumns, setBoardColumns });
+			const { rows } = getProps(boardColumns);
+			return <><button onClick={() => onAssignedAgentIdsChange("PAY-1", ["claude-code"])}>Start agent</button><output>{JSON.stringify(rows.map(({ issueKey, status }) => [issueKey, status]))}</output></>;
+		}
+	` });
+	await view.click(view.getByRole("button", { name: "Start agent" }));
+	assert.deepEqual(JSON.parse(view.container.querySelector("output").textContent), [["PAY-1", "In progress"], ["PAY-2", "To do"], ["PAY-3", "In progress"]]);
+	await view.unmount();
+});
