@@ -87,10 +87,10 @@ export function TopWhy({ suggestion, whyOpen, onWhyOpenChange, whyAnchor, whyCon
 /** Every face shares one padding, so a card changing face (row, sheet, top) never shifts its label or value. */
 const FACE_PADDING = "px-4 pt-2.5 pb-3";
 
-function RoundAction({ label, hint, className, onClick, children }: Readonly<{ label: string; hint: string; className?: string; onClick: () => void; children: ReactNode }>) {
+function RowAction({ label, hint, className, onClick, children }: Readonly<{ label: string; hint: string; className?: string; onClick: () => void; children: ReactNode }>) {
 	return (
 		<Tooltip>
-			<TooltipTrigger render={<Button aria-label={label} className={cn("any-pointer-coarse:size-8", className)} onClick={onClick} shape="circle" size="icon-compact" type="button" variant="ghost" />}>{children}</TooltipTrigger>
+			<TooltipTrigger render={<Button aria-label={label} className={cn("any-pointer-coarse:size-8", className)} onClick={onClick} size="icon-compact" type="button" variant="ghost" />}>{children}</TooltipTrigger>
 			<TooltipContent>{hint}</TooltipContent>
 		</Tooltip>
 	);
@@ -118,9 +118,8 @@ export function RowFace({ suggestion, controls, onDecide, why }: Readonly<{ sugg
 										aria-controls={whyId}
 										aria-expanded={expanded}
 										aria-label={`Why ${field} was suggested`}
-										className="size-7 any-pointer-coarse:size-8 aria-expanded:bg-bg-neutral-subtle-hovered aria-expanded:[&_svg]:text-icon-subtle"
+										className="any-pointer-coarse:size-8 aria-expanded:bg-bg-neutral-subtle-hovered aria-expanded:[&_svg]:text-icon-subtle"
 										onClick={() => why.onWhyOpenChange(!expanded)}
-										shape="circle"
 										size="icon-compact"
 										type="button"
 										variant="ghost"
@@ -132,12 +131,12 @@ export function RowFace({ suggestion, controls, onDecide, why }: Readonly<{ sugg
 							<TooltipContent>{expanded ? "Hide why" : "Why this was suggested"}</TooltipContent>
 						</Tooltip>
 					) : null}
-					<RoundAction className="size-7 hover:[&_svg]:text-icon" hint="Discard" label={`Discard ${field}`} onClick={() => onDecide("dismiss")}>
+					<RowAction className="hover:[&_svg]:text-icon" hint="Discard" label={`Discard ${field}`} onClick={() => onDecide("dismiss")}>
 						<CrossIcon color="currentColor" label="" size="small" />
-					</RoundAction>
-					<RoundAction hint="Accept" label={`Accept ${field}`} onClick={() => onDecide("accept")}>
+					</RowAction>
+					<RowAction hint="Accept" label={`Accept ${field}`} onClick={() => onDecide("accept")}>
 						<CheckMarkIcon color="currentColor" label="" size="small" />
-					</RoundAction>
+					</RowAction>
 				</>
 			) : null}
 			className={FACE_PADDING}

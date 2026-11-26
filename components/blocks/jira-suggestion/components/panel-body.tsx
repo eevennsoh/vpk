@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 import { CardDeck } from "./card-deck";
 import { CaughtUp } from "./caught-up";
-import { CONTROLS_IN, FADE, FADE_OUT } from "./constants";
+import { CONTROLS_IN, FADE, FADE_OUT, SETTLE } from "./constants";
 import { DeckControls } from "./deck-controls";
 import { GhostCard } from "./ghost-card";
 import { useArmed } from "./use-armed";
@@ -45,6 +45,8 @@ export interface PanelBodyProps {
 }
 
 const SWAP = { opacity: 1, transition: FADE };
+/** Room left above a row brought to the top for its reasoning, so its edge is not flush with the list's top fade. */
+const WHY_SCROLL_INSET = 8;
 const SWAP_OUT = { opacity: 0, transition: FADE_OUT };
 
 /**
@@ -66,6 +68,25 @@ export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, 
 	useEffect(() => {
 		if (runs > 1) scroller.current?.scrollTo({ top: 0, behavior: "smooth" });
 	}, [runs]);
+
+	// Opening a row's reasoning brings that row to the top of the list, where it reads at full size and its reasoning
+	// has the room below it; near the bottom the depth tail would shrink it. Again once the reasoning has grown in,
+	// since until then the list may be too short to scroll that far.
+	useEffect(() => {
+		const port = scroller.current;
+		if (!listed || !whyId || !port) return undefined;
+		const toTop = () => {
+			const row = port.querySelector<HTMLElement>(`[data-suggestion-field="${whyId}"]`);
+			if (!row) return;
+			port.scrollTo({ top: port.scrollTop + row.getBoundingClientRect().top - port.getBoundingClientRect().top - WHY_SCROLL_INSET, behavior: "smooth" });
+		};
+		const frame = requestAnimationFrame(toTop);
+		const settled = window.setTimeout(toTop, SETTLE.duration * 1000 + 50);
+		return () => {
+			cancelAnimationFrame(frame);
+			window.clearTimeout(settled);
+		};
+	}, [listed, whyId]);
 
 	// Every unpack opens at the top, with the first row straight under the top card it came from, wherever the last
 	// list was scrolled to. Before Motion measures where the rows land, so the flight heads for the right slots.

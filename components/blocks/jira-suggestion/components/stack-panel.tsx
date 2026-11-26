@@ -17,6 +17,9 @@ import type { Deck, SwipeDirection } from "./use-deck";
 import { useDeckView } from "./use-deck-view";
 import { usePanelFocus } from "./use-panel-focus";
 
+/** The floating panel's height while a row's reasoning is open: taller than the list's, short of the viewport. */
+const READING_HEIGHT = "min(760px, calc(100dvh - 7rem))";
+
 export interface StackPanelProps {
 	id: string;
 	className?: string;
@@ -139,21 +142,23 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 		return () => panel.removeEventListener("keydown", listener);
 	}, [panelRef]);
 
+	// A row's reasoning is open in the list: the panel grows so the card and its reasoning can be read together.
+	const reading = listStage === "list" && mode === "list" && whyId !== null;
 	const panel = (
 		<div
 			aria-keyshortcuts={shortcuts}
 			aria-labelledby={titleId}
 			className={cn(
 				"flex max-h-full w-96 max-w-[calc(100vw-1rem)] flex-col rounded-xl bg-surface-overlay shadow-2xl outline-none",
-				animateHeight ? "transition-[height] duration-slower ease-in-out" : null,
+				animateHeight || listStage === "list" ? "transition-[height,max-height] duration-slower ease-in-out" : null,
 				className,
 			)}
 			id={id}
 			ref={panelRef}
 			role="dialog"
 			style={listStage !== undefined ? {
-				height: mode === "caught-up" ? undefined : introHeight ?? (feed.runs.length === 1 ? maxHeight : undefined),
-				maxHeight: `min(${maxHeight}px, ${feed.onPreviewCard ? "56dvh" : "calc(100dvh - 3rem)"})`,
+				height: mode === "caught-up" ? undefined : reading ? READING_HEIGHT : introHeight ?? (feed.runs.length === 1 ? maxHeight : undefined),
+				maxHeight: reading ? READING_HEIGHT : `min(${maxHeight}px, ${feed.onPreviewCard ? "56dvh" : "calc(100dvh - 3rem)"})`,
 			} : undefined}
 			tabIndex={-1}
 		>
