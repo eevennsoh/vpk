@@ -43,8 +43,8 @@ function ToolbarButton({ label, hint = label, disabled = false, onClick, childre
 
 /**
  * Suggestions shown inline, where they would land. The current suggestion is previewed in its own field (the same
- * in-place preview the review panel shows on hover), and a small toolbar sits on that field's top-right corner: the
- * field's name, the lightbulb · ✕ · ✓ a review row has, and a pager through the rest. There is no separate suggestions
+ * in-place preview the review panel shows on hover), and a small toolbar sits just under that field's right edge: the
+ * lightbulb · ✕ · ✓ a review row has, and a pager through the rest. There is no separate suggestions
  * area; paging or deciding moves the preview, and the toolbar with it, to the next field. Nothing left leaves nothing.
  */
 export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed }>) {
@@ -102,15 +102,16 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 					align="end"
 					anchor={anchored}
 					aria-label={`AI suggestion for ${field}, ${index + 1} of ${pending.length}`}
-					className={cn("gap-0 overflow-hidden p-0", expanded ? "w-80" : "w-auto")}
+					// ADS overlay elevation without its 1px perimeter: just the overlay's 8px spread, per theme (no token has it alone).
+					className={cn("gap-0 overflow-hidden p-0 shadow-[0px_8px_12px_#1E1F2126] dark:shadow-[0px_8px_12px_#0104045C]", expanded ? "w-80" : "w-auto")}
 					initialFocus={false}
 					positionerClassName="z-[650]"
-					side="top"
+					side="bottom"
 					sideOffset={4}
 				>
 					<TooltipProvider>
-						<div className="flex h-9 items-center gap-1 pr-1 pl-3">
-							<span className="mr-2 text-xs font-medium text-text-subtle">{current.label}</span>
+						{/* The toolbar sits right under the field it previews, so it never names the field again. */}
+						<div className="flex h-9 items-center gap-1 px-1">
 							{hasWhy ? (
 								<ToolbarButton aria-controls={whyId} aria-expanded={expanded} hint={expanded ? "Hide why" : "Why this was suggested"} label={`Why ${field} was suggested`} onClick={() => setWhyOpen(!expanded)}>
 									<LightbulbIcon color="currentColor" label="" size="small" />
@@ -126,7 +127,7 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 							<ToolbarButton disabled={index === 0} label="Previous suggestion" onClick={() => page(-1)}>
 								<ChevronLeftIcon color="currentColor" label="" size="small" />
 							</ToolbarButton>
-							<span aria-live="polite" className="text-xs whitespace-nowrap text-text-subtlest tabular-nums">{index + 1} of {pending.length}</span>
+							<span aria-live="polite" className="text-xs whitespace-nowrap text-text-subtlest tabular-nums">{index + 1}/{pending.length}</span>
 							<ToolbarButton disabled={index === pending.length - 1} label="Next suggestion" onClick={() => page(1)}>
 								<ChevronRightIcon color="currentColor" label="" size="small" />
 							</ToolbarButton>
