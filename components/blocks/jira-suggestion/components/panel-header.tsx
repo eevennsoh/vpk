@@ -5,7 +5,7 @@ import CollapseVerticalIcon from "@atlaskit/icon/core/collapse-vertical";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
-import VideoStopIcon from "@atlaskit/icon/core/video-stop";
+import StatusWorkflowStoppedIcon from "@atlaskit/icon-lab/core/status-workflow-stopped";
 
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -129,12 +129,13 @@ export function PanelHeader({ feed, title, titleId, view, floating, onToggleView
 
 						<HeaderButton buttonRef={rerunRef} label="Stop checking for suggestions" onClick={onCancelRerun} portalOutsidePanel={floating} tip="Stop checking">
 							{/* The spinner says a check is running; hover or focus swaps in the stop that ends it. */}
-							<span className="grid">
-								<span className="col-start-1 row-start-1 flex transition-opacity duration-xxshort ease-out-practical group-hover/header-button:opacity-0 group-focus-visible/header-button:opacity-0">
+							{/* Both glyphs share one centred 16px cell, so the swap never shifts the icon off the button's centre. */}
+							<span className="grid size-4 place-items-center">
+								<span className="col-start-1 row-start-1 grid size-4 place-items-center transition-opacity duration-xxshort ease-out-practical group-hover/header-button:opacity-0 group-focus-visible/header-button:opacity-0">
 									<SuggestionsStatusIcon state="loading" />
 								</span>
-								<span className="col-start-1 row-start-1 flex opacity-0 transition-opacity duration-xxshort ease-out-practical group-hover/header-button:opacity-100 group-focus-visible/header-button:opacity-100">
-									<VideoStopIcon color="currentColor" label="" size="small" />
+								<span className="col-start-1 row-start-1 grid size-4 place-items-center opacity-0 transition-opacity duration-xxshort ease-out-practical group-hover/header-button:opacity-100 group-focus-visible/header-button:opacity-100">
+									<StatusWorkflowStoppedIcon color="currentColor" label="" size="medium" />
 								</span>
 							</span>
 						</HeaderButton>
