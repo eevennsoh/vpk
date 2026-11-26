@@ -4,7 +4,8 @@ import { useState } from "react";
 import ChevronDownIcon from "@atlaskit/icon/core/chevron-down";
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { AGENT_SESSION_CLOUD_ITEMS, AGENT_SESSION_ITEMS, AgentSession, type AgentSessionItem } from "@/components/blocks/agent-session";
-import { JIRA_FOR_YOU_TABS } from "@/components/projects/jira-for-you/data";
+import { AGENT_SESSION_DEMO_CHECKS } from "@/components/blocks/agent-session/data";
+import type { JiraIssuePullRequestItem } from "@/components/blocks/jira-issue/types";
 import { JiraForYouHeader } from "@/components/projects/jira-for-you/jira-for-you-header";
 import { JgpRovoOverlay } from "@/components/projects/jira-golden-journey-v1/components/jira-golden-journey-v1-rovo-overlay";
 import { useJgpAgentChatDemo } from "@/components/projects/jira-golden-journey-v1/hooks/use-jira-golden-journey-v1-agent-chat-demo";
@@ -16,16 +17,29 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Icon } from "@/components/ui/icon";
 import { token } from "@/lib/tokens";
 
-const JIRA_FOR_YOU_SESSIONS: readonly { item: AgentSessionItem; tabs: readonly string[] }[] = [
-	{ item: AGENT_SESSION_CLOUD_ITEMS[1], tabs: ["assigned", "viewed"] },
-	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[1], agent: AGENT_SESSION_ITEMS[1].agent, invokedBy: AGENT_SESSION_ITEMS[1].invokedBy, id: "review-rollout", title: "Confirm the rollout plan for pilot customers", sessionDetails: { host: "cloud" }, timeLabel: "18m", updatedAtMs: undefined }, tabs: ["assigned", "worked-on"] },
-	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[1], agent: AGENT_SESSION_ITEMS[2].agent, invokedBy: AGENT_SESSION_ITEMS[2].invokedBy, id: "review-copy", title: "Review the recovery message for declined payments", sessionDetails: { host: "cloud" }, timeLabel: "1h", updatedAtMs: undefined }, tabs: ["viewed"] },
-	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[0], sessionDetails: { ...AGENT_SESSION_CLOUD_ITEMS[0].sessionDetails, pullRequestTitle: "Refactor off-road damping" } }, tabs: ["assigned", "worked-on"] },
-	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[0], agent: AGENT_SESSION_ITEMS[1].agent, invokedBy: AGENT_SESSION_ITEMS[1].invokedBy, id: "working-tests", title: "Add coverage for the onboarding flow", pullRequestChecks: undefined, sessionDetails: { host: "cloud", pullRequestNumber: 1856, pullRequestTitle: "Add onboarding coverage" }, timeLabel: "5m", updatedAtMs: undefined }, tabs: ["assigned", "viewed"] },
-	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[0], agent: AGENT_SESSION_ITEMS[2].agent, invokedBy: AGENT_SESSION_ITEMS[2].invokedBy, id: "working-dashboard", title: "Investigate the payments dashboard regressions", prStatus: undefined, pullRequestChecks: undefined, sessionDetails: { host: "cloud" }, timeLabel: "12m", updatedAtMs: undefined }, tabs: ["worked-on"] },
-	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[3], state: "ready-for-review" }, tabs: ["worked-on", "viewed"] },
-	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[3], agent: AGENT_SESSION_ITEMS[0].agent, invokedBy: AGENT_SESSION_ITEMS[0].invokedBy, id: "review-quickstart", state: "ready-for-review", title: "Prepare the sandbox quickstart", sessionDetails: { host: "cloud" }, timeLabel: "Yesterday", updatedAtMs: undefined }, tabs: ["assigned", "worked-on"] },
-	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[3], agent: AGENT_SESSION_ITEMS[2].agent, invokedBy: AGENT_SESSION_ITEMS[2].invokedBy, id: "review-accessibility", state: "ready-for-review", title: "Audit the checkout accessibility fixes", sessionDetails: { host: "cloud" }, timeLabel: "3d", updatedAtMs: undefined }, tabs: ["viewed"] },
+const READY_FOR_REVIEW_CHECKS = AGENT_SESSION_DEMO_CHECKS.passed;
+const CHECKOUT_ACCESSIBILITY_PULL_REQUESTS = [
+	{ number: 1861, status: "open", preview: { title: "Fix focus order in the checkout form", repository: "acme/storefront", branch: "fix/checkout-focus-order", targetBranch: "main", additions: 48, deletions: 17, filesChanged: 3, checks: READY_FOR_REVIEW_CHECKS } },
+	{ number: 1862, status: "open", preview: { title: "Announce declined payments to screen readers", repository: "acme/storefront", branch: "fix/checkout-payment-announcements", targetBranch: "main", additions: 63, deletions: 9, filesChanged: 4, checks: READY_FOR_REVIEW_CHECKS } },
+] as const satisfies readonly JiraIssuePullRequestItem[];
+
+/** The demo viewer; "My sessions" lists the sessions they started. */
+const VIEWER = { avatarSrc: "/avatar-user/venn/venn.png", name: "Venn" } as const;
+const JIRA_FOR_YOU_SESSION_TABS = [
+	{ id: "all", label: "All" },
+	{ id: "mine", label: "My sessions" },
+] as const;
+
+const JIRA_FOR_YOU_SESSIONS: readonly { item: AgentSessionItem; mine: boolean }[] = [
+	{ item: AGENT_SESSION_CLOUD_ITEMS[1], mine: false },
+	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[1], agent: AGENT_SESSION_ITEMS[1].agent, invokedBy: VIEWER, id: "review-rollout", title: "Confirm the rollout plan for pilot customers", sessionDetails: { host: "cloud" }, timeLabel: "18m", updatedAtMs: undefined }, mine: true },
+	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[0], invokedBy: VIEWER, state: "ready-for-review", pullRequestChecks: READY_FOR_REVIEW_CHECKS, sessionDetails: { ...AGENT_SESSION_CLOUD_ITEMS[0].sessionDetails, pullRequestTitle: "Refactor off-road damping" } }, mine: true },
+	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[0], agent: AGENT_SESSION_ITEMS[2].agent, invokedBy: AGENT_SESSION_ITEMS[2].invokedBy, id: "review-accessibility", state: "ready-for-review", title: "Audit the checkout accessibility fixes", pullRequests: CHECKOUT_ACCESSIBILITY_PULL_REQUESTS, pullRequestChecks: undefined, sessionDetails: { host: "cloud" }, timeLabel: "45m", updatedAtMs: undefined }, mine: false },
+	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[0], agent: AGENT_SESSION_ITEMS[1].agent, invokedBy: VIEWER, id: "review-copy", state: "ready-for-review", title: "Rewrite the recovery message for declined payments", pullRequestChecks: READY_FOR_REVIEW_CHECKS, sessionDetails: { ...AGENT_SESSION_CLOUD_ITEMS[0].sessionDetails, additions: 22, branch: "copy/declined-payment-recovery", deletions: 14, files: 2, issueKey: "PAY-211", issueSummary: "Rewrite the recovery message for declined payments", pullRequestNumber: 1868, pullRequestTitle: "Clarify declined payment recovery copy", pullRequestUrl: "https://github.com/acme/storefront/pull/1868" }, timeLabel: "1h", updatedAtMs: undefined }, mine: true },
+	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[3], state: "ready-for-review", timeLabel: "3h", updatedAtMs: undefined }, mine: false },
+	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[0], agent: AGENT_SESSION_ITEMS[1].agent, invokedBy: VIEWER, id: "working-tests", title: "Add coverage for the onboarding flow", prStatus: undefined, pullRequestChecks: undefined, sessionDetails: { host: "cloud" }, timeLabel: "5m", updatedAtMs: undefined }, mine: true },
+	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[0], agent: AGENT_SESSION_ITEMS[2].agent, invokedBy: AGENT_SESSION_ITEMS[2].invokedBy, id: "working-dashboard", title: "Investigate the payments dashboard regressions", prStatus: undefined, pullRequestChecks: undefined, sessionDetails: { host: "cloud" }, timeLabel: "12m", updatedAtMs: undefined }, mine: false },
+	{ item: { ...AGENT_SESSION_CLOUD_ITEMS[0], agent: AGENT_SESSION_ITEMS[0].agent, invokedBy: AGENT_SESSION_ITEMS[0].invokedBy, id: "working-quickstart", title: "Prepare the sandbox quickstart", prStatus: undefined, pullRequestChecks: undefined, sessionDetails: { host: "cloud" }, timeLabel: "25m", updatedAtMs: undefined }, mine: false },
 ];
 const JIRA_FOR_YOU_GROUPS = [
 	{ label: "Needs input", state: "needs-input" },
@@ -55,15 +69,15 @@ function JiraForYouProjectButterContent() {
 			question: { id: `${item.id}-direction`, kind: "single-select", label: "What should I do next?", options: [{ id: "continue", label: "Continue with the proposed approach" }, { id: "pause", label: "Pause for further review" }] },
 		} : scenario);
 	};
-	const sessions = JIRA_FOR_YOU_SESSIONS.filter(({ item, tabs }) =>
-		(activeTabId === "all" || tabs.includes(activeTabId))
+	const sessions = JIRA_FOR_YOU_SESSIONS.filter(({ item, mine }) =>
+		(activeTabId === "all" || mine)
 		&& item.title.toLowerCase().includes(query.trim().toLowerCase()),
 	).map(({ item }) => ({ ...item, state: answeredSessions.has(item.id) ? "running" as const : item.state, shortTitle: item.title }));
 	return (
 		<>
 		<div className="h-full min-h-0 w-full overflow-y-auto bg-surface">
 			<section className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-4 md:px-5 md:py-5 [--feed-stack-top:1rem] md:[--feed-stack-top:1.25rem]">
-				<JiraForYouHeader activeTabId={activeTabId} onQueryChange={setQuery} onTabChange={setActiveTabId} query={query} tabs={JIRA_FOR_YOU_TABS} />
+				<JiraForYouHeader activeTabId={activeTabId} onQueryChange={setQuery} onTabChange={setActiveTabId} query={query} tabs={JIRA_FOR_YOU_SESSION_TABS} />
 				<div className="flex flex-col gap-3">
 					{JIRA_FOR_YOU_GROUPS.map(({ label, state }) => {
 						const items = sessions.filter((item) => item.state === state);

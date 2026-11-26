@@ -50,7 +50,7 @@ function suggestionReason(suggestion: ProjectButterSuggestion, profile: ProjectB
 	const detail = suggestion.field === "storyPoints" && profile === "payments"
 		? "The estimate accounts for setup guidance, sandbox payment examples, and error handling."
 		: `The suggested value, ${suggestion.preview}, is a starting point based on this example project's context.`;
-	return { confidence: "medium", reason: { headline, detail, evidence: [{ id: `butter-${suggestion.field}`, kind: "history", title: source, meta: "Example project context" }] } };
+	return { confidence: "medium", reason: { headline, detail, evidence: [{ id: `butter-${suggestion.field}`, kind: "history", title: source }] } };
 }
 
 function toCard(suggestion: ProjectButterSuggestion, profile: ProjectButterSuggestionProfile): WorkItemSuggestion {

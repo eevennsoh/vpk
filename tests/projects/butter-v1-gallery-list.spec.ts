@@ -25,7 +25,9 @@ test("Jira for you groups session cards and preserves their hover actions", asyn
 	const session = section.locator('[data-testid="agent-session-row-working-tests"]');
 	await session.hover();
 	await expect(session.getByRole("button", { name: "More actions for Add coverage for the onboarding flow" })).toBeVisible();
-	await expect(session).toContainText("#1856");
+	await expect(session).not.toContainText("#");
+	await expect(section.getByTestId("agent-session-row-cloud-suspension-refactor")).toContainText("#124");
+	await expect(section.getByTestId("agent-session-row-review-accessibility")).toContainText("2 pull requests");
 	for (const label of ["Needs input", "Ready for review", "Working"]) {
 		await expect(section.locator('[data-slot="collapsible-trigger"]').getByText(label, { exact: true })).toBeVisible();
 	}
@@ -44,9 +46,10 @@ test("Jira for you groups session cards and preserves their hover actions", asyn
 	await section.getByRole("searchbox", { name: "Search work items" }).fill("roadmap");
 	await expect(section.locator('[data-testid^="agent-session-row-"]')).toHaveCount(1);
 	await section.getByRole("searchbox", { name: "Search work items" }).clear();
-	await section.getByRole("tab", { name: "Worked on" }).click();
-	await expect(section.getByRole("tab", { name: "Worked on" })).toHaveAttribute("aria-selected", "true");
-	await expect(section.locator('[data-testid^="agent-session-row-"]')).toHaveCount(5);
+	await expect(section.getByRole("tab")).toHaveText(["All", "My sessions"]);
+	await section.getByRole("tab", { name: "My sessions" }).click();
+	await expect(section.getByRole("tab", { name: "My sessions" })).toHaveAttribute("aria-selected", "true");
+	await expect(section.locator('[data-testid^="agent-session-row-"]')).toHaveCount(4);
 	await expect(page.getByRole("region", { name: /Chat workspace/ })).toHaveCount(0);
 });
 
