@@ -75,8 +75,8 @@ export function RecommendingAgentRow({ done, onDone }: Readonly<{ done: boolean;
 				<span className="grid size-6 shrink-0 place-items-center text-icon-subtle">
 					<FinishingSpinner done={done} onDone={onDone} />
 				</span>
-				{/* The same sweep as an agent's Working label (JiraIssueAgentRowLabel), so in-progress states read alike. */}
-				<Shimmer as="span" className="menu-row-title block min-w-0 flex-1 truncate text-text" duration={1.4} spread={2}>Recommending agent</Shimmer>
+				{/* The same sweep as an agent's Working label (JiraIssueAgentRowLabel), on subtle text: a placeholder, not an agent yet. */}
+				<Shimmer as="span" className="menu-row-title block min-w-0 flex-1 truncate text-text-subtle" duration={1.4} spread={2}>Recommending agent</Shimmer>
 			</div>
 		</div>
 	);
