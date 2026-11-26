@@ -45,7 +45,7 @@ test("filter tabs: all five when filled, present types only in the Empty preset"
 
 test("files split their extension and duplicates are dropped by id or name and type", () => {
 	const file = attachmentFromFile({ name: "Report.final.pdf", type: "application/pdf" }, stamp);
-	assert.deepEqual([file.name, file.extension, file.kind, file.addedBy, file.updatedAt], ["Report.final", "pdf", "file", "Annie Cook", stamp.now]);
+	assert.deepEqual([file.name, file.extension, file.kind, file.addedBy, file.updatedAt], ["Report.final", "pdf", "file", "Venn", stamp.now]);
 	const again = attachmentFromFile({ name: "Report.final.pdf", type: "application/pdf" }, { ...stamp, id: "other" });
 	const merged = mergeAttachments([file], [again, { ...file }]);
 	assert.equal(merged.items.length, 1);

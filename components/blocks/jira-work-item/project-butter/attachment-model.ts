@@ -1,5 +1,6 @@
 // Loaded directly by node:test suites: keep value imports relative (`./x.ts`); `@/` is fine for types only.
 import type { AttachmentGroupType, AttachmentPile, ProjectButterAttachment, ProjectButterAttachmentType } from "@/components/blocks/jira-work-item/project-butter/attachment-data";
+import { PROJECT_BUTTER_VIEWER } from "@/components/blocks/jira-work-item/project-butter/people";
 
 /** Attachment filter tabs, in reference order. */
 export const ATTACHMENT_FILTERS = ["All", "Documents", "Images", "Videos", "Links"] as const;
@@ -108,7 +109,7 @@ export interface AttachmentStamp {
 }
 
 /** A dropped or chosen local file. Images get an object-URL preview from the caller. */
-export function attachmentFromFile(file: Pick<File, "name" | "type">, { id, now, addedBy = "Annie Cook" }: AttachmentStamp, previewSrc?: string): ProjectButterAttachment {
+export function attachmentFromFile(file: Pick<File, "name" | "type">, { id, now, addedBy = PROJECT_BUTTER_VIEWER.name }: AttachmentStamp, previewSrc?: string): ProjectButterAttachment {
 	const kind = file.type.startsWith("image/") ? "image" : file.type.startsWith("video/") ? "video" : "file";
 	return { id, kind, ...splitFileName(file.name), addedBy, dateAdded: now, updatedAt: now, ...(previewSrc ? { previewSrc } : {}), ...(file instanceof Blob ? { file: file as File } : {}) };
 }

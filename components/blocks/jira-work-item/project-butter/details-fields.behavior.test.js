@@ -69,6 +69,18 @@ test("assignee defaults to Unassigned with its avatar and can be reassigned", as
 	assert.notEqual(assignee.querySelector('[data-unassigned="person"]'), null);
 });
 
+test("assigning yourself picks Venn, the presenter", async () => {
+	const view = await renderDetails({ workItem: { code: "PAY-118", title: "Billing" } });
+	await view.click(view.getByRole("button", { name: "Change assignee" }));
+	const options = [...document.querySelectorAll('[role="option"]')].map((option) => option.textContent.trim());
+	assert.deepEqual(options.slice(0, 2), ["Unassigned", "Venn"]);
+	assert.equal(options.filter((label) => label === "Venn").length, 1);
+	await view.fill(view.getByRole("textbox", { name: "Search people" }), "Venn");
+	await view.press(null, "Enter");
+	const assignee = view.getByRole("button", { name: "Change assignee" });
+	assert.equal(assignee.textContent.includes("Venn"), true);
+});
+
 test("assignee picker includes the editor palette people and selects them by click", async () => {
 	const view = await renderDetails({ workItem: { code: "PAY-118", title: "Billing" } });
 	await view.click(view.getByRole("button", { name: "Change assignee" }));

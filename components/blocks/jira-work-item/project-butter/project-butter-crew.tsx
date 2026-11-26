@@ -37,6 +37,7 @@ import { motionDuration, motionEase } from "@/lib/motion";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { AgentAvatarLanyard, AgentAvatarLanyards } from "@/components/blocks/jira-work-item/project-butter/agent-avatar-lanyard";
 import { SESSION_URGENCY, sessionStatusPresentation } from "@/components/blocks/jira-work-item/project-butter/session-status-presentation";
+import { PROJECT_BUTTER_VIEWER } from "@/components/blocks/jira-work-item/project-butter/people";
 
 type CrewMember = { name: string; kind: "person"; state: "Working" | "Currently viewing"; avatarSrc?: string } | { id?: string; name: string; kind: "agent"; state: "Working" | "Needs input" | "Ready for review" | "Completed"; visual: Pick<AgentAvatarVisualProps, "avatarSrc" | "brandName" | "vpkLogo"> };
 type AgentCrewMember = Extract<CrewMember, { kind: "agent" }>;
@@ -135,7 +136,7 @@ function ProjectButterCrewContent({ assignee, extraAgents = [], cloudAgentSelect
 		...(assignee && assignee.name !== "Automatic" && assignee.name !== "Unassigned" ? [{ name: assignee.name, kind: "person" as const, state: "Working" as const, avatarSrc: assignee.avatarUrl }] : []),
 		...sessions.map((session): CrewMember => ({ name: session.agent.name, kind: "agent", state: SESSION_STATE[session.state], visual: { avatarSrc: session.agent.avatarSrc, brandName: session.agent.brandName, vpkLogo: session.agent.vpkLogo } })),
 	];
-	const crew: readonly CrewMember[] = members.length ? members : [{ name: currentUser?.name ?? "Annie Cook", avatarSrc: currentUser?.avatarUrl, kind: "person", state: "Currently viewing" }];
+	const crew: readonly CrewMember[] = members.length ? members : [{ name: currentUser?.name ?? PROJECT_BUTTER_VIEWER.name, avatarSrc: currentUser ? currentUser.avatarUrl : PROJECT_BUTTER_VIEWER.avatarSrc, kind: "person", state: "Currently viewing" }];
 	const picking = Boolean(onStartAgent) && ((field && !fieldSessionMenu) || view === "picker" || sessions.length === 0);
 	const label = `${members.length ? "Working on this work item. " : ""}${crew.map((member) => `${member.name}, ${member.state}`).join(". ")}. ${onStartAgent ? "Add agent" : "View agent sessions"}`;
 	const firstSession = agentSessions[0];

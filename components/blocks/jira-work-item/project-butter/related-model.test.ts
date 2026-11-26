@@ -42,7 +42,7 @@ test("created keys use the parent's project prefix and stay unique", () => {
 
 test("created items default to the current user while existing matches keep their fields", () => {
 	const created = relatedItemFromRequest({ kind: "create", summary: "Draft rollout plan" }, { id: "a", key: "PAY-1234", kind: "children" });
-	assert.deepEqual([created.assignee, created.status, created.priority, created.workType, created.relationship], ["Annie Cook", "To do", "Medium", "Subtask", undefined]);
+	assert.deepEqual([created.assignee, created.status, created.priority, created.workType, created.relationship], ["Venn", "To do", "Medium", "Subtask", undefined]);
 	const link = relatedItemFromRequest({ kind: "create", summary: "Link", relationship: "Blocks" }, { id: "b", key: "PAY-2345", kind: "linked" });
 	assert.deepEqual([link.workType, link.relationship], ["Task", "Blocks"]);
 	const existing = relatedItemFromRequest({ kind: "existing", item: catalog[0] }, { id: "c", key: "unused", kind: "linked" });

@@ -3,6 +3,7 @@ import { getAgentSessionRole } from "@/components/blocks/agent-session/agent-ses
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_SESSION_EPOCH } from "@/components/blocks/jira-work-item/project-butter/data";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
+import { PROJECT_BUTTER_VIEWER } from "@/components/blocks/jira-work-item/project-butter/people";
 
 export type ProjectButterActivityView = "Activity" | "Audit";
 export type ProjectButterActivitySort = "newest" | "oldest";
@@ -47,7 +48,7 @@ function personActor(name: string, avatarSrc?: string): JiraActivityActor {
 }
 
 function invoker(session: ProjectButterSessionItem): JiraActivityActor {
-	const name = session.invokedBy?.name ?? "Annie Cook";
+	const name = session.invokedBy?.name ?? PROJECT_BUTTER_VIEWER.name;
 	return personActor(name, session.invokedBy?.avatarSrc);
 }
 

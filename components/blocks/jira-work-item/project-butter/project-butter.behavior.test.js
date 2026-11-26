@@ -866,7 +866,7 @@ test("new audit records and comment replies survive changing activity filters", 
 	await view.click(view.getByRole("button", { name: "Change status, In progress" }));
 	await view.click(view.getByRole("menuitem", { name: "Done" }));
 	await expandUpdates(view);
-	await view.click(view.getByRole("button", { name: /Annie Cook\s*updated status\s*Just now/u }));
+	await view.click(view.getByRole("button", { name: /Venn\s*updated status\s*Just now/u }));
 	const change = [...document.querySelectorAll("[data-project-butter-activity] dl")].map((node) => node.textContent).find((text) => text.includes("Done"));
 	assert.equal(change.includes("In progress"), true);
 	const ownComment = '[data-jira-activity-entry-id="butter-source-comment-1"]';
@@ -881,7 +881,7 @@ test("new audit records and comment replies survive changing activity filters", 
 	await view.click(view.getByRole("button", { name: "Submit" }));
 	assert.equal(view.queryByText("Keep the reply draft") !== null, true);
 	await expandUpdates(view);
-	assert.equal(view.queryByRole("button", { name: /Annie Cook\s*updated status\s*Just now/u }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: /Venn\s*updated status\s*Just now/u }) !== null, true);
 	await view.fill(await commentEditor(view), "Posted from the bar");
 	await view.click(view.getByRole("button", { name: "Submit" }));
 	assert.equal(view.queryByText("Posted from the bar") !== null, true);
@@ -896,7 +896,7 @@ test("own comments can be edited with the change recorded in Activity", async ()
 	// The edit's audit row also carries the new text in its collapsed change detail, so read the comment itself.
 	assert.equal(document.querySelector(ownComment).textContent.includes("Updated campaign review"), true);
 	await expandUpdates(view);
-	assert.equal(view.getAllByRole("button", { name: /Annie Cook\s*updated comment\s*Just now/u }).length, 1);
+	assert.equal(view.getAllByRole("button", { name: /Venn\s*updated comment\s*Just now/u }).length, 1);
 });
 
 test("pinned local sessions open the continuation menu in place", async () => {

@@ -16,7 +16,7 @@ import type {
 import { PROJECT_BUTTER_CONTENT_WIDTH, PROJECT_BUTTER_MODAL_SIZE } from "@/components/blocks/jira-work-item/project-butter/presentation";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
-import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
+import { PROJECT_BUTTER_VIEWER } from "@/components/blocks/jira-work-item/project-butter/people";
 
 export function ProjectButterShell({
 	chatPanel,
@@ -174,10 +174,10 @@ export function ProjectButterShell({
 				{standalone ? (
 					<TopNavigation
 						currentUser={{
-							id: "butter-annie",
-							name: "Annie Cook",
-							avatarSrc: projectButterPersonAvatar("Annie Cook"),
-							initials: "AC",
+							id: PROJECT_BUTTER_VIEWER.id,
+							name: PROJECT_BUTTER_VIEWER.name,
+							avatarSrc: PROJECT_BUTTER_VIEWER.avatarSrc,
+							initials: "V",
 						}}
 						hideRovoAction={!chatPanel}
 						onSettingsClick={() => setSettingsOpen(true)}

@@ -1,4 +1,5 @@
 import type { PriorityValue } from "@/components/blocks/jira-work-item/team-eu26/components/detail-field-editor-data";
+import { PROJECT_BUTTER_VIEWER } from "@/components/blocks/jira-work-item/project-butter/people";
 
 /** Butter related rows use three statuses. Placeholder data that says "In review" is mapped to "In progress" in placeholder-fill.ts. */
 export type ProjectButterRelatedStatus = "To do" | "In progress" | "Done";
@@ -42,7 +43,7 @@ export interface ProjectButterRelatedScope {
 }
 
 /** The person who creates items in the prototype (reference CURRENT_USER). */
-export const RELATED_CURRENT_USER = "Annie Cook";
+export const RELATED_CURRENT_USER = PROJECT_BUTTER_VIEWER.name;
 
 /** Resolves a related key to an opener when the host can open that work item; undefined renders the key as plain text. */
 export type RelatedItemOpener = (key: string) => (() => void) | undefined;
