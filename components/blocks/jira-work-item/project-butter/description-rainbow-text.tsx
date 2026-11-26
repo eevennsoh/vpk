@@ -3,8 +3,8 @@
 import { useLayoutEffect, useRef } from "react";
 import { animate, useReducedMotion } from "motion/react";
 
-import { DESCRIPTION_REVEAL_WORD_LIMIT, planDescriptionReveal } from "@/components/blocks/jira-work-item/project-butter/description-reveal-plan";
-import { SUGGESTION_REVEAL_EASE, SUGGESTION_REVEAL_FROM, SUGGESTION_REVEAL_SECONDS, SUGGESTION_REVEAL_TO } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
+import { DESCRIPTION_REVEAL_WORD_LIMIT } from "@/components/blocks/jira-work-item/project-butter/description-reveal-plan";
+import { SUGGESTION_REVEAL_EASE, SUGGESTION_REVEAL_FROM, SUGGESTION_REVEAL_LINE_STAGGER, SUGGESTION_REVEAL_SECONDS, SUGGESTION_REVEAL_TO } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
 
 type RevealPart = Readonly<{ text: string; start: number; word: boolean }>;
 
@@ -41,13 +41,16 @@ export function DescriptionRainbowText({ onComplete, text }: Readonly<{ onComple
 		const root = rootRef.current;
 		if (!root) return;
 		const words = [...root.querySelectorAll<HTMLElement>("[data-description-word]")];
-		const steps = planDescriptionReveal(words.length);
+		// Line by line, as Mask Reveal Up moves: words share their line's slot, read from where they wrapped.
+		// offsetTop ignores the words' starting transform, so the lines are where the settled text will sit.
+		const tops = [...new Set(words.map((word) => word.offsetTop))].sort((a, b) => a - b);
+		const lineOf = (word: HTMLElement) => tops.indexOf(word.offsetTop);
 		const animations: { finished: Promise<unknown>; stop: () => void }[] = [];
 		let active = true;
-		// Each word rises in with the Text Effects Mask Reveal Up, on the description's own word-by-word timing.
-		for (const [index, word] of words.entries()) {
+		for (const word of words) {
+			const delay = lineOf(word) * SUGGESTION_REVEAL_LINE_STAGGER;
 			// A transform string rather than `y`, so Motion hands all three properties to the browser's animation engine.
-			animations.push(animate(word, { opacity: [SUGGESTION_REVEAL_FROM.opacity, SUGGESTION_REVEAL_TO.opacity], transform: [`translateY(${SUGGESTION_REVEAL_FROM.y})`, `translateY(${SUGGESTION_REVEAL_TO.y})`], filter: [SUGGESTION_REVEAL_FROM.filter, SUGGESTION_REVEAL_TO.filter] }, { delay: steps[index], duration: SUGGESTION_REVEAL_SECONDS, ease: SUGGESTION_REVEAL_EASE }));
+			animations.push(animate(word, { opacity: [SUGGESTION_REVEAL_FROM.opacity, SUGGESTION_REVEAL_TO.opacity], transform: [`translateY(${SUGGESTION_REVEAL_FROM.y})`, `translateY(${SUGGESTION_REVEAL_TO.y})`], filter: [SUGGESTION_REVEAL_FROM.filter, SUGGESTION_REVEAL_TO.filter] }, { delay, duration: SUGGESTION_REVEAL_SECONDS, ease: SUGGESTION_REVEAL_EASE }));
 		}
 		const finish = () => { if (active) onComplete?.(); };
 		void Promise.all(animations.map((animation) => animation.finished)).then(finish, finish);

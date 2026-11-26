@@ -19,6 +19,8 @@ export const SUGGESTION_REVEAL_FROM = { opacity: 0, y: `${RISE_EM}em`, filter: `
 export const SUGGESTION_REVEAL_TO = { opacity: 1, y: "0em", filter: "blur(0px)" } as const;
 export const SUGGESTION_REVEAL_EASE = [...MASK_REVEAL.easing] as [number, number, number, number];
 export const SUGGESTION_REVEAL_SECONDS = MASK_REVEAL.durationMs / 1000;
+/** The effect's own unit stagger, for reveals that move line by line as Mask Reveal Up does. */
+export const SUGGESTION_REVEAL_LINE_STAGGER = MASK_REVEAL.staggerMs / 1000;
 /** The effect's stagger, shortened for long values so the whole reveal still lands within about a second. */
 export function suggestionRevealStagger(units: number): number {
 	return Math.min(MASK_REVEAL.staggerMs / 1000, 0.6 / Math.max(units - 1, 1));
