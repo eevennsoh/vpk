@@ -116,6 +116,12 @@ export function useIsSuggestionTarget(field: string) {
 	return use(TargetState)?.id === field;
 }
 
+/** The suggested value previewed in this field right now, or null when nothing previews here. */
+export function useSuggestionPreviewText(field: string): string | null {
+	const preview = use(TargetState);
+	return preview?.id === field ? preview.valueText : null;
+}
+
 /** The preview's corner radius, which the shared dropzone stroke (drawn for a radius-lg well) takes inline. */
 const PREVIEW_STROKE_SHAPE = {
 	rx: "calc(var(--radius-md) - 0.5px)",

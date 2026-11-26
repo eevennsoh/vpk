@@ -21,7 +21,8 @@ import { AvatarUnassigned } from "@/components/ui/avatar";
 import { AVATAR_ENTER_FROM } from "@/components/ui/avatar-enter";
 import { IconTile } from "@/components/ui/icon-tile";
 import { DETAIL_VALUE_HANDOFF } from "./details-rail";
-import { SuggestionLabelReveal, SuggestionPreviewLabel } from "./suggestion-targets";
+import { SuggestionLabelReveal, SuggestionPreviewLabel, useSuggestionPreviewText } from "./suggestion-targets";
+import { projectButterPersonAvatar } from "./people";
 
 const DETAIL_DUE_DATE_ICON = <IconTile aria-hidden as="span" className="text-icon-subtle" icon={<CalendarIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />;
 const DETAIL_UNASSIGNED_AVATAR = <AvatarUnassigned animate={false} label="" size="xs" />;
@@ -30,6 +31,11 @@ function PersonValue({ field, person }: Readonly<{ field: "assignee" | "reporter
 	const reveal = use(SuggestionLabelReveal);
 	const reduced = useReducedMotion();
 	const isAssignee = field === "assignee";
+	// A suggested person previewed here shows with their own avatar, not the current value's (often the placeholder).
+	const previewName = useSuggestionPreviewText(field);
+	const previewPerson: AgentPlannerAssignee | null = previewName
+		? PEOPLE.find((candidate) => candidate.name === previewName) ?? { name: previewName, avatarUrl: projectButterPersonAvatar(previewName) }
+		: null;
 	const personAvatar = <PersonLabelAvatar animate={false} person={person} size="xs" />;
 	const avatar = isAssignee && !reduced ? (
 		<motion.span animate={{ opacity: 1, scale: 1 }} className="inline-flex shrink-0" initial={{ ...AVATAR_ENTER_FROM, scale: 0.6 }} style={{ willChange: "transform, opacity" }} transition={DETAIL_VALUE_HANDOFF}>
@@ -38,7 +44,7 @@ function PersonValue({ field, person }: Readonly<{ field: "assignee" | "reporter
 	) : personAvatar;
 	return (
 		<span className="flex w-full min-w-0 items-center gap-2">
-			{person.name === "Unassigned" || (isAssignee && reveal) ? DETAIL_UNASSIGNED_AVATAR : avatar}
+			{previewPerson ? <PersonLabelAvatar animate={false} key={previewPerson.name} person={previewPerson} size="xs" /> : person.name === "Unassigned" || (isAssignee && reveal) ? DETAIL_UNASSIGNED_AVATAR : avatar}
 			<SuggestionPreviewLabel field={field}>{person.name}</SuggestionPreviewLabel>
 		</span>
 	);
