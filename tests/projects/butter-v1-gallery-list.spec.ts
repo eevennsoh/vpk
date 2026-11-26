@@ -26,10 +26,12 @@ test("Jira for you groups session cards and preserves their hover actions", asyn
 	await session.hover();
 	await expect(session.getByRole("button", { name: "More actions for Add coverage for the onboarding flow" })).toBeVisible();
 	await expect(session).toContainText("#1856");
-	for (const label of ["Needs input", "Working", "Finished"]) {
+	for (const label of ["Needs input", "Ready for review", "Working"]) {
 		await expect(section.locator('[data-slot="collapsible-trigger"]').getByText(label, { exact: true })).toBeVisible();
 	}
-	const finished = section.locator('[data-slot="collapsible-trigger"]').filter({ hasText: "Finished" });
+	await expect(section.locator('[data-slot="collapsible-trigger"]').getByText("Finished", { exact: true })).toHaveCount(0);
+	await expect(section.getByText("Complete", { exact: true })).toHaveCount(0);
+	const finished = section.locator('[data-slot="collapsible-trigger"]').filter({ hasText: "Ready for review" });
 	const chevron = finished.locator('[data-slot="icon"]');
 	await expect(chevron).toHaveCSS("rotate", "none");
 	await finished.click();
@@ -60,7 +62,7 @@ test("Jira for you opens Rovo and each session's conversation", async ({ page })
 	for (const [id, title] of [
 		["review-rollout", "Confirm the rollout plan for pilot customers"],
 		["working-tests", "Add coverage for the onboarding flow"],
-		["finished-accessibility", "Audit the checkout accessibility fixes"],
+		["review-accessibility", "Audit the checkout accessibility fixes"],
 	] as const) {
 		await page.getByTestId(`agent-session-row-${id}`).locator("article").click();
 		await expect(chat).toBeVisible();
