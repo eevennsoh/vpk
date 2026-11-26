@@ -110,7 +110,7 @@ function SourceRow({ evidence, compact = false }: Readonly<{ evidence: Suggestio
  * names the field, titles the popup and gives each source its who/when and quoted passage; inline, under the card's
  * own label, it skips the field, lists sources by title alone, and pads like the card it expands.
  */
-export function WhyCard({ suggestion, inline = false }: Readonly<{ suggestion: WorkItemSuggestion; inline?: boolean }>) {
+export function WhyCard({ suggestion, inline = false, compactSources = inline }: Readonly<{ suggestion: WorkItemSuggestion; inline?: boolean; /** Sources by title alone (the inline suggestion toolbar's popover too). */ compactSources?: boolean }>) {
 	const { reason } = suggestion;
 	const headline = "text-sm leading-5 font-semibold text-pretty text-text";
 	const detail = "text-sm leading-5 text-pretty text-text-subtle";
@@ -137,8 +137,8 @@ export function WhyCard({ suggestion, inline = false }: Readonly<{ suggestion: W
 				<h3 className="text-xs font-medium text-text-subtlest">
 					{reason.evidence.length} {reason.evidence.length === 1 ? "source" : "sources"}
 				</h3>
-				<ul className={cn("flex flex-col", inline ? "gap-2" : "gap-4")}>
-					{reason.evidence.map((evidence) => <SourceRow compact={inline} evidence={evidence} key={evidence.id} />)}
+				<ul className={cn("flex flex-col", compactSources ? "gap-2" : "gap-4")}>
+					{reason.evidence.map((evidence) => <SourceRow compact={compactSources} evidence={evidence} key={evidence.id} />)}
 				</ul>
 			</section>
 		</div>

@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import ChevronLeftIcon from "@atlaskit/icon/core/chevron-left";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import CrossIcon from "@atlaskit/icon/core/cross";
-import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
 
 import { AgentSessionColumnCountMorph } from "@/components/blocks/agent-session-column/agent-session-column-count-swap";
 import type { SuggestionFieldId } from "@/components/blocks/jira-suggestion/data/suggestions";
@@ -14,10 +12,8 @@ import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/u
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 
-import { SETTLE } from "./constants";
-import { WhyCard } from "./why-card";
+import { CardWhy } from "./card-why";
 
 /** How many frames to look for the previewed field before giving up (it renders a commit or two after the preview is set). */
 const ANCHOR_SEARCH_FRAMES = 30;
@@ -34,10 +30,10 @@ function findPreviewAnchor(field: SuggestionFieldId): HTMLElement | null {
 	return found && bounds && bounds.width > 0 && bounds.height > 0 ? found : null;
 }
 
-function ToolbarButton({ label, hint = label, disabled = false, onClick, children, ...aria }: Readonly<{ label: string; hint?: string; disabled?: boolean; onClick: () => void; children: React.ReactNode; "aria-expanded"?: boolean; "aria-controls"?: string }>) {
+function ToolbarButton({ label, hint = label, disabled = false, onClick, children }: Readonly<{ label: string; hint?: string; disabled?: boolean; onClick: () => void; children: React.ReactNode }>) {
 	return (
 		<Tooltip>
-			<TooltipTrigger render={<Button {...aria} aria-label={label} className="any-pointer-coarse:size-8 aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_svg]:text-icon-subtle" disabled={disabled} onClick={onClick} size="icon-compact" type="button" variant="ghost" />}>
+			<TooltipTrigger render={<Button aria-label={label} className="any-pointer-coarse:size-8" disabled={disabled} onClick={onClick} size="icon-compact" type="button" variant="ghost" />}>
 				{children}
 			</TooltipTrigger>
 			{/* Above the toolbar's own popover layer (z-650), or the tip renders behind the toolbar it labels. */}
@@ -49,17 +45,16 @@ function ToolbarButton({ label, hint = label, disabled = false, onClick, childre
 /**
  * Suggestions shown inline, where they would land. The current suggestion is previewed in its own field (the same
  * in-place preview the review panel shows on hover), and a small toolbar sits just under that field's right edge: the
- * lightbulb · ✕ · ✓ a review row has, and a pager through the rest. There is no separate suggestions
- * area; paging or deciding moves the preview, and the toolbar with it, to the next field. Nothing left leaves nothing.
+ * lightbulb · ✕ · ✓ a review row has, and a pager through the rest. Hovering the lightbulb opens the reasoning in a
+ * popover under the toolbar, so the toolbar itself never resizes. There is no separate suggestions area; paging or
+ * deciding moves the preview, and the toolbar with it, to the next field. Nothing left leaves nothing.
  */
 export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed }>) {
 	const pending = feed.review.pending;
 	const [position, setPosition] = useState(0);
 	const [whyOpen, setWhyOpen] = useState(false);
-	// The toolbar stays reasoning-wide until the reasoning has finished closing, so it never reflows across a narrow box.
-	const [wide, setWide] = useState(false);
 	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-	const whyId = useId();
+	const toolbarRef = useRef<HTMLDivElement>(null);
 	// A decided suggestion leaves the list, so the one after it slides into the same position.
 	const index = Math.min(position, pending.length - 1);
 	const current = pending.at(index);
@@ -99,7 +94,6 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 	};
 	const field = current.label.toLowerCase();
 	const hasWhy = current.reason.evidence.length > 0;
-	const expanded = hasWhy && whyOpen;
 	const anchored = anchor?.isConnected ? anchor : null;
 
 	return (
@@ -110,7 +104,7 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 					anchor={anchored}
 					aria-label={`AI suggestion for ${field}, ${pending.length} left to review`}
 					// ADS overlay elevation without its 1px perimeter: just the overlay's 8px spread, per theme (no token has it alone).
-					className={cn("gap-0 overflow-hidden p-0 shadow-[0px_8px_12px_#1E1F2126] transition-[opacity,translate,width] dark:shadow-[0px_8px_12px_#0104045C]", expanded || wide ? "w-80" : "w-auto")}
+					className="w-auto gap-0 overflow-hidden p-0 shadow-[0px_8px_12px_#1E1F2126] dark:shadow-[0px_8px_12px_#0104045C]"
 					initialFocus={false}
 					positionerClassName="z-[650]"
 					side="bottom"
@@ -118,12 +112,8 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 				>
 					<TooltipProvider>
 						{/* The toolbar sits right under the field it previews, so it never names the field again. */}
-						<div className="flex h-8 items-center gap-1 p-1">
-							{hasWhy ? (
-								<ToolbarButton aria-controls={whyId} aria-expanded={expanded} hint={expanded ? "Hide" : "Why this was suggested"} label={`Why ${field} was suggested`} onClick={() => { if (!expanded) setWide(true); setWhyOpen(!expanded); }}>
-									<LightbulbIcon color="currentColor" label="" size="small" />
-								</ToolbarButton>
-							) : null}
+						<div className="flex h-8 items-center gap-1 p-1" ref={toolbarRef}>
+							{hasWhy ? <CardWhy anchor={toolbarRef} appearance="toolbar" container={null} onOpenChange={setWhyOpen} open={whyOpen} side="bottom" suggestion={current} /> : null}
 							<ToolbarButton hint="Discard" label={`Discard ${field}`} onClick={() => decide(false)}>
 								<CrossIcon color="currentColor" label="" size="small" />
 							</ToolbarButton>
@@ -143,15 +133,6 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 								<ChevronRightIcon color="currentColor" label="" size="small" />
 							</ToolbarButton>
 						</div>
-						<AnimatePresence initial={false} onExitComplete={() => setWide(false)}>
-							{expanded ? (
-								<motion.div animate={{ height: "auto", opacity: 1, transition: SETTLE }} className="overflow-hidden" exit={{ height: 0, opacity: 0, transition: SETTLE }} id={whyId} initial={{ height: 0, opacity: 0 }} key="why">
-									<div className="border-t border-border-disabled">
-										<WhyCard inline suggestion={current} />
-									</div>
-								</motion.div>
-							) : null}
-						</AnimatePresence>
 					</TooltipProvider>
 				</PopoverContent>
 			) : null}

@@ -11,9 +11,9 @@ import { cn } from "@/lib/utils";
 import { WHY_CLOSE_DELAY, WHY_OPEN_DELAY } from "./constants";
 import { WhyCard } from "./why-card";
 
-/** Matches the shared PopoverContent enter/exit: opacity plus a short slide toward the deck it explains. */
+/** Matches the shared PopoverContent enter/exit: opacity plus a short slide toward what it explains. */
 const POPUP_MOTION =
-	"origin-(--transform-origin) transition-[opacity,translate] duration-normal ease-out-practical data-ending-style:duration-fast data-ending-style:ease-in data-starting-style:opacity-0 data-ending-style:opacity-0 data-starting-style:translate-x-2 data-ending-style:translate-x-2 data-[side=right]:data-starting-style:-translate-x-2 data-[side=right]:data-ending-style:-translate-x-2";
+	"origin-(--transform-origin) transition-[opacity,translate] duration-normal ease-out-practical data-ending-style:duration-fast data-ending-style:ease-in data-starting-style:opacity-0 data-ending-style:opacity-0 data-starting-style:translate-x-2 data-ending-style:translate-x-2 data-[side=right]:data-starting-style:-translate-x-2 data-[side=right]:data-ending-style:-translate-x-2 data-[side=bottom]:data-starting-style:translate-x-0 data-[side=bottom]:data-ending-style:translate-x-0 data-[side=bottom]:data-starting-style:-translate-y-2 data-[side=bottom]:data-ending-style:-translate-y-2";
 
 export interface CardWhyProps {
 	suggestion: WorkItemSuggestion;
@@ -23,20 +23,24 @@ export interface CardWhyProps {
 	anchor: RefObject<HTMLElement | null>;
 	/** The preview's overlay layer: the card renders there so it pans and zooms with the canvas and stays inside the frame. */
 	container: HTMLElement | null;
-	/** "line" reads "Why · 2 sources" under the top card's value; "icon" is the list card's lightbulb. */
-	appearance: "line" | "icon";
+	/** "line" reads "Why · 2 sources" under the top card's value; "icon" is the list card's lightbulb; "toolbar" is the
+	 * inline suggestion toolbar's 24px square lightbulb. */
+	appearance: "line" | "icon" | "toolbar";
+	/** Which side of the anchor the reasoning opens on: beside the deck by default, under a toolbar. */
+	side?: "left" | "bottom";
 }
 
 const TRIGGER: Readonly<Record<CardWhyProps["appearance"], string>> = {
 	line: "-mx-1.5 h-6 any-pointer-coarse:min-h-8 gap-1 rounded-md px-1.5 text-xs text-text-subtlest hover:text-text-subtle focus-visible:text-text-subtle data-popup-open:text-text-subtle",
 	icon: "size-7 any-pointer-coarse:size-8 justify-center rounded-full text-icon-subtlest hover:text-icon-subtle focus-visible:text-icon-subtle",
+	toolbar: "size-6 any-pointer-coarse:size-8 justify-center rounded-md text-icon-subtle",
 };
 
 /**
  * The card's quiet "Why" affordance. Hover, keyboard focus or tap opens the reasoning card beside the deck.
  * Escape closes it and keeps focus on the trigger without reopening it; focus has to leave and come back first.
  */
-export function CardWhy({ suggestion, open, onOpenChange, anchor, container, appearance }: Readonly<CardWhyProps>) {
+export function CardWhy({ suggestion, open, onOpenChange, anchor, container, appearance, side = "left" }: Readonly<CardWhyProps>) {
 	const reopenOnFocus = useRef(true);
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const popupRef = useRef<HTMLDivElement>(null);
@@ -85,14 +89,14 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container, app
 			</PopoverPrimitive.Trigger>
 			<PopoverPrimitive.Portal container={container ?? undefined}>
 				<PopoverPrimitive.Positioner
-					align="start"
+					align={side === "bottom" ? "end" : "start"}
 					anchor={anchor}
 					className={cn("pointer-events-auto isolate", container ? "z-40" : "z-[700]")}
 					collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "end" }}
 					collisionBoundary={container ?? "clipping-ancestors"}
 					collisionPadding={8}
-					side="left"
-					sideOffset={8}
+					side={side}
+					sideOffset={side === "bottom" ? 4 : 8}
 				>
 					<PopoverPrimitive.Popup
 						className={`flex max-h-(--available-height) w-72 max-w-(--available-width) flex-col overflow-hidden rounded-xl bg-surface-overlay text-sm text-text outline-hidden ${POPUP_MOTION}`}
@@ -101,7 +105,7 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container, app
 						ref={popupRef}
 						style={{ boxShadow: token("elevation.shadow.overlay") }}
 					>
-						<WhyCard suggestion={suggestion} />
+						<WhyCard compactSources={appearance === "toolbar"} suggestion={suggestion} />
 					</PopoverPrimitive.Popup>
 				</PopoverPrimitive.Positioner>
 			</PopoverPrimitive.Portal>
