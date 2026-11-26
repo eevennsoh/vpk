@@ -295,15 +295,17 @@ test("folding preserves cloud actions, local continuation, expired Delete and po
 			assert.equal(view.getByRole("button", disclosure).getAttribute("aria-expanded"), "true");
 		}
 		await view.click(view.getByRole("button", { name: "More actions for local work" }));
-		assert.equal(view.getAllByRole("menuitem").length, 2);
+		assert.equal(view.getAllByRole("menuitem").length, 3);
 		assert.ok(view.getByRole("menuitem", { name: "Copy prompt" }));
 		await view.click(view.getByRole("menuitem", { name: "Sample agent" }));
 		await view.click(view.getByRole("button", { name: /^local work/u }));
 		await view.click(view.getByRole("menuitem", { name: "Sample agent" }));
+		await view.click(view.getByRole("button", { name: "More actions for local work" }));
+		await view.click(view.getByRole("menuitem", { name: "Dismiss" }));
 		await view.click(view.getByRole("button", { name: "More actions for old work" }));
 		assert.deepEqual(view.getAllByRole("menuitem").map((item) => item.textContent.trim()), ["Delete"]);
 		await view.click(view.getByRole("menuitem", { name: "Delete" }));
-		assert.deepEqual(calls, [["view", "cloud"], ["rename", "cloud"], ["delete", "cloud"], ["continue", "local"], ["continue", "local"], ["delete", "old"]]);
+		assert.deepEqual(calls, [["view", "cloud"], ["rename", "cloud"], ["delete", "cloud"], ["continue", "local"], ["continue", "local"], ["archive", "local"], ["delete", "old"]]);
 		assert.equal(menuChanges.includes(true), true);
 		assert.equal(menuChanges.at(-1), false);
 	} finally { await view.unmount(); }

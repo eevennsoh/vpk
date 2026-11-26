@@ -76,13 +76,14 @@ export function AgentSessionShowcase({ active, className, localItems = AGENT_SES
 function AgentSessionShowcaseContent({ active, className, localItems, onSessionOpen, permission, profiles }: Readonly<{ active: boolean; className?: string; localItems: readonly AgentSessionItem[]; onSessionOpen?: () => void; permission: ButterSessionPermission; profiles: readonly RovoAgentProfile[] }>) {
 	const [size, setSize] = useState<SessionSize>(SESSION_SIZES[0]);
 	const [answeredSessions, setAnsweredSessions] = useState<ReadonlySet<string>>(new Set());
+	const [dismissedLocalSessions, setDismissedLocalSessions] = useState<ReadonlySet<string>>(new Set());
 	const [viewerChatOwner, setViewerChatOwner] = useState<NonNullable<AgentSessionItem["invokedBy"]> | null>(null);
 	const { activeSessionId, chatContextBar, externalThinkingMessageId, isSwitchingSession, openAgentChat } = useJgpAgentChatDemo();
 	const awaitingAnswer = activeSessionId !== null && !answeredSessions.has(activeSessionId)
 		&& CLOUD_SESSIONS.some((item) => item.id === activeSessionId && item.state === "needs-input");
 	const rows = permission === "team"
 		? [{ title: "Cloud (Owner)", items: CLOUD_SESSIONS, role: "owner" as const }, { title: "Cloud (Viewer)", items: CLOUD_SESSIONS, role: "viewer" as const }]
-		: [{ title: "Local", items: withLifecycleStates(localItems), role: permission === "mine" ? "owner" as const : "viewer" as const }, { title: "Cloud", items: CLOUD_SESSIONS, role: permission === "mine" ? "owner" as const : "viewer" as const }];
+		: [{ title: "Local", items: withLifecycleStates(localItems).filter((item) => !dismissedLocalSessions.has(item.id)), role: permission === "mine" ? "owner" as const : "viewer" as const }, { title: "Cloud", items: CLOUD_SESSIONS, role: permission === "mine" ? "owner" as const : "viewer" as const }];
 	return (
 		<>
 		<div className={cn("flex flex-col overflow-auto px-6", className)}>
@@ -98,7 +99,7 @@ function AgentSessionShowcaseContent({ active, className, localItems, onSessionO
 							{row.items.map((item) => (
 								// Width, not scale: the row's truncation is what this toggle demonstrates,
 								// so the frame resizes in place and the content reflows with it.
-								<AgentSession allowViewerView={permission === "team" && row.role === "viewer"} className={cn("relative max-w-full rounded-lg border border-border bg-surface transition-[width] duration-medium ease-in-out", size.width)} density={size.density} items={[permission === "team" ? { ...item, state: answeredSessions.has(item.id) ? "running" : item.state, role: row.role } : withPermission(answeredSessions.has(item.id) ? { ...item, state: "running" } : item, permission)]} key={item.state} lifecycleLabelPlacement={size.value === "medium" ? "metadata" : "trailing"} moreMenuVariant={row.role === "owner" ? "owner" : "default"} onView={row.title.startsWith("Cloud") ? (session) => { onSessionOpen?.(); setViewerChatOwner(permission === "team" && row.role === "viewer" ? session.invokedBy ?? { name: "" } : null); void openAgentChat(agentSessionDemoScenario(session, profiles, item.state === "needs-input")); } : undefined} selectedItemId={null} showLifecycleLabel={size.showLifecycleLabel} showWorkingSpinner variant="large" />
+								<AgentSession allowViewerView={permission === "team" && row.role === "viewer"} className={cn("relative max-w-full rounded-lg border border-border bg-surface transition-[width] duration-medium ease-in-out", size.width)} density={size.density} items={[permission === "team" ? { ...item, state: answeredSessions.has(item.id) ? "running" : item.state, role: row.role } : withPermission(answeredSessions.has(item.id) ? { ...item, state: "running" } : item, permission)]} key={item.state} lifecycleLabelPlacement={size.value === "medium" ? "metadata" : "trailing"} moreMenuVariant={row.role === "owner" ? "owner" : "default"} onToggleVisibility={row.title === "Local" ? (session) => setDismissedLocalSessions((current) => new Set(current).add(session.id)) : undefined} onView={row.title.startsWith("Cloud") ? (session) => { onSessionOpen?.(); setViewerChatOwner(permission === "team" && row.role === "viewer" ? session.invokedBy ?? { name: "" } : null); void openAgentChat(agentSessionDemoScenario(session, profiles, item.state === "needs-input")); } : undefined} selectedItemId={null} showLifecycleLabel={size.showLifecycleLabel} showWorkingSpinner variant="large" />
 							))}
 						</div>
 					</section>

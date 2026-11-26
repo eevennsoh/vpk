@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useId, useRef, type ReactElement, type RefObject } from "react";
+import ArchiveBoxIcon from "@atlaskit/icon/core/archive-box";
 
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { CopyPromptButton } from "@/components/ui-custom/copy-prompt-button";
+import { IconTile } from "@/components/ui/icon-tile";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -26,7 +29,7 @@ export function AgentSessionContinueMenu({
 	positionerClassName,
 	trigger,
 }: Readonly<{
-	actions: Pick<AgentSessionMoreMenuActions, "onContinueInAgent" | "onCopyPrompt">;
+	actions: Pick<AgentSessionMoreMenuActions, "onContinueInAgent" | "onCopyPrompt" | "onDismiss">;
 	copied: boolean;
 	item: AgentSessionItem;
 	onOpenChange: (open: boolean) => void;
@@ -129,6 +132,10 @@ export function AgentSessionContinueMenu({
 						selected={copied}
 					/>
 				</DropdownMenuGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuItem elemBefore={<IconTile aria-hidden as="span" className="text-icon-subtle" icon={<ArchiveBoxIcon label="" size="medium" />} iconSize="medium" label="" size="small" variant="transparent" />} onSelect={() => actions.onDismiss?.()}>
+					Dismiss
+				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

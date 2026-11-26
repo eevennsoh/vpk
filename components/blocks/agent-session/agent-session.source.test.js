@@ -556,7 +556,7 @@ test("the prototype menu keeps host-appropriate actions enabled without callback
 	assert.match(SESSION_MORE_MENU_SOURCE, /<DropdownMenu onOpenChange=\{onOpenChange\} open=\{open\}>/u);
 	assert.match(CONTINUE_MENU_SOURCE, /<DropdownMenuLabel>Continue in<\/DropdownMenuLabel>/u);
 	assert.doesNotMatch(SESSION_MORE_MENU_SOURCE, /Continue in|TerminalIcon/u);
-	assert.doesNotMatch(CONTINUE_MENU_SOURCE, /onDismiss|dismissLabel/u);
+	assert.match(CONTINUE_MENU_SOURCE, /<DropdownMenuSeparator \/>[\s\S]*onDismiss\?\.\(\)[\s\S]*Dismiss/u);
 	assert.doesNotMatch(CONTINUE_MENU_SOURCE, /disabled=\{actions\./u);
 	assert.match(SESSION_MORE_MENU_SOURCE, /<EditIcon label="" size="small" \/>[\s\S]*Rename/u);
 	assert.match(SESSION_MORE_MENU_SOURCE, /<DeleteIcon label="" size="small" \/>[\s\S]*variant="destructive"[\s\S]*Delete/u);
