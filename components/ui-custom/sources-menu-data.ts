@@ -102,6 +102,25 @@ export function getSourcePreviewProduct(href: string): SourcePreviewProduct {
 	return "other";
 }
 
+export function getSourcePreviewApps(pages: readonly SourcePreviewPage[]): TwgToolSource[] {
+	const apps = new Map<string, TwgToolSource>();
+	for (const page of pages) {
+		const product = getSourcePreviewProduct(page.href);
+		const source: TwgToolSource | undefined = page.source ?? (
+			product === "jira" || product === "confluence"
+				? { id: product, label: product === "jira" ? "Jira" : "Confluence", provider: product }
+				: product === "github" || product === "slack"
+					? { id: product, label: product === "github" ? "GitHub" : "Slack", provider: "twg", name: product }
+					: undefined
+		);
+		if (source) {
+			const key = source.name ?? (source.provider === "twg" ? source.id : source.provider);
+			apps.set(key, source);
+		}
+	}
+	return [...apps.values()];
+}
+
 /** Matches Smart Link Confluence pages: IconTile `blue` (information tone). */
 export function getSourcePreviewIconTileVariant(
 	href: string,

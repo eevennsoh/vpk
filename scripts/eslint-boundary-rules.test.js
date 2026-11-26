@@ -26,6 +26,15 @@ const importFindings = (source, filePath) => ruleFindings(source, filePath, ["no
 const syntaxFindings = (source, filePath = "components/projects/demo/lint-contract-fixture.tsx") =>
 	ruleFindings(source, filePath, ["no-restricted-syntax"]);
 
+test("button icon sizing does not reach nested logos", async () => {
+	const findings = await ruleFindings([
+		"const a = \"[&_svg:not([class*='size-'])]:size-3!\";",
+		"const b = \"[&>svg]:size-3\";",
+		"const c = \"[&_[data-slot=icon]]:size-3\";",
+	].join("\n"), "components/ui/button.tsx", ["vpk-button/no-descendant-svg-size"]);
+	assert.deepEqual(findings.map(({ line }) => line), [1]);
+});
+
 test("search inputs use the shared subtlest magnifier paths", async () => {
 	const findings = await syntaxFindings([
 		"const a = <InputGroupAddon><SearchIcon /></InputGroupAddon>;",

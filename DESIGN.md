@@ -372,6 +372,10 @@ repo's semantic Tailwind classes whenever a class exists.
   Use the icon as a direct child of a flex row with `items-center` or give its
   wrapper `inline-flex items-center`. Why: a plain inline wrapper adds text
   baseline spacing that can make the glyph sit high even in a centered row.
+  Button icon sizing must not resize nested app-stack logos; verify icon, label,
+  and logo centerlines in the rendered control. Why: app logos retain their own
+  size so they remain centered and recognizable.
+  <!-- 2026-11-26: "the logo again is misaligned and not centered" -->
   <!-- 2026-11-13: "why do i keep getting this icon and label is misaligned vertically issue" -->
   <!-- 2026-11-22: "it makes the icon an label alignment off all the time" -->
 - **Board-column scrollbars:** Hide scrollbar chrome in scrollable board columns,

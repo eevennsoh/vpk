@@ -281,9 +281,31 @@ function classStringSelector(pattern) {
 	return `Literal[value=/${pattern}/], TemplateElement[value.raw=/${pattern}/]`;
 }
 
+const buttonIconSizing = {
+	rules: {
+		"no-descendant-svg-size": {
+			meta: { type: "problem", schema: [], messages: { nested: "Scope button icon sizing to icon slots or direct children so nested app logos keep their own size." } },
+			create(context) {
+				const check = (node, value) => {
+					if (typeof value === "string" && /\[&_svg\S*\]:size-/u.test(value)) context.report({ node, messageId: "nested" });
+				};
+				return {
+					Literal(node) { check(node, node.value); },
+					TemplateElement(node) { check(node, node.value.raw); },
+				};
+			},
+		},
+	},
+};
+
 const eslintConfig = defineConfig([
 	...nextVitals,
 	...nextTs,
+	{
+		files: ["components/ui/button.tsx"],
+		plugins: { "vpk-button": buttonIconSizing },
+		rules: { "vpk-button/no-descendant-svg-size": "error" },
+	},
 	{
 		files: ["app/**/*.{js,jsx,ts,tsx}", "components/**/*.{js,jsx,ts,tsx}"],
 		plugins: { shadcn },

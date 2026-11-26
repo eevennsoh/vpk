@@ -11,11 +11,8 @@ test("preview-menu demo reuses the shared SourcesMenu owner", () => {
 		/import \{\s*SOURCE_PREVIEW_PAGES,\s*SourcesMenu,\s*\} from "@\/components\/ui-custom\/sources-menu";/u,
 	);
 	assert.match(DEMO_SOURCE, /<SourcesMenu/u);
-	assert.match(DEMO_SOURCE, /pages=\{SOURCE_PREVIEW_PAGES\}/u);
-	assert.match(
-		DEMO_SOURCE,
-		/<p className="font-medium">Used \{SOURCE_PREVIEW_PAGES\.length\} sources<\/p>/u,
-	);
+	assert.match(DEMO_SOURCE, /pages=\{DEMO_SOURCES\}/u);
+	assert.doesNotMatch(DEMO_SOURCE, /trigger=/u);
 	assert.doesNotMatch(DEMO_SOURCE, /function SourcePreviewCard/u);
 	assert.doesNotMatch(DEMO_SOURCE, /Open preview modal/u);
 });

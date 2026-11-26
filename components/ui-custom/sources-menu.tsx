@@ -7,6 +7,7 @@ import GrowDiagonalIcon from "@atlaskit/icon/core/grow-diagonal";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PageIcon from "@atlaskit/icon/core/page";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import TeamworkGraphIcon from "@atlaskit/icon-lab/core/teamwork-graph";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -33,10 +34,11 @@ import { SonnerToast, Toaster } from "@/components/ui/sonner";
 import {
 	formatSourcePreviewDate,
 	getSourcePreviewIconTileVariant,
+	getSourcePreviewApps,
 	getSourcePreviewProduct,
 	type SourcePreviewPage,
 } from "@/components/ui-custom/sources-menu-data";
-import { TwgToolSourceIcon } from "@/components/ui-custom/twg-appstack";
+import { TWGAppstack, TwgToolSourceIcon } from "@/components/ui-custom/twg-appstack";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { cn } from "@/lib/utils";
 
@@ -134,7 +136,8 @@ function SourcePreviewActions({
 				<DropdownMenuContent align="end" sideOffset={6}>
 					<DropdownMenuGroup>
 						<DropdownMenuItem
-							elemBefore={<Icon render={<LinkIcon label="" size="small" />} />}
+							elemBefore={<Icon render={<LinkIcon label="" />} />}
+							elemBeforeSize={16}
 							onSelect={() => {
 								void copySourceLink(source.href, toasterId);
 							}}
@@ -142,7 +145,8 @@ function SourcePreviewActions({
 							Copy link
 						</DropdownMenuItem>
 						<DropdownMenuItem
-							elemBefore={<Icon render={<GrowDiagonalIcon label="" size="small" />} />}
+							elemBefore={<Icon render={<GrowDiagonalIcon label="" />} />}
+							elemBeforeSize={16}
 							onSelect={() => onPreview(source)}
 						>
 							Open preview modal
@@ -272,6 +276,22 @@ function SourcePreviewCard({
 	);
 }
 
+function SourceSimpleRow({ source }: Readonly<{ source: SourcePreviewPage }>) {
+	return (
+		<a
+			className={cn(dropdownStyles.itemBase, "gap-3 px-2 text-text no-underline hover:bg-bg-neutral-subtle-hovered hover:no-underline focus-visible:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring")}
+			href={source.href}
+			rel="noreferrer"
+			target="_blank"
+		>
+			<span className="inline-flex size-6 shrink-0 items-center justify-center">
+				<SourcePreviewLeadingTile source={source} />
+			</span>
+			<span className="min-w-0 truncate">{source.title}</span>
+		</a>
+	);
+}
+
 function SourcePreviewDialog({
 	source,
 	onOpenChange,
@@ -318,12 +338,14 @@ export function SourcesMenu({
 	trigger,
 	toasterId,
 	align = "start",
+	variant = "verbose",
 }: Readonly<{
 	pages: readonly SourcePreviewPage[];
-	children: ReactNode;
-	trigger: ReactElement;
+	children?: ReactNode;
+	trigger?: ReactElement;
 	toasterId?: string;
 	align?: "start" | "center" | "end";
+	variant?: "simple" | "verbose";
 }>) {
 	const generatedToasterId = useId();
 	const resolvedToasterId = toasterId ?? generatedToasterId;
@@ -338,16 +360,24 @@ export function SourcesMenu({
 	return (
 		<>
 			<Popover onOpenChange={setMenuOpen} open={menuOpen}>
-				<PopoverTrigger render={trigger}>
-					{children}
+				<PopoverTrigger render={trigger ?? <Button className="h-6 px-1 text-xs font-normal" type="button" variant="ghost" />}>
+					{trigger ? children : (
+						<>
+							<Icon aria-hidden className="size-3 [&_svg]:size-3!" render={<TeamworkGraphIcon label="" size="small" />} />
+							<span>Context</span>
+							<TWGAppstack animated={false} aria-hidden iconSize="xxsmall" sources={getSourcePreviewApps(pages)} />
+						</>
+					)}
 				</PopoverTrigger>
 				<PopoverContent
 					align={align}
-					className={cn("w-[min(26rem,var(--available-width,26rem))] max-h-[min(22rem,var(--available-height,22rem))] gap-0 overflow-x-hidden overflow-y-auto border-0 shadow-2xl", dropdownStyles.surface, dropdownStyles.padding)}
+					className={cn(variant === "simple" ? "w-[min(20rem,var(--available-width,20rem))]" : "w-[min(26rem,var(--available-width,26rem))]", "max-h-[min(22rem,var(--available-height,22rem))] gap-0 overflow-x-hidden overflow-y-auto border-0 shadow-2xl", dropdownStyles.surface, dropdownStyles.padding)}
 					initialFocus={(openType) => openType === "keyboard"}
 				>
 					<PopoverTitle className="sr-only">Source previews</PopoverTitle>
-					{pages.map((previewItem) => (
+					{pages.map((previewItem) => variant === "simple" ? (
+						<SourceSimpleRow key={previewItem.id} source={previewItem} />
+					) : (
 						<SourcePreviewCard
 							key={previewItem.id}
 							onPreview={openPreview}
@@ -365,7 +395,7 @@ export function SourcesMenu({
 				}}
 				source={previewSource}
 			/>
-			<Toaster id={resolvedToasterId} />
+			{variant === "verbose" ? <Toaster id={resolvedToasterId} /> : null}
 		</>
 	);
 }

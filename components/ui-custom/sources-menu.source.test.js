@@ -46,7 +46,7 @@ test("preview-menu metadata truncates the owner with CSS ellipsis, not a hard cl
 test("preview-menu is a shared popover owner, not a docs-only demo", () => {
 	assert.match(MENU_SOURCE, /export function SourcesMenu/u);
 	assert.match(MENU_SOURCE, /<Popover onOpenChange=\{setMenuOpen\} open=\{menuOpen\}>/u);
-	assert.match(MENU_SOURCE, /<PopoverTrigger render=\{trigger\}>/u);
+	assert.match(MENU_SOURCE, /<PopoverTrigger render=\{trigger \?\?/u);
 	assert.match(MENU_SOURCE, /<PopoverTitle className="sr-only">Source previews<\/PopoverTitle>/u);
 	assert.match(MENU_SOURCE, /Open preview modal/u);
 	assert.match(MENU_SOURCE, /Copy link/u);
@@ -55,6 +55,14 @@ test("preview-menu is a shared popover owner, not a docs-only demo", () => {
 		/max-h-\[min\(22rem,var\(--available-height,22rem\)\)\][\s\S]*overflow-y-auto/u,
 	);
 	assert.doesNotMatch(MENU_SOURCE, /gap-0 overflow-visible border-0 p-1 shadow-2xl/u);
+});
+
+test("app stack represents distinct source apps", async () => {
+	const { code } = await esbuild.transform(readFileSync(DATA_PATH, "utf8"), { format: "cjs", loader: "ts" });
+	const { getSourcePreviewApps, SOURCE_PREVIEW_PAGES } = loadCjsModuleFromText(code, DATA_PATH);
+	assert.deepEqual(getSourcePreviewApps(SOURCE_PREVIEW_PAGES).map((app) => app.id), ["confluence"]);
+	const slack = { ...SOURCE_PREVIEW_PAGES[0], href: "https://atlassian.slack.com/archives/example" };
+	assert.deepEqual(getSourcePreviewApps([...SOURCE_PREVIEW_PAGES, slack, slack]).map((app) => app.id), ["confluence", "slack"]);
 });
 
 test("preview-menu leading tiles follow an explicit source, then the href product", () => {
