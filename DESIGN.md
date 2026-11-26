@@ -275,8 +275,8 @@ step obvious without adding explanatory chrome.
   (classification) beside it, or a byline under it. Art and website surfaces
   can opt in as part of their own identity, as can motion-led stages (see
   [Signature surfaces](#signature-surfaces)). Lint:
-  `vpk-tokens/no-uppercase-tracking` (product, blocks, `ui`, `ui-custom`;
-  finale stages excluded).
+  `vpk-tokens/no-uppercase-tracking` (`.ts` and `.tsx` in projects, blocks,
+  `ui`, `ui-custom`, and screen-assistant; finale stages excluded).
 - **Actions:** Buttons and calls to action use imperative verbs such as "Save",
   "Delete", "Connect", or "Create agent". Avoid "Submit", "OK", "Click here",
   and generic action labels that do not describe the result.

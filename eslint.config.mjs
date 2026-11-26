@@ -43,7 +43,11 @@ const overlaySurfaceContract = {
 const menuRowSeparatorContract = {
 	pattern: "^DropdownMenu(Item|Label|Group|CheckboxItem|RadioItem|SubTrigger)$",
 	allow: ["*"],
-	deny: ["border-t", "border-b", "border-y"],
+	deny: [
+		"border-t", "border-b", "border-y",
+		"border-t-2", "border-b-2", "border-y-2", "border-t-4", "border-b-4", "border-y-4", "border-t-8", "border-b-8", "border-y-8",
+		"border-t-[*", "border-b-[*", "border-y-[*",
+	],
 	message: {
 		shape: "Separate menu sections with DropdownMenuSeparator instead of a row border (DESIGN.md › Menu and picker separators).",
 	},
@@ -269,10 +273,10 @@ const fractionalBorderPattern = "(^|[\\s:])border(-[a-z]{1,2})?-\\[\\d*\\.\\d+px
 // DESIGN.md › Typography: type sizes come from the scale, never viewport-scaled.
 const viewportTypePattern = "(^|[\\s:])text-\\[[^\\]]*(vw|vh|vmin|vmax|clamp\\()";
 // DESIGN.md › No all caps or eyebrows: product UI does not uppercase or letter-space text.
-const uppercaseTrackingPattern = "(^|[\\s:])(uppercase|tracking-(wide|wider|widest|\\[\\d))($|\\s)";
+const uppercaseTrackingPattern = "(^|[\\s:])((uppercase|tracking-(wide|wider|widest))($|\\s)|tracking-\\[\\d)";
 // Art, website, and motion-led stages may opt into expressive type and geometry (DESIGN.md › Signature surfaces).
-const productTsxFiles = ["components/projects/**/*.tsx", "components/blocks/**/*.tsx", "components/ui/**/*.tsx", "components/ui-custom/**/*.tsx"];
-const signatureSurfaceIgnores = ["**/finale/**", "**/*.test.tsx"];
+const productSourceFiles = ["components/projects/**/*.{ts,tsx}", "components/blocks/**/*.{ts,tsx}", "components/ui/**/*.{ts,tsx}", "components/ui-custom/**/*.{ts,tsx}", "components/screen-assistant/**/*.{ts,tsx}"];
+const signatureSurfaceIgnores = ["**/finale/**", "**/*.test.{ts,tsx}"];
 function classStringSelector(pattern) {
 	return `Literal[value=/${pattern}/], TemplateElement[value.raw=/${pattern}/]`;
 }
@@ -338,6 +342,8 @@ const eslintConfig = defineConfig([
 						],
 					},
 					badgeRestyleContract,
+					overlaySurfaceContract,
+					menuRowSeparatorContract,
 				],
 			}],
 		},
@@ -358,6 +364,8 @@ const eslintConfig = defineConfig([
 						],
 					},
 					badgeRestyleContract,
+					overlaySurfaceContract,
+					menuRowSeparatorContract,
 				],
 			}],
 		},
@@ -527,7 +535,7 @@ const eslintConfig = defineConfig([
 		},
 	},
 	{
-		files: productTsxFiles,
+		files: productSourceFiles,
 		ignores: signatureSurfaceIgnores,
 		plugins: { "vpk-tokens": vpkTokens },
 		rules: {

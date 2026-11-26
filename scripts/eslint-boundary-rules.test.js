@@ -361,6 +361,7 @@ export const Geometry = () => (
 		<div className="border-[1.5px]" />
 		<p className="text-[4vw] md:text-[clamp(1rem,2vw,2rem)]" />
 		<p className="uppercase tracking-widest" />
+		<p className="tracking-[0.1em]" />
 		<div className="rounded-lg rounded-tile rounded-[inherit] border border-2 text-[11px] tracking-tight normal-case" />
 	</>
 );
@@ -370,7 +371,13 @@ export const Geometry = () => (
 	assert.deepEqual(byRule("vpk-tokens/no-arbitrary-radius"), [4]);
 	assert.deepEqual(byRule("vpk-tokens/no-fractional-border"), [5]);
 	assert.deepEqual(byRule("vpk-tokens/no-viewport-type"), [6]);
-	assert.deepEqual(byRule("vpk-tokens/no-uppercase-tracking"), [7]);
+	assert.deepEqual(byRule("vpk-tokens/no-uppercase-tracking"), [7, 8]);
+	assert.deepEqual(byRule("vpk-tokens/no-arbitrary-radius").length, 1, "rounded-[inherit] and scale steps pass");
+	assert.deepEqual(
+		(await ruleFindings("export const ROW = \"uppercase rounded-[10px]\";\n", "components/blocks/demo/classes.ts", rules)).map(({ ruleId }) => ruleId).sort(),
+		["vpk-tokens/no-arbitrary-radius", "vpk-tokens/no-uppercase-tracking"],
+		"class constants in .ts files are checked",
+	);
 	assert.deepEqual(await ruleFindings(source, "components/projects/jira-team-eu26-end/finale/lint-contract-fixture.tsx", rules), [], "motion-led stages opt out");
 	assert.deepEqual(await ruleFindings(source, "components/arts/demo/lint-contract-fixture.tsx", rules), [], "art surfaces opt out");
 });
@@ -385,16 +392,22 @@ export const Menus = () => (
 		<DropdownMenuContent className="shadow-2xl">
 			<DropdownMenuLabel className="border-b border-border" />
 			<DropdownMenuItem className="border-t" />
+			<DropdownMenuItem className="md:border-b-2 border-t-[1px]" />
 			<DropdownMenuSeparator />
 			<DropdownMenuItem className="gap-2" />
 		</DropdownMenuContent>
 	</>
 );
 `, "components/blocks/demo/lint-contract-fixture.tsx", ["shadcn/no-restyle"]);
-	assert.deepEqual([...new Set(findings.map(({ line }) => line))], [6, 8, 9]);
+	assert.deepEqual([...new Set(findings.map(({ line }) => line))], [6, 8, 9, 10]);
 	assert.ok(findings.every(({ severity }) => severity === 2));
 	assert.match(findings[0].message, /shadow-2xl/u);
 	assert.match(findings.at(-1).message, /DropdownMenuSeparator/u);
+	const pilotOverride = await ruleFindings(`
+import { TooltipContent } from "@/components/ui/tooltip";
+export const Tip = () => <TooltipContent className="shadow-xl" />;
+`, "components/blocks/agent-session-column/agent-session-column-header.tsx", ["shadcn/no-restyle"]);
+	assert.equal(pilotOverride.length, 1, "per-file pilot overrides keep the repo-wide overlay contract");
 });
 
 test("primitives may compose dynamic classes and art scenes may pass literal colors", async () => {

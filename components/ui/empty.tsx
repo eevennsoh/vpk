@@ -16,10 +16,11 @@ const emptyVariants = cva("flex min-w-0 flex-1", {
 			// Side-by-side: media on the leading edge, left-aligned text/actions.
 			// Container-query driven: stays a wrapping row, and when the container
 			// runs out of space the actions block (basis-full) drops below the
-			// text as a single unit. Becomes a centered stack on very narrow
-			// containers (< @sm).
+			// text as a single unit. On very narrow containers (< @sm) the slots
+			// take full rows and center. A container query never matches the
+			// container itself, so the slots query this root, not the root.
 			horizontal:
-				"@container flex-row flex-wrap items-center justify-start gap-x-5 gap-y-3 text-left @max-sm:flex-col @max-sm:items-center @max-sm:text-center @max-sm:text-balance",
+				"@container flex-row flex-wrap items-center justify-start gap-x-5 gap-y-3 text-left",
 		},
 	},
 	defaultVariants: {
@@ -77,7 +78,7 @@ function EmptyHeader({ className, ...props }: React.ComponentProps<"div">) {
 				// Take the remaining row width so the actions sit on the far edge;
 				// recenters on very narrow containers where the layout stacks.
 				orientation === "horizontal" &&
-					"min-w-0 flex-1 items-start text-left @max-sm:flex-none @max-sm:items-center @max-sm:text-center",
+					"min-w-0 flex-1 items-start text-left @max-sm:flex-none @max-sm:basis-full @max-sm:items-center @max-sm:text-center @max-sm:text-balance",
 				className
 			)}
 			{...props}
@@ -103,7 +104,7 @@ function EmptyBody({ className, ...props }: React.ComponentProps<"div">) {
 		<div
 			data-slot="empty-body"
 			className={cn(
-				"flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-5 gap-y-3 @max-sm:flex-col @max-sm:items-center",
+				"flex min-w-0 flex-1 flex-row flex-wrap items-center gap-x-5 gap-y-3 @max-sm:basis-full @max-sm:flex-col @max-sm:items-center",
 				className
 			)}
 			{...props}
@@ -112,7 +113,7 @@ function EmptyBody({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 const emptyMediaVariants = cva(
-	"mb-1 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0",
+	"mb-1 flex shrink-0 items-center justify-center @max-sm:mx-auto [&_svg]:pointer-events-none [&_svg]:shrink-0",
 	{
 		variants: {
 			variant: {
