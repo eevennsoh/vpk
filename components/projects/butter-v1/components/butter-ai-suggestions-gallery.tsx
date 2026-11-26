@@ -48,6 +48,7 @@ export function ButterAiSuggestionsGallery({ view, open, onClose }: Readonly<{ v
 			</div>
 		);
 	}
-	// Inline starts as an exact copy of Global (its own instance, so each tab replays from the start).
-	return <ButterGalleryWorkItem key={view} open={open} onClose={onClose} showAiSuggestions />;
+	// Global reviews in the floating panel; Inline shows the first suggestion straight away above the details. Each tab
+	// is its own instance, so switching replays it from the start.
+	return <ButterGalleryWorkItem aiSuggestionSurface={view === "inline" ? "inline" : "floating"} key={view} open={open} onClose={onClose} showAiSuggestions />;
 }
