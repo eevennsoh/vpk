@@ -54,6 +54,8 @@ export const FADE_BOTTOM = 56;
 export const FOOTER_HEIGHT = 56;
 export const CHROME_HEIGHT = 44 + FOOTER_HEIGHT;
 export const LIST_HEADER_TOP_INSET = 8;
+/** The list's top fade once it has scrolled (3rem); a card brought to the top stops just below it, fully legible. */
+export const LIST_TOP_FADE = 48;
 /** Space between list cards. */
 export const LIST_GAP = 10;
 

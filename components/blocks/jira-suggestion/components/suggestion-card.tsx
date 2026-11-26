@@ -235,9 +235,12 @@ export function SuggestionCard({
 					CARD_PAPER,
 					// Rows only take their elevation once the morph settles, so ease it (and a sheet's inset edge) in rather than snap.
 					floating ? "dark:bg-surface-overlay dark:ring-0" : null,
-					"transition-shadow duration-slower ease-in-out",
-					role === "row" ? "group/suggestion-card" : null,
-					previewing ? "bg-surface-overlay-hovered dark:bg-surface-overlay-hovered" : null,
+					"transition-[box-shadow,background-color] duration-slower ease-in-out",
+					// List rows are raised elevation: the raised surface and shadow, and its hovered surface while the field is
+					// previewed or the card's reasoning is open (held, so an open card stays marked as the one being read).
+					role === "row" ? "group/suggestion-card bg-surface-raised dark:bg-surface-raised dark:ring-0" : null,
+					role === "row" && (previewing || whyOpen) ? "bg-surface-raised-hovered dark:bg-surface-raised-hovered" : null,
+					role !== "row" && previewing ? "bg-surface-overlay-hovered dark:bg-surface-overlay-hovered" : null,
 					parked || !elevated ? "shadow-none" : floating || role === "row" || sheet ? "shadow-sm" : null,
 					floatingSheetEdge,
 					// The paper clips its face, so while its size morphs nothing inside can hang past its rounded edge.

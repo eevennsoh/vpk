@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 import { CardDeck } from "./card-deck";
 import { CaughtUp } from "./caught-up";
-import { CONTROLS_IN, FADE, FADE_OUT, SETTLE } from "./constants";
+import { CONTROLS_IN, FADE, FADE_OUT, SETTLE, LIST_TOP_FADE } from "./constants";
 import { DeckControls } from "./deck-controls";
 import { GhostCard } from "./ghost-card";
 import { useArmed } from "./use-armed";
@@ -45,8 +45,6 @@ export interface PanelBodyProps {
 }
 
 const SWAP = { opacity: 1, transition: FADE };
-/** Room left above a row brought to the top for its reasoning, so its edge is not flush with the list's top fade. */
-const WHY_SCROLL_INSET = 8;
 const SWAP_OUT = { opacity: 0, transition: FADE_OUT };
 
 /**
@@ -78,7 +76,7 @@ export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, 
 		const toTop = () => {
 			const row = port.querySelector<HTMLElement>(`[data-suggestion-field="${whyId}"]`);
 			if (!row) return;
-			port.scrollTo({ top: port.scrollTop + row.getBoundingClientRect().top - port.getBoundingClientRect().top - WHY_SCROLL_INSET, behavior: "smooth" });
+			port.scrollTo({ top: port.scrollTop + row.getBoundingClientRect().top - port.getBoundingClientRect().top - LIST_TOP_FADE, behavior: "smooth" });
 		};
 		const frame = requestAnimationFrame(toTop);
 		const settled = window.setTimeout(toTop, SETTLE.duration * 1000 + 50);

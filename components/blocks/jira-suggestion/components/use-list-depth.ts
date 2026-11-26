@@ -6,7 +6,7 @@ import { animate, useMotionValue, useReducedMotion, useScroll } from "motion/rea
 import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { depthLift, depthProgress, depthScale } from "@/components/visual/scrolling/stack-layout";
 
-import { DEPTH_IN, DEPTH_LIFT, DEPTH_MIN_SCALE, DEPTH_ZONE, FADE_BOTTOM, INSTANT } from "./constants";
+import { DEPTH_IN, DEPTH_LIFT, DEPTH_MIN_SCALE, DEPTH_ZONE, FADE_BOTTOM, INSTANT, LIST_TOP_FADE } from "./constants";
 import { styleOf } from "./dom-style";
 
 interface Slot {
@@ -25,7 +25,7 @@ function paintScrollMask(style: CSSStyleDeclaration, fadeTop: boolean, bottomFad
 	}
 	const { maskImage, maskPosition, maskRepeat, maskSize } = fadeTop ? bottomFade > 0 ? bothMasks : topMask : bottomMask;
 	Object.assign(style, { maskImage, maskPosition, maskRepeat, maskSize });
-	style.setProperty("--scroll-mask-top-fade-size", "3rem");
+	style.setProperty("--scroll-mask-top-fade-size", `${LIST_TOP_FADE}px`);
 	style.setProperty("--scroll-mask-fade-size", `${bottomFade}px`);
 }
 
