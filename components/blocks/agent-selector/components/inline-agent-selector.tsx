@@ -122,11 +122,11 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 					{renderAgentFeedback?.(agent, avatar) ?? <>
 						<motion.span animate={{ opacity: 1, scale: 1, transition: RECOMMENDATION_AVATAR_IN }} aria-hidden className="grid size-6 shrink-0 place-items-center" initial={reveal ? { opacity: 0, scale: 0.4 } : false}>{avatar}</motion.span>
 						{reveal ? (
-							// An AI pick, so it arrives with the same reveal an accepted suggestion gets; "(Recommended)" keeps its disabled tone.
-							<span className="menu-row-title min-w-0 flex-1 [&_[aria-hidden]>span:last-child]:text-text-disabled">
+							// An AI pick, so it arrives with the same reveal an accepted suggestion gets; "(Recommended)" keeps its subtlest tone.
+							<span className="menu-row-title min-w-0 flex-1 [&_[aria-hidden]>span:last-child]:text-text-subtlest">
 								<SuggestionRainbowText text={`${agent.name} (Recommended)`} truncate />
 							</span>
-						) : <span className="menu-row-title min-w-0 flex-1 truncate">{agent.name}{agent.id === recommendedAgentId ? <span className="text-text-disabled"> (Recommended)</span> : null}</span>}
+						) : <span className="menu-row-title min-w-0 flex-1 truncate">{agent.name}{agent.id === recommendedAgentId ? <span className="text-text-subtlest"> (Recommended)</span> : null}</span>}
 					</>}
 					{disabled && disabledLabel ? <span className="shrink-0 text-xs text-text-subtlest">{disabledLabel}</span> : null}
 				</button>;
