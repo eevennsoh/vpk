@@ -110,7 +110,7 @@ function ListRow({ className, ...props }: Readonly<ListRowProps>) {
 			// The hover highlight is applied per-cell (see List.Cell) so the
 			// rounded outer corners can clip it; the row itself stays transparent.
 			className={cn(
-				"group/row h-14 border-disabled hover:bg-transparent",
+				"group/row h-14 hover:bg-transparent",
 				className,
 			)}
 			{...props}

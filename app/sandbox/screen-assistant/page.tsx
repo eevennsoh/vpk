@@ -35,7 +35,7 @@ export default function ScreenAssistantSandboxPage() {
 					</p>
 				</header>
 
-				<section className="flex flex-col gap-3 rounded-xl bg-surface-raised p-5 shadow-raised">
+				<section className="flex flex-col gap-3 rounded-xl bg-surface-raised p-5 shadow-sm">
 					<h2 className="text-sm font-semibold text-text">Pointable targets</h2>
 					<p className="text-xs text-text-subtle">
 						Each button is tagged with <code>{SCREEN_ASSISTANT_TARGET_ATTR}</code> so the
@@ -55,7 +55,7 @@ export default function ScreenAssistantSandboxPage() {
 					</div>
 				</section>
 
-				<section className="rounded-xl bg-surface-raised p-5 shadow-raised">
+				<section className="rounded-xl bg-surface-raised p-5 shadow-sm">
 					<h2 className="mb-2 text-sm font-semibold text-text">How to use</h2>
 					<ul className="list-disc pl-5 text-xs text-text-subtle">
 						<li>Move your mouse — the AI cursor follows once activated.</li>

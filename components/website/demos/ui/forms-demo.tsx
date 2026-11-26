@@ -58,7 +58,7 @@ function showSubmittedValuesToast(value: unknown) {
 				dismissible
 				onDismiss={() => toast.dismiss(id)}
 				description={
-					<pre className="bg-code text-code-foreground w-[320px] overflow-x-auto rounded-md p-4">
+					<pre className="bg-bg-neutral text-text w-[320px] overflow-x-auto rounded-md p-4">
 						<code>{JSON.stringify(value, null, 2)}</code>
 					</pre>
 				}

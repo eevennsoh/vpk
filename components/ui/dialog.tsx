@@ -76,7 +76,7 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "bg-popover shadow-xl grid max-w-[calc(100%-2rem)] gap-6 rounded-xl p-6 text-sm fixed top-1/2 left-1/2 z-[200] w-full -translate-x-1/2 -translate-y-1/2 outline-none origin-center transition-[opacity,scale] duration-slow ease-in-out motion-reduce:transition-none data-ending-style:duration-medium data-ending-style:ease-in data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
+          "bg-popover shadow-2xl grid max-w-[calc(100%-2rem)] gap-6 rounded-xl p-6 text-sm fixed top-1/2 left-1/2 z-[200] w-full -translate-x-1/2 -translate-y-1/2 outline-none origin-center transition-[opacity,scale] duration-slow ease-in-out motion-reduce:transition-none data-ending-style:duration-medium data-ending-style:ease-in data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
           DIALOG_SIZE_CLASSES[size],
           className
         )}

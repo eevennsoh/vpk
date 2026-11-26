@@ -20,7 +20,7 @@ interface ScreenAssistantTranscriptProps {
 }
 
 const ROLE_ALIGNMENT: Record<ScreenAssistantTranscriptEntry["role"], string> = {
-	user: "self-end bg-bg-brand-bold text-text-inverse",
+	user: "self-end bg-primary text-text-inverse",
 	assistant: "self-start bg-bg-neutral text-text",
 	system: "self-center bg-bg-neutral-subtle text-text-subtle italic",
 };
@@ -89,7 +89,7 @@ export function ScreenAssistantTranscript({
 				</AnimatePresence>
 
 				{liveUserTranscript ? (
-					<div className="max-w-[85%] self-end rounded-lg bg-bg-brand-bold/70 px-2.5 py-1.5 text-xs leading-relaxed text-text-inverse">
+					<div className="max-w-[85%] self-end rounded-lg bg-primary/70 px-2.5 py-1.5 text-xs leading-relaxed text-text-inverse">
 						{liveUserTranscript}
 					</div>
 				) : null}

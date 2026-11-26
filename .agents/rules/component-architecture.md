@@ -74,8 +74,10 @@ interface BadgeProps extends React.ComponentProps<"span">, VariantProps<typeof b
 
 `eslint.config.mjs` owns the `@shadcn/lint` policy. The initial `no-restyle`
 pilot covers Button and Badge consumers in Team EU26 and Agent Session
-Column. One repo-wide contract enforces established policy: overlay
-`*Content` surfaces may not add border/ring widths (`overlaySurfaceContract`).
+Column. Repo-wide contracts enforce established policy: overlay `*Content`
+surfaces may not add border/ring widths or `shadow-xl`
+(`overlaySurfaceContract`), and `DropdownMenu*` rows may not carry section
+borders (`menuRowSeparatorContract`).
 Other primitives and features remain outside enforcement until their
 customization is reviewed. Primitive implementations under
 `components/ui/**` own their styling and are exempt from `no-restyle`.
@@ -105,8 +107,18 @@ After correcting UI misuse or incorporating user feedback:
   owner, scope, and design reason. Preserve reference geometry, ADS font
   shorthand, dynamic measurements, and explicit product capabilities.
 - Keep token meaning and visual judgment in `DESIGN.md` and review.
-  Declared palette aliases are not proof of correct semantic use. The
-  other five plugin rules remain off pending separate validation.
+  Declared palette aliases are not proof of correct semantic use.
+  Theme-token rules run repo-wide as errors over `app/**` and
+  `components/**`, with existing debt baselined: `no-raw-colors` and
+  `no-unknown-classes` catch classes that render nothing (an undeclared
+  token such as `text-danger`, a misspelled utility); `no-arbitrary-values`
+  denies only arbitrary colors (`bg-[#hex]`, `text-[var(--ds-…)]`), so
+  layout sizes stay free; `require-static-classes` keeps component class
+  strings readable. Primitives under `components/ui/**` are exempt from the
+  last two, and `components/arts/**` and `components/visual/**` may pass
+  literal colors to canvas and WebGL. A hook class styled by a
+  component-owned stylesheet goes in the `no-unknown-classes` allow list
+  with its stylesheet named. `no-inline-styles` remains off.
 
 For each contract or scope change, extend
 `scripts/eslint-boundary-rules.test.js` with actual ESLint results: the

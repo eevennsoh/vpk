@@ -724,7 +724,7 @@ function SidebarResizeHandle({
         // Named group so notch `group-hover/*` does not inherit from the outer Sidebar `group` wrapper.
         "group/sidebar-resize absolute inset-y-0 z-20 m-0 flex w-px cursor-col-resize items-center justify-center border-0 bg-border p-0 transition-colors hover:bg-bg-selected-bold data-[active]:bg-bg-selected-bold",
         side === "left" ? "left-0" : "right-0",
-        "data-[will-collapse]:bg-bg-warning-bold",
+        "data-[will-collapse]:bg-warning",
         "after:absolute after:inset-y-0 after:left-1/2 after:w-3 after:-translate-x-1/2",
         "group-data-[collapsible=offcanvas]:hidden",
         className
@@ -739,7 +739,7 @@ function SidebarResizeHandle({
           "pointer-events-none z-10 h-6 w-1 shrink-0 rounded-lg bg-neutral-100 transition-[opacity,background-color] duration-medium ease-out",
           "opacity-0 group-hover/sidebar-resize:opacity-100 group-data-[active]/sidebar-resize:opacity-100",
           "group-hover/sidebar-resize:bg-bg-selected-bold group-data-[active]/sidebar-resize:bg-bg-selected-bold",
-          "group-data-[will-collapse]/sidebar-resize:bg-bg-warning-bold group-data-[will-collapse]/sidebar-resize:group-hover/sidebar-resize:bg-bg-warning-bold group-data-[will-collapse]/sidebar-resize:group-data-[active]/sidebar-resize:bg-bg-warning-bold"
+          "group-data-[will-collapse]/sidebar-resize:bg-warning group-data-[will-collapse]/sidebar-resize:group-hover/sidebar-resize:bg-warning group-data-[will-collapse]/sidebar-resize:group-data-[active]/sidebar-resize:bg-warning"
         )}
       />
     </div>

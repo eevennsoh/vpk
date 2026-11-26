@@ -18,7 +18,7 @@ const tileVariants = cva(
 			variant: {
 				// Semantic
 				neutral: "bg-bg-neutral",
-				brand: "bg-bg-brand-bold text-text-inverse",
+				brand: "bg-primary text-text-inverse",
 				danger: "bg-bg-danger text-text-danger",
 				warning: "bg-bg-warning text-text-warning",
 				success: "bg-bg-success text-text-success",

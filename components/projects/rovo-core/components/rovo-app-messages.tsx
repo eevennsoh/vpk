@@ -274,9 +274,9 @@ function WidgetErrorCard({
 			? `All ${productName} instances are busy. Your request will be retried shortly.`
 			: widgetError.data.message;
 
-	const borderClass = isBusy ? "border-warning" : "border-danger";
-	const bgClass = isBusy ? "bg-warning/5" : "bg-danger/5";
-	const textClass = isBusy ? "text-warning" : "text-danger";
+	const borderClass = isBusy ? "border-border-warning" : "border-border-danger";
+	const bgClass = isBusy ? "bg-bg-warning" : "bg-bg-danger";
+	const textClass = isBusy ? "text-text-warning" : "text-text-danger";
 
 	return (
 		<div className={cn("rounded-xl border px-3 py-2 text-sm", borderClass, bgClass)}>
