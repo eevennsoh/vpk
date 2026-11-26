@@ -22,7 +22,7 @@ export interface CardFaceProps {
 	label?: ReactNode;
 	/** Controls at the end of the label row (the list card's lightbulb, ✕ and ✓). */
 	actions?: ReactNode;
-	/** A row under the value (the top card's Why line). */
+	/** Content under the value (a list card's expanded reasoning). */
 	footer?: ReactNode;
 	className?: string;
 }
@@ -33,7 +33,7 @@ export function CardFace({ suggestion, label, actions, footer, className }: Read
 		<div className={cn("flex flex-col gap-1.5", className)}>
 			<div className="flex min-h-6 items-center gap-2 text-xs font-medium">
 				<span className="grid min-w-0 items-center">{label ?? <span className="text-text-subtle">{suggestion.label}</span>}</span>
-				{actions ? <span className={cn("-my-1 -mr-1.5 ml-auto flex shrink-0 items-center gap-0.5 has-[[data-popup-open]]:opacity-100", CARD_ACTION_REVEAL)}>{actions}</span> : null}
+				{actions ? <span className={cn("-my-1 -mr-1.5 ml-auto flex shrink-0 items-center gap-0.5 has-[[data-popup-open]]:opacity-100 has-[[aria-expanded=true]]:opacity-100", CARD_ACTION_REVEAL)}>{actions}</span> : null}
 			</div>
 			<CardValue value={suggestion.value} />
 			{footer}
