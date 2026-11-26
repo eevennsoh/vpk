@@ -118,7 +118,8 @@ export function RowFace({ suggestion, controls, onDecide, why }: Readonly<{ sugg
 										aria-controls={whyId}
 										aria-expanded={expanded}
 										aria-label={`Why ${field} was suggested`}
-										className="any-pointer-coarse:size-8 aria-expanded:bg-bg-neutral-subtle-hovered aria-expanded:[&_svg]:text-icon-subtle"
+										// No selected look when open: the expanded card already says so.
+										className="any-pointer-coarse:size-8 aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_svg]:text-icon-subtle"
 										onClick={() => why.onWhyOpenChange(!expanded)}
 										size="icon-compact"
 										type="button"

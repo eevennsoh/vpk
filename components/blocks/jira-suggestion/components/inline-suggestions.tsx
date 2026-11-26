@@ -34,7 +34,7 @@ function findPreviewAnchor(field: SuggestionFieldId): HTMLElement | null {
 function ToolbarButton({ label, hint = label, disabled = false, onClick, children, ...aria }: Readonly<{ label: string; hint?: string; disabled?: boolean; onClick: () => void; children: React.ReactNode; "aria-expanded"?: boolean; "aria-controls"?: string }>) {
 	return (
 		<Tooltip>
-			<TooltipTrigger render={<Button {...aria} aria-label={label} className="size-7 any-pointer-coarse:size-8 aria-expanded:bg-bg-neutral-subtle-hovered aria-expanded:[&_svg]:text-icon-subtle" disabled={disabled} onClick={onClick} shape="circle" size="icon-compact" type="button" variant="ghost" />}>
+			<TooltipTrigger render={<Button {...aria} aria-label={label} className="size-7 any-pointer-coarse:size-8 aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_svg]:text-icon-subtle" disabled={disabled} onClick={onClick} shape="circle" size="icon-compact" type="button" variant="ghost" />}>
 				{children}
 			</TooltipTrigger>
 			<TooltipContent>{hint}</TooltipContent>
