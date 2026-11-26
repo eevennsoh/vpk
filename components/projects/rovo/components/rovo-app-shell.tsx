@@ -1371,7 +1371,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	);
 
 	const chatPaneContainer = (
-		<div className="overscroll-behavior-contain relative z-10 flex h-full min-w-0 flex-1 flex-col touch-pan-y bg-background">
+		<div className="overscroll-contain relative z-10 flex h-full min-w-0 flex-1 flex-col touch-pan-y bg-background">
 			{shouldShowTimelineNavigator ? (
 				<ChatTimelineNavigator
 					activeItemId={activeTimelineMessageId}

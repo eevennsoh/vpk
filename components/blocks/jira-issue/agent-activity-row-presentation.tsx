@@ -23,7 +23,7 @@ import { JiraIssueAgentHandoffLabel } from "@/components/blocks/jira-issue/proje
 import { JiraIssueAgentSessionUnlinkButton } from "@/components/blocks/jira-issue/agent-session-unlink-button";
 import { getJiraIssueVisibleActivities } from "@/components/blocks/jira-issue/agent-activity-model";
 import type { JiraIssueIconScale } from "@/components/blocks/jira-issue/types";
-import { AgentLoading, type AgentLoadingAgent } from "@/components/ui-custom/agent-loading";
+import { AgentLoading } from "@/components/ui-custom/agent-loading";
 import { AnimatedDot } from "@/components/ui-custom/animated-dot";
 import { Shimmer } from "@/components/ui/shimmer";
 import { AvatarGroup } from "@/components/ui/avatar";
@@ -37,7 +37,7 @@ import type {
 	JiraIssueAgentActivityAvatarLayout,
 	JiraIssueAgentActivityIndicatorRenderer,
 } from "./agent-activity";
-import { getJiraIssueAgentRowInset } from "./agent-activity-avatar";
+import { getJiraIssueAgentRowInset, toAgentLoadingAgent } from "./agent-activity-avatar";
 
 export type JiraIssueAgentAssignment = Partial<
 	Pick<
@@ -64,23 +64,11 @@ export type JiraIssueAgentAssignment = Partial<
 	onCreateCloudSession?: (agent: AgentSelectorAgent) => void;
 };
 
-function getAgentInitial(name: string): string {
-	return name.trim()[0]?.toUpperCase() ?? "A";
-}
-
-function toAgentLoadingAgent(activity: JiraIssueAgentActivity): AgentLoadingAgent {
-	return {
-		id: activity.id,
-		name: activity.name,
-		status: activity.state === "completed" ? "finished" : "working",
-		avatar: {
-			appearance: "coding",
-			...(activity.avatarSrc ? { avatarSrc: activity.avatarSrc } : {}),
-			...(activity.agentBrandName ? { brandName: activity.agentBrandName } : {}),
-			...(activity.agentVpkLogo ? { vpkLogo: activity.agentVpkLogo } : {}),
-			fallbackText: getAgentInitial(activity.name),
-		},
-	};
+/** A card agent row's avatar: the agent, with its invoker's dot when someone started it. The invocation handoff renders the same one. */
+/** `badgeEntrance` scales the invoker's dot in, for the handoff that precedes the attached row. */
+// react-doctor-disable-next-line react-doctor/only-export-components -- The card chin's handoff renders the attached row's exact identity through this helper, so it lives beside the row that owns that identity.
+export function renderJiraIssueSessionIdentity(activity: JiraIssueAgentActivity, sizePx: 16 | 20 | 24, badgeEntrance = false, onBadgeReadyChange?: (ready: boolean) => void): ReactElement {
+	return renderSessionIdentity({ ...toAgentLoadingAgent(activity), invokedBy: activity.invokedBy }, sizePx, false, badgeEntrance, onBadgeReadyChange);
 }
 
 /** Match the session column's 12px glyph while retaining the 24px status slot. */
@@ -345,7 +333,7 @@ export function JiraIssueAgentRowContent({
 	} else if (featuredActivity !== undefined) {
 		avatar = (
 			<span className={cn("flex h-6 shrink-0 items-center justify-center", compactAvatarSlot ? "w-4" : "w-6")}>
-				{renderSessionIdentity({ ...toAgentLoadingAgent(featuredActivity), invokedBy: featuredActivity.invokedBy }, avatarSize)}
+				{renderJiraIssueSessionIdentity(featuredActivity, avatarSize)}
 			</span>
 		);
 	} else if (avatarLayout === "horizontal-group") {
@@ -356,7 +344,7 @@ export function JiraIssueAgentRowContent({
 				size="sm"
 			>
 				{activities.map((activity) => (
-					<span key={activity.id}>{renderSessionIdentity({ ...toAgentLoadingAgent(activity), invokedBy: activity.invokedBy }, avatarSize)}</span>
+					<span key={activity.id}>{renderJiraIssueSessionIdentity(activity, avatarSize)}</span>
 				))}
 			</AvatarGroup>
 		);

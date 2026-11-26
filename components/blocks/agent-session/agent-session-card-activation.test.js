@@ -44,6 +44,7 @@ function loadHarness() {
 						open ? React.createElement("div", { role: "menu", "data-menu": "continue", "data-anchor": anchor?.current?.tagName ?? "BUTTON" },
 							React.createElement("span", null, "Continue in"),
 							React.createElement("button", { role: "menuitem", onClick: actions.onCopyPrompt, "data-copied": copied }, "Copy prompt"),
+							React.createElement("button", { role: "menuitem", onClick: actions.onDismiss }, "Dismiss"),
 							React.createElement("button", { role: "menuitem", onClick: () => onOpenChange(false) }, "Close")) : null);
 				}
 			`],
@@ -74,7 +75,7 @@ function loadHarness() {
 				export function DropdownMenu({ children }) { return children; }
 				export function DropdownMenuTrigger({ render, children }) { return React.cloneElement(render, null, children); }
 				export function DropdownMenuContent({ children, anchor, ref, side, align, sideOffset }) { return React.createElement("div", { ref, role: "menu", "data-anchor-kind": anchor ? "explicit" : "trigger", "data-side": side, "data-align": align, "data-side-offset": sideOffset }, children); }
-				export function DropdownMenuItem({ children, disabled, render }) { return render ? React.cloneElement(render, { role: "menuitem", disabled }) : React.createElement("button", { role: "menuitem", disabled }, children); }
+				export function DropdownMenuItem({ children, disabled, render, onSelect }) { return render ? React.cloneElement(render, { role: "menuitem", disabled, onClick: onSelect }) : React.createElement("button", { role: "menuitem", disabled, onClick: onSelect }, children); }
 				export function DropdownMenuGroup({ children }) { return React.createElement("div", null, children); }
 				export function DropdownMenuLabel({ children }) { return React.createElement("span", null, children); }
 				export function DropdownMenuSeparator() { return null; }
@@ -317,8 +318,8 @@ test("private viewer cards expose their explanation from the keyboard without an
 	});
 });
 
-test("team viewer cards omit the row tooltip while private cards explain access", async () => {
-	await withCard({ item: { ...LOCAL_ITEM, host: "cloud", role: "viewer", sharedWithTeam: true, invokedBy: { name: "Jordan Okafor" } }, allowViewerView: true, onView() {} }, async ({ document, render, click }) => {
+test("viewer cards that allow viewing omit the row tooltip while private cards explain access", async () => {
+	await withCard({ item: { ...LOCAL_ITEM, host: "cloud", role: "viewer", invokedBy: { name: "Jordan Okafor" } }, allowViewerView: true, onView() {} }, async ({ document, render, click }) => {
 		assert.equal(document.querySelector('[role="tooltip"]'), null);
 		assert.notEqual(document.querySelector("[data-body-trigger]"), null);
 		await click(document.querySelector("[data-body-trigger]"));
@@ -539,12 +540,24 @@ test("prototype continuation options stay enabled and use the card's right edge"
 		const { document } = parseHTML(html);
 		assert.equal(document.querySelector('[role="menu"]').getAttribute("data-anchor-kind"), "explicit");
 		const items = [...document.querySelectorAll('[role="menuitem"]')];
-		assert.deepEqual(items.map((item) => item.textContent), ["Claude", "Copy prompt"]);
-		assert.deepEqual(items.map((item) => item.disabled), [false, false]);
+		assert.deepEqual(items.map((item) => item.textContent), ["Claude", "Copy prompt", "Dismiss"]);
+		assert.deepEqual(items.map((item) => item.disabled), [false, false, false]);
 		assert.equal(document.querySelector('[role="menu"]').getAttribute("data-side"), "right");
 		assert.equal(document.querySelector('[role="menu"]').getAttribute("data-align"), "start");
 		assert.equal(document.querySelector('[role="menu"]').getAttribute("data-side-offset"), "8");
 	}
+});
+
+test("dismissing a local card requests visibility change without deleting its session", async () => {
+	const dismissed = [];
+	let deleted = 0;
+	await withCard({ item: LOCAL_ITEM, onToggleVisibility: (item) => dismissed.push(item.id), onDeleteSession: () => { deleted++; } }, async ({ document, click }) => {
+		await click(document.querySelector("article"));
+		const dismiss = [...document.querySelectorAll('[role="menuitem"]')].find((item) => item.textContent === "Dismiss");
+		await click(dismiss);
+		assert.deepEqual(dismissed, [LOCAL_ITEM.id]);
+		assert.equal(deleted, 0);
+	});
 });
 
 test("card-anchored continuation dismisses outside its card and popup", async () => {

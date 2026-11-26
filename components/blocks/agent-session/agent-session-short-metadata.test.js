@@ -56,8 +56,9 @@ test("short metadata starts with the PR when created and keeps the agent before 
 		item: { ...item, role: "viewer" },
 	}));
 	assert.equal(viewerMarkup.replace(/<[^>]*>/gu, ""), "Claude·7m·");
-	assert.match(viewerMarkup, /aria-label="Team session"[^>]*data-access-mark="team" role="img"/u);
+	assert.match(viewerMarkup, /aria-label="Private session"[^>]*data-access-mark="private" role="img"/u);
 	assert.doesNotMatch(viewerMarkup, /<button/u);
+	assert.doesNotMatch(viewerMarkup, /data-access-mark="team"|Team session/u);
 });
 
 test("metadata placement shows the session state in a long row", async () => {

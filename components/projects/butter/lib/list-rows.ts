@@ -12,13 +12,9 @@ import type {
 	JiraListRowData,
 	JiraListStatusOption,
 } from "@/components/blocks/jira-list";
+import { BUTTER_PAY_CURRENT_USER } from "../data/current-user.ts";
 
-/** Mirrors TopNavigation / `BUTTER_PAY_CURRENT_USER`; covered by the list-row contract tests. */
-const CURRENT_USER_ASSIGNEE = {
-	id: "venn",
-	name: "Venn",
-	avatarSrc: "/avatar-user/venn/venn.png",
-} as const;
+const CURRENT_USER_ASSIGNEE = BUTTER_PAY_CURRENT_USER;
 
 const CURRENT_USER_INVOKER = {
 	avatarSrc: CURRENT_USER_ASSIGNEE.avatarSrc,

@@ -22,8 +22,7 @@ import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/
 import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import type { ProjectButterDevelopmentJourneyProps } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-journey";
-import { sessionTransferTintSeed } from "@/components/blocks/jira-issue/agent-session-drag";
-import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor } from "@/components/blocks/agent-session/agent-brand-tint";
+import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor, resolveAgentTintSeed } from "@/components/blocks/agent-session/agent-brand-tint";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import type { ProjectButterRelatedSearchItem, RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { butterRelatedCatalog } from "@/components/projects/butter/data/related-scope";
@@ -430,7 +429,7 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, s
 			host: "cloud",
 			startedAtMs: Date.now(),
 			timeLabel: "Just now",
-			invokedBy: { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" },
+			invokedBy: { name: BUTTER_PAY_CURRENT_USER.name, avatarSrc: BUTTER_PAY_CURRENT_USER.avatarSrc },
 		};
 		startAgentSession(card.code, { ...toButterAgentActivityFromSession(session), waitingForPrompt: true });
 	}, [startAgentSession]);
@@ -509,7 +508,7 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, s
 	const { flash: listRowFlash, flashRow: flashListRow } = useJiraListRowFlashSource();
 	const handleListAgentAssigned = useCallback((issueKey: string, agent: AgentSelectorAgent) => {
 		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-		const tint = resolveAgentBrandTintColor(sessionTransferTintSeed(agent.brandName, agent.vpkLogo, agent.name, agent.id)) ?? AGENT_BRAND_TINT_FALLBACK;
+		const tint = resolveAgentBrandTintColor(resolveAgentTintSeed(agent)) ?? AGENT_BRAND_TINT_FALLBACK;
 		flashListRow(issueKey, `color-mix(in srgb, ${tint} 28%, transparent)`);
 	}, [flashListRow]);
 	const handleWorkItemSessionStart = useCallback((issueKey: string, session: ProjectButterSessionItem) => {
@@ -525,7 +524,7 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, s
 		if (!pending) return;
 		if (activeView === "list") {
 			const { issueKey, session } = pending;
-			const tint = resolveAgentBrandTintColor(sessionTransferTintSeed(session.agent.brandName, session.agent.vpkLogo, session.agent.name, session.agent.id)) ?? AGENT_BRAND_TINT_FALLBACK;
+			const tint = resolveAgentBrandTintColor(resolveAgentTintSeed(session.agent)) ?? AGENT_BRAND_TINT_FALLBACK;
 			if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) flashListRow(issueKey, `color-mix(in srgb, ${tint} 28%, transparent)`);
 		} else {
 			setAgentAssignmentRequest(pending);

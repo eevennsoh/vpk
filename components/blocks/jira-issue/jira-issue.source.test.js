@@ -334,7 +334,7 @@ test("Jira issue exposes agent activity state props", () => {
 
 test("Jira issue keeps activity rows composer-free and uses one shared assignment flyout", () => {
 	assert.match(AGENT_ACTIVITY_SOURCE, /const visibleActivities = getJiraIssueVisibleActivities\(activities\);\s+const summary = summarizeJiraIssueAgentActivities\(visibleActivities\);/u);
-	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentLoading, type AgentLoadingAgent \} from "@\/components\/ui-custom\/agent-loading";/u);
+	assert.match(AGENT_ACTIVITY_SOURCE, /import \{ AgentLoading \} from "@\/components\/ui-custom\/agent-loading";/u);
 	assert.match(AGENT_ACTIVITY_SOURCE, /<AgentLoading[\s\S]*agents=\{activities\.map\(toAgentLoadingAgent\)\}[\s\S]*announce=\{false\}[\s\S]*className="shrink-0"/u);
 	assert.doesNotMatch(AGENT_ACTIVITY_SOURCE, /<AvatarFallback[\s\S]*\{summary\.activityCount\}/u);
 	// At rest the row shell is the full-width chin row; dragged out it collapses

@@ -119,7 +119,7 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container, app
 						ref={popupRef}
 						style={{ boxShadow: token("elevation.shadow.overlay") }}
 					>
-						<WhyCard compactSources={clickOnly} showField={!clickOnly} suggestion={suggestion} />
+						<WhyCard showField={!clickOnly} suggestion={suggestion} />
 					</PopoverPrimitive.Popup>
 				</PopoverPrimitive.Positioner>
 			</PopoverPrimitive.Portal>

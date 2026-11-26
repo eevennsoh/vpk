@@ -27,10 +27,10 @@ import {
 	resolveAgentBrandTint,
 	resolveAgentBrandTintColor,
 	resolveAgentBrandTintVariable,
+	resolveAgentTintSeed,
 } from "@/components/blocks/agent-session/agent-brand-tint";
 import {
 	JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
-	sessionTransferTintSeed,
 	type JiraIssueAgentSessionDragState,
 	type JiraIssueAgentSessionTransferMember,
 } from "@/components/blocks/jira-issue/agent-session-drag";
@@ -157,11 +157,7 @@ function toIdentities(
 	sessions: readonly AgentSessionItem[],
 ): readonly JiraLinkingIdentity[] {
 	return sessions.map((session) => {
-		const tintSeed = sessionTransferTintSeed(
-			session.agent.brandName,
-			session.agent.vpkLogo,
-			session.agent.name,
-		);
+		const tintSeed = resolveAgentTintSeed(session.agent);
 		const tintVariable = resolveAgentBrandTintVariable(tintSeed);
 		return {
 			id: session.id,
@@ -386,11 +382,7 @@ function JiraLinkingStage({ label, sessions, variant }: Readonly<JiraLinkingStag
 		}));
 		if (lead && variant === "fuse") {
 			flashTokenRef.current += 1;
-			const leadTintSeed = sessionTransferTintSeed(
-				lead.agent.brandName,
-				lead.agent.vpkLogo,
-				lead.agent.name,
-			);
+			const leadTintSeed = resolveAgentTintSeed(lead.agent);
 			setLinkFlashes((current) => ({
 				...current,
 				[pending.cardId]: {

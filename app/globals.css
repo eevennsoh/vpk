@@ -580,6 +580,19 @@
 	contain-intrinsic-size: auto 400px;
 }
 
+/* Butter details rail value row: the row owns the dropdown-item padding
+   (py-1.5), so its popover, menu, inline-edit and labels controls drop their
+   own height and stretch back over the padding as full-row hit targets. One
+   rule instead of repeated `[&_:is(…)]` variants keeps the shared CSS bundle
+   inside its byte budget. */
+@utility butter-detail-row-triggers {
+	& :is([data-slot=popover-trigger], [data-slot=dropdown-menu-trigger], [data-slot=inline-edit-read-view], [data-slot=labels-field]) {
+		min-height: 0;
+		margin-block: --spacing(-1.5);
+		padding-block: --spacing(1.5);
+	}
+}
+
 /* Shared option-row type treatment — the single source of truth for every
    list/menu option row's title + byline (editor palette command menu + its
    trigger/flyout pickers, agent selector, greeting prompts). Each surface

@@ -32,8 +32,6 @@ export type AgentSessionItem = AgentListItem & {
 	role?: AgentSessionRole;
 	pullRequests?: readonly JiraIssuePullRequestItem[];
 	pullRequestChecks?: readonly PullRequestCheck[];
-	/** The session is shared with the team, including when viewed by its owner. */
-	sharedWithTeam?: boolean;
 	/** Person with exclusive access to this session, when explicitly private. */
 	privateTo?: string;
 };
@@ -166,6 +164,8 @@ export interface AgentSessionProps {
 	showWorkingSpinner?: boolean;
 	/** Long rows: show the lifecycle label beside its glyph. Narrow hosts drop it to the glyph alone. */
 	showLifecycleLabel?: boolean;
+	/** Show the trailing lifecycle at all. Off leaves the slot to the hover more-actions button, e.g. for the viewer's own local sessions. */
+	showLifecycle?: boolean;
 	/** Title-led rows can show lifecycle text beside the avatar stack. */
 	lifecycleLabelPlacement?: "trailing" | "metadata";
 	/**

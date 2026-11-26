@@ -204,10 +204,11 @@ export function DetailsSuggestionHighlight({ rootRef }: Readonly<{ rootRef: RefO
 	);
 }
 
-export function SuggestionPreviewLabel({ field, children }: Readonly<{ field: string; children: ReactNode }>) {
+/** `fill` stretches the label across the row; turn it off when a trailing mark should follow the text. */
+export function SuggestionPreviewLabel({ field, children, fill = true }: Readonly<{ field: string; children: ReactNode; fill?: boolean }>) {
 	const reveal = use(SuggestionLabelReveal);
 	return (
-		<span className="relative min-w-0 flex-1 has-[[data-suggestion-preview]]:[&>span:first-child]:opacity-0 group-focus-within/butter-field:[&>span:first-child]:opacity-100!">
+		<span className={cn("relative min-w-0", fill && "flex-1", "has-[[data-suggestion-preview]]:[&>span:first-child]:opacity-0 group-focus-within/butter-field:[&>span:first-child]:opacity-100!")}>
 			<span className={field === "reporter" ? "block truncate" : undefined}>
 				<span className={cn("inline-block max-w-full group-focus-within/butter-field:opacity-100!", reveal && "opacity-0")} data-project-butter-field-control>{children}</span>
 			</span>

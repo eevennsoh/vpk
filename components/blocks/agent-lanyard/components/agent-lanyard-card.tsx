@@ -137,7 +137,7 @@ export function AgentLanyardCard({
 					recommended ? "border-0" : "border border-border",
 					mcpSetup ? "bg-clip-padding" : null,
 					recommended || mcpSetup ? null : "min-h-[280px]",
-					hoverSurface ? "border-transparent bg-surface-hovered shadow-2xl" : null,
+					hoverSurface ? "border-transparent shadow-2xl" : null,
 				)}
 			>
 				{onSelect && !recommended ? (

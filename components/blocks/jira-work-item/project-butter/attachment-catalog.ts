@@ -1,6 +1,7 @@
 // Loaded directly by node:test suites: keep value imports relative (`./x.ts`); `@/` is fine for types only.
 import type { ProjectButterAttachment, ProjectButterAttachmentObjectType } from "@/components/blocks/jira-work-item/project-butter/attachment-data";
 import { deriveDisplayName, parseWeblink, type AttachmentStamp } from "./attachment-model.ts";
+import { PROJECT_BUTTER_VIEWER } from "@/components/blocks/jira-work-item/project-butter/people";
 
 /*
  * Inline attachment add for Project Butter: create, search or paste (reference useInlineAttachmentAdd).
@@ -84,7 +85,7 @@ function contentHref(item: CatalogItem): string {
 }
 
 /** Catalog Loom items land in Videos; live docs, whiteboards and databases are Confluence documents; Create makes a page. */
-export function attachmentFromChoice(choice: AttachmentComposerChoice, { id, now, addedBy = "Annie Cook" }: AttachmentStamp): ProjectButterAttachment {
+export function attachmentFromChoice(choice: AttachmentComposerChoice, { id, now, addedBy = PROJECT_BUTTER_VIEWER.name }: AttachmentStamp): ProjectButterAttachment {
 	const base = { id, addedBy, dateAdded: now, updatedAt: now };
 	if (choice.kind === "link") return { ...base, kind: "link", name: choice.label, url: choice.url };
 	if (choice.kind === "create") return { ...base, kind: "confluence", objectType: "page", name: choice.label, url: contentHref({ label: choice.label, type: "page" }) };

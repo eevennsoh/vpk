@@ -24,9 +24,7 @@ import { toJiraIssueDemoAttachedActivity } from "@/components/blocks/jira-issue/
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_ASSIGNEES } from "@/components/blocks/jira-work-item/project-butter/assignee-people";
 import { nextProjectButterDevelopmentPhase, PROJECT_BUTTER_JOURNEY_PULL_REQUEST } from "@/components/blocks/jira-work-item/project-butter/development-journey-model";
-import { sessionTransferTintSeed } from "@/components/blocks/jira-issue/agent-session-drag";
-import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor } from "@/components/blocks/agent-session/agent-brand-tint";
-import { getAgentAvatarAccent } from "@/lib/agent-avatars";
+import { AGENT_BRAND_TINT_FALLBACK, resolveAgentBrandTintColor, resolveAgentTintSeed } from "@/components/blocks/agent-session/agent-brand-tint";
 import type { JiraIssueAgentSessionRef } from "@/components/blocks/jira-issue/agent-session-transfer";
 import type { RelatedItemOpener } from "@/components/blocks/jira-work-item/project-butter/related-model";
 import { butterRelatedCatalog } from "@/components/projects/butter-v1/data/related-scope";
@@ -84,7 +82,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { MerchantJourneyCompactControls, MerchantJourneyControls } from "./components/merchant-journey-controls";
 import { applyMerchantJourneyToBoard, merchantJourneyAuthoredCard, merchantJourneyChatSnapshot, workItemChatSnapshot, type MerchantJourneyPhase } from "./data/merchant-journey";
 import { MERCHANT_PROGRESS_DELAY_MS } from "@/components/blocks/jira-work-item/project-butter/merchant-journey-activity";
-import { BUTTER_DEFAULT_REPORTER } from "./data/current-user";
+import { BUTTER_DEFAULT_REPORTER, BUTTER_PAY_CURRENT_USER } from "./data/current-user";
 import { BUTTER_GALLERY_ITEMS } from "./data/gallery-items";
 import { BUTTER_SAVED_FILTERS } from "./data/saved-filters";
 import { BUTTER_GALLERY_SESSIONS, BUTTER_WORK_ITEM_SESSIONS } from "./data/gallery-work-item-sessions";
@@ -122,7 +120,7 @@ const ProjectButterDevelopmentGallery = dynamic(() => import("@/components/block
 const ButterBacklog = dynamic(() => import("./components/butter-backlog"));
 
 const WAC_DEFAULT_REPORTER = { name: WAC_CURRENT_USER.name, avatarUrl: WAC_CURRENT_USER.avatarSrc };
-const BUTTER_FILTER_ASSIGNEES = [...PROJECT_BUTTER_ASSIGNEES, BUTTER_DEFAULT_REPORTER];
+const BUTTER_FILTER_ASSIGNEES = PROJECT_BUTTER_ASSIGNEES;
 const BUTTER_FILTER_STATUSES = ["To do", "In progress", "In review", "Done"] as const;
 const WAC_FILTER_ASSIGNEES = [...PROJECT_BUTTER_ASSIGNEES, WAC_DEFAULT_REPORTER];
 const BUTTER_WORK_ITEM_TABS = getJiraTabs(false).filter((tab) => tab.view === "board" || tab.view === "list");
@@ -506,7 +504,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 			host: "cloud",
 			startedAtMs: Date.now(),
 			timeLabel: "Just now",
-			invokedBy: { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" },
+			invokedBy: { name: BUTTER_PAY_CURRENT_USER.name, avatarSrc: BUTTER_PAY_CURRENT_USER.avatarSrc },
 		};
 		const activity = { ...toButterAgentActivityFromSession(session), waitingForPrompt: true };
 		startAgentSession(card.code, activity);
@@ -595,8 +593,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 			if (activity) setAddedBoardAgent({ agent: { id: agent.id, kind: "agent", name: agent.name, avatarSrc: agent.avatarSrc, brandName: agent.brandName, vpkLogo: agent.vpkLogo }, activity, card });
 		}
 		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-		const tint = resolveAgentBrandTintColor(sessionTransferTintSeed(agent.brandName, agent.vpkLogo, agent.logoName, agent.name, agent.id))
-			?? (agent.avatarSrc?.startsWith("/avatar-agent") ? getAgentAvatarAccent(agent.avatarSrc) : AGENT_BRAND_TINT_FALLBACK);
+		const tint = resolveAgentBrandTintColor(resolveAgentTintSeed(agent)) ?? AGENT_BRAND_TINT_FALLBACK;
 		flashListRow(issueKey, tint, "sweep");
 	}, [agentCatalog, boardColumns, flashListRow]);
 	const handleWorkItemSessionStart = useCallback((issueKey: string, session: ProjectButterSessionItem) => {
@@ -613,7 +610,7 @@ function ButterApp({ ref, onBoardCreateActiveChange, standaloneView, collapsedCo
 		if (!pending || showBacklog) return;
 		if (activeView === "list") {
 			const { issueKey, session } = pending;
-			const tint = resolveAgentBrandTintColor(sessionTransferTintSeed(session.agent.brandName, session.agent.vpkLogo, session.agent.name, session.agent.id)) ?? AGENT_BRAND_TINT_FALLBACK;
+			const tint = resolveAgentBrandTintColor(resolveAgentTintSeed(session.agent)) ?? AGENT_BRAND_TINT_FALLBACK;
 			if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) flashListRow(issueKey, `color-mix(in srgb, ${tint} 28%, transparent)`);
 		} else if (!pending.journey) {
 			setAgentAssignmentRequest(pending);

@@ -113,7 +113,7 @@ function DevelopmentConnections() {
 
 export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSettings, onPullRequestOpen, headerExtra, surface = "card" }: Readonly<DevelopmentPanelProps>) {
 	const hasPullRequests = pullRequests.length > 0;
-	const openIn = <JiraLocalAgent workItem={workItem} trigger={<Button className="h-8 w-full justify-start gap-2 border-0 px-2 font-normal" type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AngleBracketsIcon label="" size="small" />} label="" size="xxsmall" variant="transparent" />Open in</Button>} />;
+	const openIn = <JiraLocalAgent workItem={workItem} trigger={<Button className="h-auto w-full justify-start gap-2 border-0 px-2 py-1.5 font-normal" type="button" variant="ghost"><IconTile aria-hidden as="span" className="text-icon-subtle" icon={<AngleBracketsIcon label="" />} iconSize="medium" label="" size="small" variant="transparent" />Open in</Button>} />;
 	return (
 		<TeamEuRailPanel
 			alwaysShowHeaderActions={Boolean(headerExtra)}
@@ -137,7 +137,7 @@ export function DevelopmentPanel({ pullRequests = [], workItem, pullRequestSetti
 							<PullRequest {...request} onActivate={undefined} selected={false} variant="flyout" />
 						</PopoverContent>
 					</Popover>
-				); }) : <div className="-mb-2"><ProjectButterDevelopmentActions {...workItem} renderStartCoding={(trigger) => <StartCodingMenu trigger={trigger} />} showCopyPrompt={false} /><div className="-mx-2">{openIn}</div></div>}
+				); }) : <div className="-mb-2 flex flex-col gap-0.5"><ProjectButterDevelopmentActions {...workItem} renderStartCoding={(trigger) => <StartCodingMenu trigger={trigger} />} showCopyPrompt={false} /><div className="-mx-2">{openIn}</div></div>}
 			</div>
 		</TeamEuRailPanel>
 	);

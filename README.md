@@ -42,6 +42,12 @@ cp .env.local.example .env.local
 # Edit .env.local with your credentials
 ```
 
+Motion+ is optional. If its private package cannot be downloaded, VPK uses
+the public Motion library and simplified versions of the scrolling and scramble
+text demos. A Motion+ license and registry token enable the full effects; they
+are not needed for the rest of VPK. Restart the development server after
+installing or removing Motion+ so it picks the appropriate implementation.
+
 ### Development
 
 ```bash

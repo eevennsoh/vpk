@@ -556,7 +556,7 @@ test("the prototype menu keeps host-appropriate actions enabled without callback
 	assert.match(SESSION_MORE_MENU_SOURCE, /<DropdownMenu onOpenChange=\{onOpenChange\} open=\{open\}>/u);
 	assert.match(CONTINUE_MENU_SOURCE, /<DropdownMenuLabel>Continue in<\/DropdownMenuLabel>/u);
 	assert.doesNotMatch(SESSION_MORE_MENU_SOURCE, /Continue in|TerminalIcon/u);
-	assert.doesNotMatch(CONTINUE_MENU_SOURCE, /onDismiss|dismissLabel/u);
+	assert.match(CONTINUE_MENU_SOURCE, /<DropdownMenuSeparator \/>[\s\S]*onDismiss\?\.\(\)[\s\S]*Dismiss/u);
 	assert.doesNotMatch(CONTINUE_MENU_SOURCE, /disabled=\{actions\./u);
 	assert.match(SESSION_MORE_MENU_SOURCE, /<EditIcon label="" size="small" \/>[\s\S]*Rename/u);
 	assert.match(SESSION_MORE_MENU_SOURCE, /<DeleteIcon label="" size="small" \/>[\s\S]*variant="destructive"[\s\S]*Delete/u);
@@ -679,7 +679,7 @@ test("the long density is title-led, with its own metadata line and lifecycle", 
 	assert.match(CARD_SOURCE, /const canOpenLocalMenu = role === "owner" && !isCloudSession/u);
 	assert.match(CARD_SOURCE, /viewSession\?\.\(item\)/u);
 	assert.match(CARD_SOURCE, /case "viewer":\s*return undefined;/u);
-	assert.match(CARD_SOURCE, /const lifecycleIndicator = role === "expired"\s*\? null/u);
+	assert.match(CARD_SOURCE, /const lifecycleIndicator = role === "expired" \|\| !showLifecycle\s*\? null/u);
 	assert.match(INDEX_SOURCE, /const isLongDensity = variant === "large" && density === "long";/u);
 	assert.match(INDEX_SOURCE, /const showUntrackedWorkFlyout = !isAttached && !hasNoFlyout;/u);
 	assert.match(

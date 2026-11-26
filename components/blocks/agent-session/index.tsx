@@ -132,6 +132,7 @@ export function AgentSession({
 	showLinkWorkItemMenuItem = true,
 	showWorkingSpinner = false,
 	showLifecycleLabel = true,
+	showLifecycle = true,
 	lifecycleLabelPlacement = "trailing",
 	showBranch = false,
 	style,
@@ -332,6 +333,7 @@ export function AgentSession({
 								showLinkWorkItemMenuItem={showLinkWorkItemMenuItem}
 								showWorkingSpinner={showWorkingSpinner}
 								showLifecycleLabel={showLifecycleLabel}
+								showLifecycle={showLifecycle}
 								lifecycleLabelPlacement={lifecycleLabelPlacement}
 								showBranch={showBranch}
 								triageRow={rowTriage?.get(item.id)}

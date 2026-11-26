@@ -1,26 +1,42 @@
 "use client";
 
-// oxlint-disable react-doctor/jsx-no-jsx-as-prop -- PopoverTrigger uses a render-node trigger so the demo label owns the visual state.
-
-import { ChevronDownIcon } from "@/components/ui/vpk-icons";
 import {
 	SOURCE_PREVIEW_PAGES,
 	SourcesMenu,
 } from "@/components/ui-custom/sources-menu";
 
 const SOURCE_PREVIEW_TOASTER_ID = "sources-menu-demo";
+const DEMO_SOURCES = [
+	...SOURCE_PREVIEW_PAGES,
+	{
+		id: "vpk-repository",
+		title: "VPK repository",
+		href: "https://github.com/eevennsoh/vpk",
+		updatedAt: new Date(2025, 9, 31),
+		owner: "VPK team",
+		snippet: "Source code and components for Venn Prototype Kit.",
+	},
+	{
+		id: "team-conversation",
+		title: "Team conversation",
+		href: "https://atlassian.slack.com/",
+		updatedAt: new Date(2025, 9, 31),
+		owner: "VPK team",
+		snippet: "Discussion and shared context from Slack.",
+	},
+];
 
 export default function SourcesMenuDemo() {
 	return (
-		<div className="not-prose mb-4 text-primary text-xs">
-			<SourcesMenu
-				pages={SOURCE_PREVIEW_PAGES}
-				toasterId={SOURCE_PREVIEW_TOASTER_ID}
-				trigger={<button className="flex items-center gap-2" type="button" />}
-			>
-				<p className="font-medium">Used {SOURCE_PREVIEW_PAGES.length} sources</p>
-				<ChevronDownIcon size="small" />
-			</SourcesMenu>
+		<div className="not-prose mb-4 flex flex-wrap items-start gap-8">
+			<div className="flex flex-col items-start gap-2">
+				<span className="text-xs text-text-subtle">Simple</span>
+				<SourcesMenu pages={DEMO_SOURCES} variant="simple" />
+			</div>
+			<div className="flex flex-col items-start gap-2">
+				<span className="text-xs text-text-subtle">Verbose</span>
+				<SourcesMenu pages={DEMO_SOURCES} toasterId={SOURCE_PREVIEW_TOASTER_ID} />
+			</div>
 		</div>
 	);
 }

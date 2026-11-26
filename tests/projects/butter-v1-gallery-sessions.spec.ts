@@ -104,7 +104,7 @@ test("team session rows do not reveal an access tooltip on hover", async ({ page
 	await expect(page.locator('[data-rovo-chat-placement="floating"]').getByRole("group", { name: "Claude, used by Priya Raman" })).toBeVisible();
 });
 
-test("private and team access icons show who started the session", async ({ page }) => {
+test("access icons are a padlock naming the owner, never a team mark", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1200 });
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select Agent sessions", exact: true }).click();
@@ -113,18 +113,15 @@ test("private and team access icons show who started the session", async ({ page
 	await privateIcon.hover();
 	await expect(page.getByRole("tooltip").filter({ hasText: "Session by Priya Raman" })).toHaveText("Session by Priya Raman");
 	await openTeamSessionComparison(page);
-	const teamIcon = page.getByRole("region", { name: "Cloud (Owner) sessions" }).locator("article").first().locator('[data-access-mark="team"]');
-	await teamIcon.hover();
-	await expect(page.getByRole("tooltip").filter({ hasText: "Session by Priya Raman" })).toHaveText("Session by Priya Raman for the team");
+	await expect(page.getByRole("region", { name: "Cloud (Owner) sessions" }).locator("article").first().locator("[data-access-mark]")).toHaveCount(0);
+	const viewerIcon = page.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article").first().locator('[data-access-mark="private"]');
+	await viewerIcon.hover();
+	await expect(page.getByRole("tooltip").filter({ hasText: "Session by Priya Raman" })).toHaveText("Session by Priya Raman");
 	await page.mouse.move(0, 0);
 	await page.keyboard.press("Tab");
-	await teamIcon.focus();
-	await expect(page.getByRole("tooltip").filter({ hasText: "Session by Priya Raman" })).toHaveText("Session by Priya Raman for the team");
-	await page.getByRole("button", { name: "Team session", exact: true }).focus();
-	await page.mouse.move(0, 0);
-	const viewerIcon = page.getByRole("region", { name: "Cloud (Viewer) sessions" }).locator("article").first().locator('[data-access-mark="team"]');
-	await viewerIcon.hover();
-	await expect(page.getByRole("tooltip").filter({ hasText: "Session by Priya Raman" })).toHaveText("Session by Priya Raman for the team");
+	await viewerIcon.focus();
+	await expect(page.getByRole("tooltip").filter({ hasText: "Session by Priya Raman" })).toHaveText("Session by Priya Raman");
+	await expect(page.locator('[data-access-mark="team"]')).toHaveCount(0);
 });
 
 test("session metadata previews its timestamp and pull request", async ({ page }) => {

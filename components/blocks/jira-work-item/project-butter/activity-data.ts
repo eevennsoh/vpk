@@ -3,9 +3,10 @@ import { referenceActivityEntries, PROJECT_BUTTER_REFERENCE_EPOCH } from "@/comp
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
 import { PROJECT_BUTTER_REFERENCE_COMMENTS } from "@/components/blocks/jira-work-item/project-butter/reference-data";
 import { PROJECT_BUTTER_SESSION_EPOCH } from "@/components/blocks/jira-work-item/project-butter/data";
+import { PROJECT_BUTTER_VIEWER } from "@/components/blocks/jira-work-item/project-butter/people";
 
 export const PROJECT_BUTTER_ACTIVITY_EPOCH = PROJECT_BUTTER_SESSION_EPOCH;
-export const PROJECT_BUTTER_CURRENT_USER: JiraActivityActor = { id: "butter-annie", name: "Annie Cook", kind: "person", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" };
+export const PROJECT_BUTTER_CURRENT_USER: JiraActivityActor = { id: PROJECT_BUTTER_VIEWER.id, name: PROJECT_BUTTER_VIEWER.name, kind: "person", avatarSrc: PROJECT_BUTTER_VIEWER.avatarSrc };
 
 export function createProjectButterActivity(empty: boolean): readonly JiraActivityEntry[] {
 	if (empty) return [{ id: "butter-empty-created", kind: "event", actor: { id: "butter-dev-rana", name: "Dev Rana", kind: "person", avatarSrc: projectButterPersonAvatar("Dev Rana") }, timestamp: "Just now", createdAtMs: PROJECT_BUTTER_ACTIVITY_EPOCH, icon: "created", segments: [{ type: "text", text: "created this work item" }] }];

@@ -2917,7 +2917,7 @@ export function RovoAppShell({ embedded = false, headingAs = "h1", initialThread
 	const chatPaneContainer = (
 		<div
 			className={cn(
-				"overscroll-behavior-contain relative z-10 flex h-full min-h-0 min-w-0 flex-1 flex-col touch-pan-y bg-background",
+				"overscroll-contain relative z-10 flex h-full min-h-0 min-w-0 flex-1 flex-col touch-pan-y bg-background",
 				// Home landing stacks bento + composer + agents table + footer in a
 				// centered (flex-1 spacers) column. Without a scrollport the spacers
 				// can't collapse far enough on short viewports and the bottom (the

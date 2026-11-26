@@ -26,10 +26,8 @@ import type {
 import {
 	AGENT_BRAND_TINT_FALLBACK,
 	resolveAgentBrandTintColor,
+	resolveAgentTintSeed,
 } from "../../../agent-session/agent-brand-tint.ts";
-import {
-	sessionTransferTintSeed,
-} from "../../../jira-issue/agent-session-drag.ts";
 import type {
 	BoardAgentSessionAttachProximity,
 	BoardAgentSessionDropBounds,
@@ -249,7 +247,7 @@ export function toAssignedAgentTransferMember(
 		avatarSrc: item.avatarSrc,
 		id: item.id,
 		name: item.label,
-		tintSeed: sessionTransferTintSeed(item.label, item.id),
+		tintSeed: resolveAgentTintSeed({ avatarSrc: item.avatarSrc, id: item.id, name: item.label }),
 	};
 }
 

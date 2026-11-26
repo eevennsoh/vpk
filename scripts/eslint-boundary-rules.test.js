@@ -26,6 +26,15 @@ const importFindings = (source, filePath) => ruleFindings(source, filePath, ["no
 const syntaxFindings = (source, filePath = "components/projects/demo/lint-contract-fixture.tsx") =>
 	ruleFindings(source, filePath, ["no-restricted-syntax"]);
 
+test("button icon sizing does not reach nested logos", async () => {
+	const findings = await ruleFindings([
+		"const a = \"[&_svg:not([class*='size-'])]:size-3!\";",
+		"const b = \"[&>svg]:size-3\";",
+		"const c = \"[&_[data-slot=icon]]:size-3\";",
+	].join("\n"), "components/ui/button.tsx", ["vpk-button/no-descendant-svg-size"]);
+	assert.deepEqual(findings.map(({ line }) => line), [1]);
+});
+
 test("search inputs use the shared subtlest magnifier paths", async () => {
 	const findings = await syntaxFindings([
 		"const a = <InputGroupAddon><SearchIcon /></InputGroupAddon>;",
@@ -326,6 +335,101 @@ export const Overlays = () => (
 	assert.deepEqual([...new Set(findings.map(({ line }) => line))], [7, 8, 11]);
 	assert.ok(findings.every(({ severity }) => severity === 2), "repo-wide overlay contract is an error");
 	assert.match(findings[0].message, /overlay elevation/u);
+});
+
+test("theme-token rules reject undeclared colors, ungeneratable classes, arbitrary colors and dynamic classes", async () => {
+	const rules = ["shadcn/no-raw-colors", "shadcn/no-unknown-classes", "shadcn/no-arbitrary-values", "shadcn/require-static-classes"];
+	const findings = await ruleFindings(`
+import { Button } from "@/components/ui/button";
+export const Tokens = ({ tone }: { tone: string }) => (
+	<>
+		<div className="text-danger shadow-raised" />
+		<svg><path fill="#ff0000" className="bg-pink-500" /></svg>
+		<div className="overscroll-behavior-contain" />
+		<div className="bg-[#ff0000] text-[var(--ds-text)]" />
+		<Button className={\`bg-\${tone}\`} />
+		<div className="text-text-danger bg-surface-hovered shadow-md w-[360px] z-[502] text-[11px]" />
+		<div className="rich-text-command-menu tiptap-editor agent-instructions-tiptap-editor" />
+	</>
+);
+`, "components/blocks/demo/lint-contract-fixture.tsx", rules);
+	const byRule = (ruleId) => [...new Set(findings.filter((finding) => finding.ruleId === ruleId).map(({ line }) => line))];
+	assert.deepEqual(byRule("shadcn/no-raw-colors"), [5, 6]);
+	assert.deepEqual(byRule("shadcn/no-unknown-classes"), [7]);
+	assert.deepEqual(byRule("shadcn/no-arbitrary-values"), [8]);
+	assert.deepEqual(byRule("shadcn/require-static-classes"), [9]);
+	assert.ok(findings.every(({ severity }) => severity === 2), "theme-token rules are errors");
+});
+
+test("DESIGN.md geometry and type checks reject arbitrary radius, fractional borders, viewport type and caps", async () => {
+	const rules = ["vpk-tokens/no-arbitrary-radius", "vpk-tokens/no-fractional-border", "vpk-tokens/no-viewport-type", "vpk-tokens/no-uppercase-tracking"];
+	const source = `
+export const Geometry = () => (
+	<>
+		<div className="rounded-[10px] rounded-t-[6px]" />
+		<div className="border-[1.5px]" />
+		<p className="text-[4vw] md:text-[clamp(1rem,2vw,2rem)]" />
+		<p className="uppercase tracking-widest" />
+		<p className="tracking-[0.1em]" />
+		<div className="rounded-lg rounded-tile rounded-[inherit] border border-2 text-[11px] tracking-tight normal-case" />
+	</>
+);
+`;
+	const findings = await ruleFindings(source, "components/blocks/demo/lint-contract-fixture.tsx", rules);
+	const byRule = (ruleId) => [...new Set(findings.filter((finding) => finding.ruleId === ruleId).map(({ line }) => line))];
+	assert.deepEqual(byRule("vpk-tokens/no-arbitrary-radius"), [4]);
+	assert.deepEqual(byRule("vpk-tokens/no-fractional-border"), [5]);
+	assert.deepEqual(byRule("vpk-tokens/no-viewport-type"), [6]);
+	assert.deepEqual(byRule("vpk-tokens/no-uppercase-tracking"), [7, 8]);
+	assert.deepEqual(byRule("vpk-tokens/no-arbitrary-radius").length, 1, "rounded-[inherit] and scale steps pass");
+	assert.deepEqual(
+		(await ruleFindings("export const ROW = \"uppercase rounded-[10px]\";\n", "components/blocks/demo/classes.ts", rules)).map(({ ruleId }) => ruleId).sort(),
+		["vpk-tokens/no-arbitrary-radius", "vpk-tokens/no-uppercase-tracking"],
+		"class constants in .ts files are checked",
+	);
+	assert.deepEqual(await ruleFindings(source, "components/projects/jira-team-eu26-end/finale/lint-contract-fixture.tsx", rules), [], "motion-led stages opt out");
+	assert.deepEqual(await ruleFindings(source, "components/arts/demo/lint-contract-fixture.tsx", rules), [], "art surfaces opt out");
+});
+
+test("overlay surfaces use shadow-2xl and menu sections use DropdownMenuSeparator", async () => {
+	const findings = await ruleFindings(`
+import { PopoverContent } from "@/components/ui/popover";
+import { DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+export const Menus = () => (
+	<>
+		<PopoverContent className="w-80 shadow-xl" />
+		<DropdownMenuContent className="shadow-2xl">
+			<DropdownMenuLabel className="border-b border-border" />
+			<DropdownMenuItem className="border-t" />
+			<DropdownMenuItem className="md:border-b-2 border-t-[1px]" />
+			<DropdownMenuSeparator />
+			<DropdownMenuItem className="gap-2" />
+		</DropdownMenuContent>
+	</>
+);
+`, "components/blocks/demo/lint-contract-fixture.tsx", ["shadcn/no-restyle"]);
+	assert.deepEqual([...new Set(findings.map(({ line }) => line))], [6, 8, 9, 10]);
+	assert.ok(findings.every(({ severity }) => severity === 2));
+	assert.match(findings[0].message, /shadow-2xl/u);
+	assert.match(findings.at(-1).message, /DropdownMenuSeparator/u);
+	const pilotOverride = await ruleFindings(`
+import { TooltipContent } from "@/components/ui/tooltip";
+export const Tip = () => <TooltipContent className="shadow-xl" />;
+`, "components/blocks/agent-session-column/agent-session-column-header.tsx", ["shadcn/no-restyle"]);
+	assert.equal(pilotOverride.length, 1, "per-file pilot overrides keep the repo-wide overlay contract");
+});
+
+test("primitives may compose dynamic classes and art scenes may pass literal colors", async () => {
+	const rules = ["shadcn/no-raw-colors", "shadcn/require-static-classes", "shadcn/no-arbitrary-values"];
+	const primitive = await ruleFindings(`
+import { Slot } from "@/components/ui/slot";
+export const Box = ({ size }: { size: string }) => <Slot className={\`h-\${size} w-[13px]\`} />;
+`, "components/ui/lint-contract-fixture.tsx", rules);
+	assert.deepEqual(primitive, []);
+	const art = await ruleFindings(`
+export const Scene = () => <mesh><meshBasicMaterial color="#8ec8ff" /></mesh>;
+`, "components/arts/demo/lint-contract-fixture.tsx", rules);
+	assert.deepEqual(art, []);
 });
 
 test("clickable UI is focusable and keyboard-operable, and hidden UI is unreachable", async () => {

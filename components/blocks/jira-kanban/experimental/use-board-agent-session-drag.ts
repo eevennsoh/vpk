@@ -9,6 +9,7 @@ import type { AgentSelectorAgent } from "@/components/blocks/agent-selector";
 import {
 	AGENT_BRAND_TINT_FALLBACK,
 	resolveAgentBrandTintColor,
+	resolveAgentTintSeed,
 } from "@/components/blocks/agent-session/agent-brand-tint";
 import { toSessionTransferMember } from "@/components/blocks/agent-session/agent-session-transfer-member";
 import { useBulkAssignmentGlow } from "@/components/blocks/jira-kanban/experimental/hooks/use-bulk-assignment-glow";
@@ -25,7 +26,6 @@ import {
 } from "@/components/blocks/jira-issue/attach-proximity";
 import {
 	JIRA_ISSUE_AGENT_SESSION_DRAG_IDLE,
-	sessionTransferTintSeed,
 	type JiraIssueAgentSessionDragBinding,
 	type JiraIssueAgentSessionTransferMember,
 } from "@/components/blocks/jira-issue/agent-session-drag";
@@ -684,7 +684,7 @@ export function useBoardAgentSessionDrag({
 	const noteAgentAssignment = useCallback((agent: AgentSelectorAgent, card: JiraKanbanCardData) => {
 		pendingAssignmentRef.current = {
 			cardCode: card.code,
-			member: { id: agent.id, name: agent.name, avatarSrc: agent.avatarSrc, tintSeed: sessionTransferTintSeed(agent.brandName, agent.vpkLogo, agent.name, agent.id) },
+			member: { id: agent.id, name: agent.name, avatarSrc: agent.avatarSrc, tintSeed: resolveAgentTintSeed(agent) },
 			previousActivities: card.agentActivities,
 		};
 	}, []);

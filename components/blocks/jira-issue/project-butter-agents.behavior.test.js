@@ -481,6 +481,29 @@ test("Butter lets a card with attached activity add another agent", async () => 
 	assert.deepEqual(assignments, [["reviewer", "writer"]]);
 });
 
+test("Butter card keeps the preview avatar at 20px through selection and handoff", async () => {
+	const view = await renderComponent({ source: `
+		import { ProjectButterInvocationChin } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
+		import { ProjectButterInvocationProvider, useProjectButterInvocationActions } from "@/components/blocks/jira-issue/project-butter-invocation";
+		const agents = [{ id: "claude", name: "Claude", brandName: "claude" }, { id: "cursor", name: "Cursor", brandName: "cursor" }];
+		function Controls() {
+			const actions = useProjectButterInvocationActions();
+			return <><button onClick={() => actions.open("footer")}>Open</button>{agents.map((agent, index) => <button key={agent.id} onClick={() => actions.preview(agent, index)}>{agent.name}</button>)}<button onClick={() => actions.commit(agents[1], 1)}>Assign</button><ProjectButterInvocationChin avatarSizePx={20} hasChin={false}><span>Working</span></ProjectButterInvocationChin></>;
+		}
+		export default function Fixture() { return <ProjectButterInvocationProvider agents={agents} enabled><Controls /></ProjectButterInvocationProvider>; }
+	` });
+	await view.click(view.getByRole("button", { name: "Open" }));
+	for (const name of ["Claude", "Cursor"]) {
+		await view.click(view.getByRole("button", { name }));
+		const avatar = view.container.querySelector('[data-slot="jira-issue-agent-invocation-preview"] [data-slot="avatar"]');
+		assert.equal(avatar?.classList.contains("size-5"), true, name);
+	}
+	await view.click(view.getByRole("button", { name: "Assign" }));
+	const handoffAvatar = view.container.querySelector('[data-slot="jira-issue-agent-invocation-handoff"] [data-slot="avatar"]');
+	assert.equal(handoffAvatar?.classList.contains("size-5"), true);
+	await view.unmount();
+});
+
 for (const role of ["owner", "viewer"]) {
 	test(`Butter can start another Cursor session when a ${role} session exists`, async () => {
 		const assignments = [];
@@ -505,6 +528,34 @@ for (const role of ["owner", "viewer"]) {
 		assert.deepEqual(assignments, [["test-agent", "test-agent"]]);
 	});
 }
+
+test("Butter card chin keeps the chosen agent at the row's 20px from browsing to attached, and only scales in the invoker dot", async () => {
+	const avatarSrc = "/avatar-agent-new/lime/auto-dev.svg";
+	const activity = { id: "writer", name: "Writing agent", avatarSrc, state: "working", label: "Working", invokedBy: { name: "Annie Cook" } };
+	const props = {
+		appearance: "project-butter",
+		issueKey: "PD-40",
+		summary: "Implement advanced date-range filter",
+		agentActivityAvatarSize: 20,
+		assignment: { agents: [{ id: "writer", name: "Writing agent", byline: "Draft updates", avatarSrc }], onAgentAssign: () => {} },
+	};
+	const view = await renderComponent({ entry: "components/blocks/jira-issue/index.tsx", exportName: "JiraIssue", props });
+	const frameClass = (selector) => view.container.querySelector(selector)?.querySelector('[data-slot="avatar"]')?.className ?? "";
+	await view.click(view.getByRole("button", { name: "Add agent to PD-40" }));
+	await view.press(view.getByRole("combobox", { name: "Search agents" }), "ArrowDown");
+	await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+	assert.match(frameClass('[data-slot="jira-issue-agent-invocation-preview"]'), /\bsize-5\b/u);
+	await view.click(view.getByRole("option", { name: /Writing agent/u }));
+	await view.rerender({ ...props, agentActivities: [activity] });
+	const handoff = view.container.querySelector('[data-slot="jira-issue-agent-invocation-handoff-avatar"]');
+	assert.equal(handoff !== null, true);
+	assert.equal(handoff.querySelector('[data-slot="human-agent-avatar"]')?.classList.contains("size-5"), true);
+	// Only the invoker dot enters (HumanAgentAvatar badgeEntrance starts it hidden and scaled down); the agent frame stays put.
+	const dotStyle = handoff.querySelector('[data-avatar-role="human"]')?.getAttribute("style") ?? "";
+	assert.match(dotStyle, /opacity:\s*0/u, dotStyle);
+	assert.doesNotMatch(handoff.getAttribute("style") ?? "", /scale/u);
+	assert.doesNotMatch(handoff.outerHTML, /scale\(0\.85\)/u);
+});
 
 test("Butter omits the add-agent action during selection and dragging", async () => {
 	for (const state of [

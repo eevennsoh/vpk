@@ -5,7 +5,13 @@ import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { AgentSessionItem } from "@/components/blocks/agent-session";
 import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data/session-state";
 import { createProjectButterSessions, PROJECT_BUTTER_SESSIONS, type ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
+import { PROJECT_BUTTER_VIEWER } from "@/components/blocks/jira-work-item/project-butter/people";
 import { useProjectButterItemState } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-item-state";
+
+/** Whoever starts a session from this work item: the host's user, else the presenter. */
+function sessionInvoker(currentUser?: WorkItemPerson) {
+	return currentUser ? { name: currentUser.name, avatarSrc: currentUser.avatarUrl } : { name: PROJECT_BUTTER_VIEWER.name, avatarSrc: PROJECT_BUTTER_VIEWER.avatarSrc };
+}
 
 interface ProjectButterSessionState {
 	sessions: ProjectButterSessionItem[];
@@ -28,7 +34,7 @@ export function useProjectButterSessions(preset: JiraWorkItemPreset, itemKey = "
 	}), [fieldSetter]);
 	const activeSession = sessions.find((session) => session.id === activeSessionId);
 	function startAgent(agent: AgentSessionItem["agent"], summary: string, prompt?: string) {
-		const session: ProjectButterSessionItem = { id: `${itemKey}:${crypto.randomUUID()}`, agent, title: summary.trim() || `Work on ${itemKey}`, host: "cloud", state: "running", timeLabel: "Just now", invokedAtMs: Date.now(), invokedBy: currentUser ? { name: currentUser.name, avatarSrc: currentUser.avatarUrl } : { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" }, message: `Ready to work on ${summary}.`, prompt };
+		const session: ProjectButterSessionItem = { id: `${itemKey}:${crypto.randomUUID()}`, agent, title: summary.trim() || `Work on ${itemKey}`, host: "cloud", state: "running", timeLabel: "Just now", invokedAtMs: Date.now(), invokedBy: sessionInvoker(currentUser), message: `Ready to work on ${summary}.`, prompt };
 		setSessions((current) => [...current, session]);
 		setActiveSessionId(session.id);
 		return session;
@@ -43,7 +49,7 @@ export function useProjectButterSessions(preset: JiraWorkItemPreset, itemKey = "
 			branch: undefined,
 			message: `Ready to work on ${itemKey}.`,
 		};
-		const codingSession = currentUser ? { ...template, invokedBy: { name: currentUser.name, avatarSrc: currentUser.avatarUrl }, invokedAtMs: Date.now(), timeLabel: "Just now" } : template;
+		const codingSession = { ...template, invokedBy: sessionInvoker(currentUser), invokedAtMs: Date.now(), timeLabel: "Just now" };
 		setSessions((current) => current.some((session) => session.id === codingSession.id)
 			? current
 			: [...current, { ...codingSession, state: "running" }]);
