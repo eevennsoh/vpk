@@ -217,7 +217,7 @@ export function SuggestionCard({
 	const face = top
 		? <TopFace progress={progress} suggestion={suggestion} />
 		: decision === "pending"
-			? <RowFace controls={role === "row"} onDecide={onDecide} suggestion={suggestion} why={floating ? undefined : why} />
+			? <RowFace controls={role === "row"} onDecide={onDecide} suggestion={suggestion} why={why} />
 			: <DecidedFace decision={decision} onRestore={onRestore} suggestion={suggestion} />;
 
 	return (
