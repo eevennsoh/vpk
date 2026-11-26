@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
+import { motion, useReducedMotion } from "motion/react";
 
 import type { AgentListItem } from "@/components/blocks/agent-list";
 import { StickyRowScrollFade } from "@/components/visual/scroll-mask";
 import { cn } from "@/lib/utils";
+import { motionDuration, motionEase } from "@/lib/motion";
 
 import { JIRA_ACTIVITY_CURRENT_USER, JIRA_ACTIVITY_ENTRIES } from "./data";
 import { JiraActivityChangedFiles } from "./jira-activity-changed-files";
@@ -63,6 +65,8 @@ export interface JiraActivityProps {
 	onRepliesExpandedChange?: (entry: JiraActivityCommentEntry, expanded: boolean) => void;
 	/** Keep the thread stem for host-rendered content following collapsed replies. */
 	forceThreadConnector?: (entry: JiraActivityCommentEntry) => boolean;
+	/** Continue the reply rail when host-rendered content follows the replies. */
+	continueThreadAfterReplies?: (entry: JiraActivityCommentEntry) => boolean;
 	/** Wrap a root comment's avatar while keeping its position on the activity rail. */
 	renderCommentAvatar?: (entry: JiraActivityCommentEntry, avatar: ReactNode) => ReactNode;
 	/** Optional replacement for a plain comment or reply header's timestamp. */
@@ -86,6 +90,10 @@ export interface JiraActivityProps {
 	renderCommentBody?: (entry: JiraActivityCommentEntry) => ReactNode | undefined;
 	/** Optional replacement for an entry's built-in body. Return undefined to use the default renderer. */
 	renderEntry?: (entry: JiraActivityEntry) => ReactNode | undefined;
+	/** Reorder rows when this host-owned key changes. */
+	positionLayoutKey?: string;
+	/** Draw a divider between adjacent entries when the host groups them. */
+	separatorAfter?: (entry: JiraActivityEntry, next: JiraActivityEntry) => string | undefined;
 	/** Marks one timeline row as the current step without changing ordering or filtering. */
 	activeEntryId?: string;
 	/**
@@ -164,6 +172,10 @@ export interface JiraActivityProps {
  * changed-files cards on a shared connector spine, with a header and a bottom
  * comment composer. Comments and replies append to the feed via a pure reducer.
  */
+export function JiraActivityGroupSeparator({ label, className }: Readonly<{ label: string; className?: string }>) {
+	return <span className={cn("pointer-events-none block border-t border-dashed border-border", className)} data-jira-activity-group-separator><span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap bg-surface px-2 text-xs font-normal text-text-subtlest">{label}</span></span>;
+}
+
 export function JiraActivity({
 	entries: controlledEntries,
 	defaultEntries = JIRA_ACTIVITY_ENTRIES,
@@ -181,6 +193,7 @@ export function JiraActivity({
 	renderCommentReplies,
 	onRepliesExpandedChange,
 	forceThreadConnector,
+	continueThreadAfterReplies,
 	renderCommentAvatar,
 	renderTimestamp,
 	renderReplyBody,
@@ -194,6 +207,8 @@ export function JiraActivity({
 	replyRequest,
 	renderCommentBody,
 	renderEntry,
+	positionLayoutKey,
+	separatorAfter,
 	activeEntryId,
 	onAddCommentToChat,
 	onAddReplyToChat,
@@ -222,6 +237,7 @@ export function JiraActivity({
 	onFilterChange,
 	collapsed: controlledCollapsed,
 }: Readonly<JiraActivityProps>) {
+	const reduceMotion = useReducedMotion();
 	const [uncontrolledEntries, setUncontrolledEntries] = useState(defaultEntries);
 	const entries = controlledEntries ?? uncontrolledEntries;
 	const [uncontrolledSortOrder, setUncontrolledSortOrder] = useState(defaultSortOrder);
@@ -363,6 +379,7 @@ export function JiraActivity({
 						const isCardEntry = entry.kind !== "event";
 						const isNestedComment = entry.kind === "comment" && Boolean(entry.parentId);
 						const nextEntry = orderedEntries[index + 1];
+						const separator = nextEntry ? separatorAfter?.(entry, nextEntry) : undefined;
 						const isNextEntryCard = nextEntry?.kind !== "event" && !isLast;
 						const isNextEntryThreadContinuation = nextEntry?.kind === "comment"
 							&& (
@@ -404,6 +421,7 @@ export function JiraActivity({
 								renderCommentReplies={renderCommentReplies}
 								onRepliesExpandedChange={onRepliesExpandedChange ? (expanded) => onRepliesExpandedChange(entry, expanded) : undefined}
 								forceThreadConnector={forceThreadConnector?.(entry)}
+								continueThreadAfterReplies={continueThreadAfterReplies?.(entry)}
 								renderTimestamp={renderTimestamp}
 								renderReplyBody={renderReplyBody}
 								renderReplyFooter={renderReplyFooter}
@@ -450,9 +468,9 @@ export function JiraActivity({
 						);
 
 						return (
-							<li
+							<motion.li
 								aria-current={entry.id === activeEntryId ? "step" : undefined}
-								className="flex min-w-0 gap-2"
+								className="relative flex min-w-0 gap-2"
 								data-active={entry.id === activeEntryId ? "" : undefined}
 								data-jira-activity-entry-id={entry.id}
 								data-jira-activity-entry-kind={entry.kind}
@@ -461,6 +479,9 @@ export function JiraActivity({
 									entry.kind === "comment" ? entry.parentId : undefined
 								}
 								key={entry.id}
+								layout={positionLayoutKey !== undefined && !reduceMotion ? "position" : false}
+								layoutDependency={positionLayoutKey}
+								transition={{ layout: { duration: motionDuration.slow, ease: motionEase.inOut } }}
 							>
 								{/*
 								 * The node gives its connector a 4px break below each icon.
@@ -504,7 +525,8 @@ export function JiraActivity({
 										<span aria-hidden className={cn("absolute -left-6 top-full h-4 w-px -translate-x-1/2 [mask-image:linear-gradient(to_bottom,black,transparent)]", connectorStyle === "thread" ? "bg-bg-accent-gray-subtler" : "bg-border")} data-jira-activity-end-fade />
 									) : null}
 								</div>
-							</li>
+								{separator ? <JiraActivityGroupSeparator className="absolute inset-x-0 -bottom-2" label={separator} /> : null}
+							</motion.li>
 						);
 					})}
 				</ol>

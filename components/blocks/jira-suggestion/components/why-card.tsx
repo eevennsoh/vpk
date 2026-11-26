@@ -14,7 +14,7 @@ const SOURCE_TYPES: Readonly<Record<WorkItemSuggestion["reason"]["evidence"][num
 	jira: { id: "jira", label: "Jira", provider: "jira" },
 	loom: { id: "loom", label: "Loom", provider: "loom" },
 	slack: { id: "slack", label: "Slack", provider: "twg", name: "slack" },
-	history: { id: "history", label: "Work history", provider: "twg", icon: <span className="inline-flex text-icon-subtle"><ClockIcon color="currentColor" label="" size="small" /></span> },
+	history: { id: "history", label: "Work history", provider: "twg", iconSize: "small", iconInset: true, icon: <span className="inline-flex text-icon-subtle"><ClockIcon color="currentColor" label="" size="small" /></span> },
 };
 
 const CONFIDENCE: Readonly<Record<SuggestionConfidence, { label: string; filled: number; tone: string }>> = {

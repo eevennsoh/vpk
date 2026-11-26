@@ -1,17 +1,20 @@
 "use client";
 
-import { useId, useRef, useState, type ComponentProps, type CSSProperties } from "react";
+import { Fragment, useId, useRef, useState, type ComponentProps, type CSSProperties } from "react";
+import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import ChevronRightIcon from "@atlaskit/icon/core/chevron-right";
 import { getAgentSessionRole } from "@/components/blocks/agent-session/agent-session-types";
 import { matchingAgentSessions } from "@/components/blocks/agent-assignment/components/session-choice-items";
 import { TeammateSessionAvatars } from "@/components/blocks/agent-assignment/components/teammate-session-avatars";
-import { JiraActivity, JiraActivityEntryGlyph, type JiraActivityCommentEntry, type JiraActivityReply } from "@/components/blocks/jira-activity";
+import { JiraActivity, JiraActivityEntryGlyph, JiraActivityGroupSeparator, type JiraActivityCommentEntry, type JiraActivityReply } from "@/components/blocks/jira-activity";
 import { Button } from "@/components/ui/button";
+import { AvatarGroup } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { motionDuration, motionEase } from "@/lib/motion";
 import { ProjectButterSessionStart } from "./activity-session-start";
 import { ProjectButterPinComment } from "./activity-comment-tools";
-import { latestVisibleActivityReply, pinProjectButterComments } from "./activity-feed-model";
+import { latestVisibleActivityReply, pinProjectButterComments, projectButterReplyParticipants } from "./activity-feed-model";
 import { draftThreadInstruction, SESSION_THREAD_RAIL, summarizeReplies, SUMMARIZED_THREAD, SUMMARY_TRANSITION, useWorkItemThreadSummaries } from "./activity-thread-summary";
 import type { ProjectButterSessionItem } from "./data";
 
@@ -21,14 +24,28 @@ type SummaryControl = ReturnType<ReturnType<typeof useWorkItemThreadSummaries>>;
 type ThreadProps = Pick<ComponentProps<typeof JiraActivity>, "actors" | "currentUser" | "onEntriesChange" | "onSelectReply" | "renderCommentTools" | "renderReply" | "renderReplyBody" | "renderReplyFooter" | "renderTimestamp" | "selectedReply">;
 
 export function renderProjectButterEarlierRepliesLabel(replies: readonly JiraActivityReply[], expanded: boolean) {
+	return <EarlierRepliesLabel expanded={expanded} replies={replies} />;
+}
+
+function EarlierRepliesLabel({ replies, expanded }: Readonly<{ replies: readonly JiraActivityReply[]; expanded: boolean }>) {
+	const [wasExpanded, setWasExpanded] = useState(expanded);
+	const reduceMotion = useReducedMotion();
+	if (expanded && !wasExpanded) setWasExpanded(true);
 	if (expanded) return "Hide replies";
-	const actors = [...new Map(replies.map(({ actor }) => [actor.id, actor])).values()].slice(-3).reverse();
+	const actors = projectButterReplyParticipants(replies).slice(0, 3);
 	return (
 		<>
 			<span>Show {replies.length} {replies.length === 1 ? "reply" : "replies"}</span>
-			<span aria-label={`Reply participants: ${actors.map(({ name }) => name).join(", ")}`} className="flex shrink-0 gap-0.5" role="group">
-				{actors.map((actor) => <JiraActivityEntryGlyph actor={actor} animate={false} key={actor.id} />)}
-			</span>
+			<AvatarGroup as="span" className="shrink-0" label={`Reply participants: ${actors.map(({ name }) => name).join(", ")}`} size="xs">
+				{actors.map((actor, index) => <motion.span
+					animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+					className="inline-flex"
+					data-reply-participant-avatar
+					initial={wasExpanded && !reduceMotion ? { opacity: 0, transform: "translateY(4px) scale(0.8)" } : false}
+					key={actor.id}
+					transition={{ duration: reduceMotion ? 0 : motionDuration.normal, ease: motionEase.outPractical, delay: reduceMotion ? 0 : index * motionDuration.xxshort }}
+				><JiraActivityEntryGlyph actor={actor} animate={false} /></motion.span>)}
+			</AvatarGroup>
 		</>
 	);
 }
@@ -64,6 +81,7 @@ function SessionThreadCard({ thread, summary, onDraft, onOpenSession, onTogglePi
 				hideHeader
 				connectorStyle="thread"
 				forceThreadConnector={() => summary.summarized || pinned}
+				continueThreadAfterReplies={() => summary.summarized}
 				commentHeaderLayout="inline"
 				commentActionsPlacement="hover"
 				renderCommentAction={() => <ProjectButterPinComment onToggle={() => onTogglePin(entry.id)} pinned={pinned} />}
@@ -101,6 +119,8 @@ export function ProjectButterActivitySessionThreads({ entries, sessions, pinnedI
 	const summaryFor = useWorkItemThreadSummaries({ entries: entries.filter(({ session }) => getAgentSessionRole(session) === "owner").map(({ entry }) => entry), active, activatedAtMs, latestReplyEntryIds: props.latestReplyEntryIds });
 	const listRef = useRef<HTMLDivElement>(null);
 	const id = useId();
+	const reduceMotion = useReducedMotion();
+	const pinLayoutKey = pinnedIds.join("|");
 	const pinned = pinnedIds.flatMap((id) => entries.filter(({ entry }) => entry.id === id));
 	const unpinned = entries.filter(({ entry }) => !pinnedIds.includes(entry.id));
 	const mine = unpinned.filter(({ session }) => getAgentSessionRole(session) === "owner");
@@ -115,8 +135,14 @@ export function ProjectButterActivitySessionThreads({ entries, sessions, pinnedI
 		});
 	}
 	return (
+		<LayoutGroup id={id}>
 		<div className="grid gap-3" ref={listRef}>
-			{[...pinned, ...mine].map((thread) => <SessionThreadCard key={thread.entry.id} thread={thread} summary={summaryFor(thread.entry)} pinned={pinnedIds.includes(thread.entry.id)} onTogglePin={togglePin} {...props} />)}
+			{[...pinned, ...mine].map((thread, index) => <Fragment key={thread.entry.id}>
+				<motion.div data-pin-motion-row layout={reduceMotion ? false : "position"} layoutId={reduceMotion ? undefined : thread.entry.id} layoutDependency={pinLayoutKey} transition={{ layout: { duration: motionDuration.slow, ease: motionEase.inOut } }}>
+					<SessionThreadCard thread={thread} summary={summaryFor(thread.entry)} pinned={pinnedIds.includes(thread.entry.id)} onTogglePin={togglePin} {...props} />
+				</motion.div>
+				{index === pinned.length - 1 && (mine.length > 0 || teammates.length > 0) ? <JiraActivityGroupSeparator className="relative my-5" label={`${pinned.length} pinned`} /> : null}
+			</Fragment>)}
 			{teammates.length ? (
 				<div>
 					<Button
@@ -132,11 +158,12 @@ export function ProjectButterActivitySessionThreads({ entries, sessions, pinnedI
 						<Icon className={expanded ? "rotate-90" : undefined} render={<ChevronRightIcon label="" size="small" />} />
 					</Button>
 					<div className={expanded ? "grid gap-3 pt-3" : undefined} hidden={!expanded} id={id}>
-						{teammates.map((thread) => <SessionThreadCard key={thread.entry.id} thread={thread} summary={summaryFor(thread.entry, expanded)} pinned={false} onTogglePin={togglePin} {...props} />)}
+						{teammates.map((thread) => <motion.div data-pin-motion-row key={thread.entry.id} layout={reduceMotion ? false : "position"} layoutId={reduceMotion ? undefined : thread.entry.id} layoutDependency={pinLayoutKey} transition={{ layout: { duration: motionDuration.slow, ease: motionEase.inOut } }}><SessionThreadCard thread={thread} summary={summaryFor(thread.entry, expanded)} pinned={false} onTogglePin={togglePin} {...props} /></motion.div>)}
 					</div>
 				</div>
 			) : null}
 			{!entries.length ? <p className="py-2 text-sm text-text-subtle">{sessions.length ? "No session activity yet" : "No agent sessions yet"}</p> : null}
 		</div>
+		</LayoutGroup>
 	);
 }

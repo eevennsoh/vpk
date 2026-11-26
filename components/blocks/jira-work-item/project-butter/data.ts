@@ -4,7 +4,7 @@ import type { JiraWorkItemPreset } from "@/components/blocks/jira-work-item/data
 // Reference: atlassian/prototyping, wiv-v2/main at 3a53253a, packages/prototypes/wiv-v2.
 // Explore WIP session threads: wiv-v2/main at 091d9991 (App.jsx WIP seeded session starters).
 /** A message in a session's Activity thread, offset in minutes from the invocation. */
-export type ProjectButterSessionReply = Readonly<{ id: string; author: string; body: string; minutesAfter: number }>;
+export type ProjectButterSessionReply = Readonly<{ id: string; author: string; body: string; minutesAfter: number; visibility?: "private" | "public" }>;
 export type ProjectButterSessionItem = AgentSessionItem & {
 	message: string;
 	invokedAtMs?: number;

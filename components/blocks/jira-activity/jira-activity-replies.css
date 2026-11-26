@@ -1,0 +1,6 @@
+@layer base {
+	[data-jira-activity-earlier-reply][hidden],
+	[data-jira-activity-animated-reply][hidden] {
+		display: block !important;
+	}
+}

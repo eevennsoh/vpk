@@ -1,6 +1,32 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("switching Global and Inline starts each suggestion demo fresh", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	await page.getByRole("button", { name: "Review suggestions", exact: true }).click();
+	await page.getByRole("dialog").last().getByRole("button", { name: "Accept description" }).click();
+	await expect(page.getByRole("textbox", { name: "Work item description" })).toContainText("Help merchants adopt");
+
+	await page.getByRole("button", { name: "Inline", exact: true }).click();
+	await expect(page.getByRole("textbox", { name: "Work item description" })).not.toContainText("Help merchants adopt");
+	await expect(page.getByRole("button", { name: "Accept description" })).toBeVisible();
+	await page.getByRole("button", { name: "Accept description" }).click();
+	await expect(page.getByRole("button", { name: "Accept assignee" })).toBeVisible();
+
+	await page.getByRole("button", { name: "Global", exact: true }).click();
+	await expect(page.getByRole("textbox", { name: "Work item description" })).not.toContainText("Help merchants adopt");
+	await page.getByRole("button", { name: "Review suggestions", exact: true }).click();
+	const panel = page.getByRole("dialog").last();
+	await expect(panel.getByRole("button", { name: "Accept description" })).toBeVisible();
+	await expect(panel.locator("footer")).toContainText("0 of 5 reviewed");
+
+	await page.getByRole("button", { name: "Inline", exact: true }).click();
+	await expect(page.getByRole("button", { name: "Accept description" })).toBeVisible();
+	await expect(page.getByRole("textbox", { name: "Work item description" })).not.toContainText("Help merchants adopt");
+});
+
 test("inline decisions let the remaining count roll before advancing", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "no-preference" });
 	await page.goto(appUrl("/butter-v1"));

@@ -14,6 +14,10 @@ export const PROJECT_BUTTER_ACTIVITY_FILTERS_ALL: ProjectButterActivityFilters =
 const replySentences = new Intl.Segmenter("en", { granularity: "sentence" });
 const MAX_REPLY_EXCERPT_LENGTH = 72;
 
+export function projectButterReplyParticipants(replies: readonly JiraActivityReply[]): JiraActivityActor[] {
+	return [...new Map(replies.map(({ actor }) => [actor.id, actor])).values()].reverse();
+}
+
 export function getProjectButterReplyExcerpt(body: string): string {
 	const firstSentence = replySentences.segment(body.trim()).containing(0)?.segment.replace(/\s+/gu, " ").trim() ?? "";
 	const characters = Array.from(firstSentence);
@@ -68,7 +72,7 @@ export function projectButterSessionInvocation(session: ProjectButterSessionItem
 	const privateVisibility = getAgentSessionRole(session) === "owner" ? { visibility: "private" as const } : {};
 	const reply = (id: string, actor: JiraActivityActor, body: string, atMs: number): JiraActivityReply => ({ id, actor, body, timestamp: relativeLabel(atMs, session.timeLabel ?? ""), createdAtMs: atMs, ...privateVisibility });
 	const prompt = session.prompt ? [reply(`prompt-${session.id}`, person, session.prompt, createdAtMs)] : [];
-	const dialogue = (session.activityReplies ?? []).map((item) => reply(item.id, item.author === session.agent.name ? agent : personActor(item.author), item.body, createdAtMs + item.minutesAfter * MINUTE));
+	const dialogue = (session.activityReplies ?? []).map((item) => ({ ...reply(item.id, item.author === session.agent.name ? agent : personActor(item.author), item.body, createdAtMs + item.minutesAfter * MINUTE), ...(item.visibility ? { visibility: item.visibility } : {}) }));
 	const latest = dialogue.length === 0 && session.state !== "running" ? [reply(`response-${session.id}`, agent, session.message, createdAtMs + MINUTE)] : [];
 	const thread: JiraActivityCommentEntry = {
 		id: `${INVOCATION_PREFIX}${session.id}`, kind: "comment", actor: agent, attributedBy: { name: person.name, avatarSrc: person.avatarSrc }, headerLabel: `${person.name} added ${agent.name}`, timestamp, createdAtMs,
@@ -127,16 +131,16 @@ export function projectButterUpdateSummary(events: readonly JiraActivityEventEnt
 export type ProjectButterUpdateGroups = ReadonlyMap<string, readonly JiraActivityEventEntry[]>;
 
 /**
- * Collapses each run of two or more adjacent events into one summary row, as
- * Explore WIP does between comment threads. Single events stay on their own line.
+ * Collapses runs of two or more adjacent events into one summary row.
+ * A single event stays on its own line.
  */
 export function groupProjectButterUpdates(entries: readonly JiraActivityEntry[], fieldLabels: (entry: JiraActivityEventEntry) => readonly string[]) {
 	const groups = new Map<string, readonly JiraActivityEventEntry[]>();
 	const grouped: JiraActivityEntry[] = [];
 	let run: JiraActivityEventEntry[] = [];
 	const flush = () => {
-		if (run.length === 1) grouped.push(run[0]);
-		else if (run.length > 1) {
+		if (run.length < 2) grouped.push(...run);
+		else {
 			const head = run[0];
 			const id = `${UPDATE_GROUP_PREFIX}${head.id}`;
 			groups.set(id, run);

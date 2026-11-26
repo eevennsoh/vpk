@@ -1,0 +1,5 @@
+@layer base {
+	[data-project-butter-update-reveal][hidden] {
+		display: block !important;
+	}
+}

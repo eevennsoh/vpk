@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect } from "react";
+import { renderSessionIdentity } from "@/components/blocks/agent-assignment/components/teammate-session-avatar-cycle";
 import { ProjectButterAddAgent } from "@/components/blocks/jira-issue/project-butter-add-agent";
 import { PROJECT_BUTTER_AGENTS } from "@/components/blocks/jira-issue/project-butter-agents";
 import { ProjectButterInvocationChin } from "@/components/blocks/jira-issue/project-butter-invocation-chin";
@@ -66,7 +67,10 @@ function ButterListAgentCellContent({ agentCatalog, onAgentAssigned, onAssignedA
 				}} /> : null}
 				{canAssign && sessions.length === 0 && phase !== "choosing" && phase !== "handoff" ? <span className="pointer-events-none shrink-0 text-sm text-text-subtlest [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/row:opacity-100 [@media(hover:hover)]:group-focus-within/row:opacity-100">Add</span> : null}
 				<div className="min-w-0 flex-1 pt-1">
-					<ProjectButterInvocationChin activities={sessions} hasChin={sessions.length > 0} allowPuzzle={allowPuzzle} flushPreview>
+					<ProjectButterInvocationChin activities={sessions} hasChin={sessions.length > 0} allowPuzzle={allowPuzzle} flushPreview renderIdentity={(session, sizePx, badgeEntrance, onBadgeReadyChange) => {
+						const catalogAgent = agentCatalog.find((agent) => agent.name.toLowerCase() === session.name.toLowerCase());
+						return renderSessionIdentity({ id: session.id, name: session.name, invokedBy: session.invokedBy, status: "working", avatar: { appearance: "coding", avatarSrc: catalogAgent?.avatarSrc ?? session.avatarSrc, brandName: catalogAgent?.brandName ?? session.brandName, vpkLogo: catalogAgent?.vpkLogo, logoName: catalogAgent?.logoName, fallbackText: session.name.slice(0, 2).toUpperCase() } }, sizePx, false, badgeEntrance, onBadgeReadyChange);
+					}}>
 						{sessions.length > 0 ? <ProjectButterCrew
 							field
 							fieldSessionMenu

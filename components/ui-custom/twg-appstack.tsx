@@ -31,6 +31,10 @@ export interface TwgToolSource {
 	label: string;
 	provider: TwgToolSourceProvider;
 	icon?: ReactNode;
+	/** Override the stack size for this source. */
+	iconSize?: TwgToolSourceIconSize;
+	/** Give a custom icon a 4px inset within its tile. */
+	iconInset?: boolean;
 	/**
 	 * Third-party brand id — renders the upstream `@atlassian/logo-third-party`
 	 * mark. Preferred over `provider` for arbitrary 3P brands.
@@ -177,7 +181,7 @@ export function TwgToolSourceIcon({
 	if (source.icon) {
 		return (
 			<Tile
-				className={cn("shrink-0", className)}
+				className={cn("shrink-0", source.iconInset && "p-1", className)}
 				isInset={false}
 				label={source.label}
 				size={size}
@@ -417,9 +421,11 @@ export function TWGAppstack({
 					index,
 					<TwgToolSourceIcon
 						source={source}
-						size={iconSize}
+						size={source.iconSize ?? iconSize}
 						className="relative"
-					/>
+					/>,
+					undefined,
+					APPSTACK_SIZES[source.iconSize ?? iconSize].box,
 				)
 			))}
 			{hiddenCount > 0 ? (

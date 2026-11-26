@@ -680,9 +680,9 @@ test("one Activity feed pages rows and filters updates, agent sessions, and comm
 	assert.equal(view.queryByRole("tab", { name: "Audit" }) === null, true);
 	assert.equal(feedIds().length, 10);
 	assert.equal(feedIds()[0], "invocation-butter-claude", "the newest session thread leads, needs-input included");
-	assert.equal(document.querySelectorAll("[data-project-butter-update-group]").length > 0, true, "adjacent field changes fold into one summary row");
 	await view.click(view.getByRole("button", { name: "Show more activity" }));
 	assert.equal(feedIds().length, 20);
+	assert.equal(document.querySelectorAll("[data-project-butter-update-group]").length > 0, true, "adjacent updates fold into a summary row");
 	await view.click(view.getByRole("button", { name: "Filter activity" }));
 	await view.click(view.getByRole("menuitemcheckbox", { name: "Updates" }));
 	await view.click(view.getByRole("menuitemcheckbox", { name: "Agent sessions" }));

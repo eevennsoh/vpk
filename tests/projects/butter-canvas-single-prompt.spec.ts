@@ -20,7 +20,7 @@ test("Reply and Draft instruction share the sticky work-item prompt", async ({ p
 	await activityMenu.click();
 	await expandChanges.click();
 	if (await expandChanges.isVisible()) await page.keyboard.press("Escape");
-	await expect(stem).toHaveCSS("background-image", /repeating-linear-gradient/);
+	await expect(stem).toHaveCSS("border-left-style", "dashed");
 	await preview.getByRole("button", { name: "Timeline", exact: true }).click();
 	await activityMenu.click();
 	await expect(expandChanges).toHaveAttribute("aria-checked", "true");
@@ -40,7 +40,7 @@ test("Reply and Draft instruction share the sticky work-item prompt", async ({ p
 	await summarize.press("Enter");
 	await expect(preview.getByRole("button", { name: "Show replies", exact: true })).toBeFocused();
 	await expect(preview.getByRole("img", { name: "Thread participants: Cursor, Venn, Annie Cook" })).toBeVisible();
-	await expect(stem).toHaveCSS("background-image", /repeating-linear-gradient/);
+	await expect(stem).toHaveCSS("border-left-style", "dashed");
 	await expect(stem).toHaveCSS("mask-image", /linear-gradient.*20%/);
 	await preview.getByRole("button", { name: "Timeline", exact: true }).click();
 	await expect(stem).toHaveCSS("background-image", "none");

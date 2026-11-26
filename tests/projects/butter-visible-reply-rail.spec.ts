@@ -17,6 +17,18 @@ async function expectSolidRail(thread: Locator) {
 	expect(Math.abs(stemBox.y + stemBox.height - continuationBox.y)).toBeLessThanOrEqual(1);
 }
 
+test("the activity timeline connects comments and events", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	const entries = page.locator('[data-project-butter-activity-feed] [aria-label="Activity timeline"] > li');
+	const count = await entries.count();
+	expect(count).toBeGreaterThan(2);
+	for (let index = 0; index < count - 1; index += 1) {
+		await expect(entries.nth(index).locator("[data-jira-activity-timeline-stem]").first()).toBeVisible();
+	}
+});
+
 test("visible session replies use a continuous solid connector", async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 1100 });
 	await page.emulateMedia({ reducedMotion: "reduce" });
@@ -27,11 +39,11 @@ test("visible session replies use a continuous solid connector", async ({ page }
 	await activity.getByRole("tab", { name: "Agent sessions", exact: true }).click();
 	const thread = activity.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]:visible');
 	await expect(thread.getByRole("button", { name: "Show replies", exact: true })).toBeVisible();
-	await expect(thread.locator("[data-jira-activity-thread-stem]")).toHaveCSS("background-image", /repeating-linear-gradient/u);
+	await expect(thread.locator("[data-jira-activity-thread-stem]")).toHaveCSS("border-left-style", "dashed");
 	await thread.getByRole("button", { name: "Show replies", exact: true }).click();
 	await expectSolidRail(thread);
 	await thread.getByRole("button", { name: "Hide replies", exact: true }).click();
-	await expect(thread.locator("[data-jira-activity-thread-stem]")).toHaveCSS("background-image", /repeating-linear-gradient/u);
+	await expect(thread.locator("[data-jira-activity-thread-stem]")).toHaveCSS("border-left-style", "dashed");
 	await thread.getByRole("button", { name: /5 replies/u }).click();
 	await thread.getByRole("button", { name: "Reply", exact: true }).first().focus();
 	await page.keyboard.press("Enter");

@@ -698,6 +698,10 @@ supplied reference copy and layout when reproducing a specific product state.
   [Motion decisions](.agents/rules/motion-decisions.md), including faster exits.
 - **Animated properties:** Animate opacity and transforms before layout
   properties. Avoid motion that changes layout in ways that break scanning.
+- **Disclosure chevrons:** Animate rotation between expanded and collapsed
+  states with VPK duration and easing tokens, respecting reduced motion. The
+  rotation makes the state change smooth and easier to follow.
+  <!-- 2026-11-27: "our chevron should always nicely animate" -->
 - **Reduced motion:** Duration and easing aliases do not automatically respect
   `prefers-reduced-motion`. Add explicit CSS guards or `useReducedMotion()` to
   disable non-essential motion or replace it with instant state changes.

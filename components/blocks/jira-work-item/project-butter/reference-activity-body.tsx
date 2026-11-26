@@ -47,7 +47,7 @@ export function ProjectButterHistoryChange({ actor, item, timestamp, defaultOpen
 		<Collapsible className="min-w-0" defaultOpen={defaultOpen}>
 			{/* Top-aligned on a 24px first-line track: a wrapped action keeps the tag, timestamp and chevron on its first line. */}
 			<div className="group/activity-timestamp relative flex min-h-6 min-w-0 items-start gap-1">
-				<CollapsibleTrigger aria-label={[actor.name, item.action, timestamp].filter(Boolean).join(" ")} className="peer flex min-h-6 min-w-0 items-start gap-1 rounded-sm text-left text-sm text-text outline-none after:absolute after:inset-0 focus-visible:ring-2 focus-visible:ring-ring">
+				<CollapsibleTrigger aria-label={[actor.name, item.action, timestamp].filter(Boolean).join(" ")} className="peer flex min-h-6 min-w-0 items-start gap-1 rounded-sm text-left text-xs text-text outline-none after:absolute after:inset-0 focus-visible:ring-2 focus-visible:ring-ring">
 					<span className="flex h-6 shrink-0 items-center"><JiraActivitySegments className="inline-flex shrink-0 items-center [&_[data-tag-text]]:[text-box:trim-both_cap_alphabetic]" segments={[mentionSegmentForActor(actor)]} /></span>
 					<span className="min-w-0 py-[calc((--spacing(6)-1cap)/2)] [text-box:trim-both_cap_alphabetic]">{item.action}</span>
 				</CollapsibleTrigger>

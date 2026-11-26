@@ -19,6 +19,25 @@ function renderWorkItem() {
 	});
 }
 
+test("activity filter stays available while buttons switch views", async () => {
+	const view = await renderWorkItem();
+	const timeline = view.getByRole("button", { name: "Timeline" });
+	const sessions = view.getByRole("button", { name: "Agent sessions" });
+	const filter = view.getByRole("button", { name: "Filter activity" });
+	assert.equal(timeline.getAttribute("aria-pressed"), "true");
+	assert.equal(sessions.getAttribute("aria-pressed"), "false");
+	await view.click(timeline);
+	assert.equal(timeline.getAttribute("aria-pressed"), "true");
+	await view.click(sessions);
+	assert.equal(sessions.getAttribute("aria-pressed"), "true");
+	assert.equal(timeline.getAttribute("aria-pressed"), "false");
+	assert.equal(view.getByRole("button", { name: "Filter activity" }) === filter, true);
+	await view.click(timeline);
+	assert.equal(sessions.getAttribute("aria-pressed"), "false");
+	assert.equal(timeline.getAttribute("aria-pressed"), "true");
+	assert.equal(view.getByRole("button", { name: "Filter activity" }) === filter, true);
+});
+
 test("reply actions select a target without staying pressed in either activity view", async () => {
 	const view = await renderWorkItem();
 	const feed = document.querySelector("[data-project-butter-activity-feed]");
@@ -32,7 +51,7 @@ test("reply actions select a target without staying pressed in either activity v
 	await view.click(nestedReply);
 	assert.equal(nestedReply.getAttribute("aria-pressed"), null);
 	assert.equal(view.queryByRole("button", { name: "Remove reply target" }) !== null, true);
-	await view.click(view.getByRole("tab", { name: "Agent sessions" }));
+	await view.click(view.getByRole("button", { name: "Agent sessions" }));
 	const otherActivity = view.getByRole("button", { name: "Other agent activity" });
 	assert.equal(otherActivity.getAttribute("aria-expanded"), "false");
 	await view.click(otherActivity);
@@ -76,7 +95,7 @@ test("timeline summaries keep independent reply disclosures", async () => {
 	assert.equal(actions[1].getAttribute("aria-expanded"), "true");
 	await view.click(summaryDisclosure);
 	assert.equal(summaryDisclosure.getAttribute("aria-expanded"), "false");
-	await view.click(view.getByRole("tab", { name: "Agent sessions" }));
+	await view.click(view.getByRole("button", { name: "Agent sessions" }));
 	assert.equal(view.getAllByRole("button", { name: "Summarize thread" }).length > 0, true);
 	assert.equal(view.queryByRole("button", { name: "More comment actions" }) === null, true);
 });
@@ -99,6 +118,7 @@ test("the attributed pair finishes before later participants enter in order", as
 	const extras = () => [...document.querySelectorAll("[data-summary-avatar-stack] > span")];
 	await view.click(view.getByRole("button", { name: "Summarize thread" }));
 	assert.equal(extras().length, 2);
+	assert.equal(document.querySelector("[data-summary-avatar-stack]")?.getAttribute("aria-label"), "Thread participants: Agent, Venn, Liam, Annie");
 	assert.equal(extras().every((avatar) => avatar.classList.contains("opacity-0")), true);
 	await view.click(document.querySelector("[data-pair-finished]"));
 	assert.equal(extras().every((avatar) => avatar.classList.contains("opacity-100")), true);
@@ -134,7 +154,7 @@ test("pinning a session thread is shared between Timeline and Agent sessions", a
 	assert.equal(visibleReplies() > 1, true);
 	await view.click(replyDisclosure());
 	assert.equal(visibleReplies(), 0);
-	await view.click(view.getByRole("tab", { name: "Agent sessions" }));
+	await view.click(view.getByRole("button", { name: "Agent sessions" }));
 	const sessionThread = [...document.querySelectorAll(`[data-jira-activity-entry-id="${id}"]`)].find((node) => !node.closest("[hidden]"));
 	assert.equal(Boolean(sessionThread), true);
 	assert.equal(sessionThread.querySelector('button[aria-label="Unpin comment"]') !== null, true);
@@ -146,7 +166,7 @@ test("pinning a session thread is shared between Timeline and Agent sessions", a
 	const sessionPin = unpinnedSession.querySelector('button[aria-label="Pin comment"]');
 	assert.equal(view.isFocused(sessionPin), true);
 	await view.click(sessionPin);
-	await view.click(view.getByRole("tab", { name: "Timeline" }));
+	await view.click(view.getByRole("button", { name: "Timeline" }));
 	assert.equal(feed.querySelector(`[data-jira-activity-entry-id="${id}"] button[aria-label="Unpin comment"]`) !== null, true);
 	await view.click(feed.querySelector(`[data-jira-activity-entry-id="${id}"] button[aria-label="Unpin comment"]`));
 	assert.equal(feed.querySelector(`[data-jira-activity-entry-id="${id}"] button[aria-label="Pin comment"]`) !== null, true);

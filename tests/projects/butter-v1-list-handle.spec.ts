@@ -185,6 +185,35 @@ for (const key of ["PAY-118", "PAY-105"]) test(`selected agent animates into lis
 	}
 });
 
+test("the session owner scales in during the list agent handoff", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.setViewportSize({ width: 1800, height: 1300 });
+	await page.goto(appUrl("/butter-v1"));
+	const list = await openList(page);
+	const add = list.getByRole("button", { name: "Add agent to PAY-118" });
+	const cell = add.locator("xpath=ancestor::*[@data-butter-agent-surface]");
+	await add.click();
+	const agent = page.getByRole("dialog", { name: "Agents" }).getByRole("button", { name: /^Claude/ }).first();
+	await agent.hover();
+	const samples = cell.evaluate(async (element) => {
+		const button = document.querySelector<HTMLButtonElement>('[role="dialog"][aria-label="Agents"] button[data-agent-id="claude-code"]');
+		if (!button) throw new Error("Agent button not found");
+		await new Promise<void>((resolve) => button.addEventListener("click", () => resolve(), { once: true, capture: true }));
+		const values: { opacity: number; scale: number }[] = [];
+		const start = performance.now();
+		while (performance.now() - start < 700) {
+			const badge = element.querySelector<HTMLElement>('[data-slot="jira-issue-agent-invocation-handoff"] [data-avatar-role="human"]');
+			if (badge) values.push({ opacity: Number(getComputedStyle(badge).opacity), scale: new DOMMatrixReadOnly(getComputedStyle(badge).transform).a });
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+		}
+		return values;
+	});
+	await agent.click();
+	const frames = await samples;
+	expect(frames.some(({ opacity, scale }) => opacity > 0 && opacity < 1 && scale > 0.35 && scale < 1), JSON.stringify(frames)).toBe(true);
+	await expect(cell.locator('[data-slot="jira-issue-agent-invocation-actual"] [data-avatar-role="human"]')).toHaveCSS("opacity", "1");
+});
+
 for (const reducedMotion of ["reduce", "no-preference"] as const) test(`assigning an agent acknowledges the list row (${reducedMotion})`, async ({ page }) => {
 	await page.emulateMedia({ reducedMotion });
 	await page.setViewportSize({ width: 1800, height: 1300 });

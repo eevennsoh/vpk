@@ -301,6 +301,7 @@ const JOURNEY_HARNESS = `import React from "react";
 			<button onClick={() => acceptField("labels")}>Accept labels</button>
 			<button onClick={undoLabels}>Undo labels</button>
 			<button onClick={() => content.setSummary("An edited summary")}>Edit summary</button>
+			<button onClick={() => content.setSummary("Another summary")}>Edit summary again</button>
 			<button onClick={start}>Start Claude</button>
 			<button onClick={() => content.recordSessionInvocation(model.startCoding(content.summary))}>Start coding</button>
 			<p data-field="assignee">{content.assignee.name}</p>
@@ -324,9 +325,13 @@ test("Butter combines accepted suggestions into one expanding Activity entry", a
 	assert.notEqual(view.queryByRole("button", { name: /Venn\s*updated description and parent\s*Just now/u }), null);
 	await view.click(view.getByRole("button", { name: "Edit summary" }));
 	assert.equal(document.querySelector("[data-project-butter-update-group] button").textContent, "2 updates: changed summary, description and parent.");
+	await view.click(view.getByRole("button", { name: "Edit summary again" }));
+	assert.equal(document.querySelector("[data-project-butter-update-group] button").textContent, "3 updates: changed summary, description and parent.");
 	await expandUpdates(view);
-	assert.notEqual(view.queryByRole("button", { name: /Venn\s*updated summary\s*Just now/u }), null);
-	assert.equal(view.getAllByRole("button", { name: /Venn\s*updated .*Just now/u }).length, 2);
+	assert.equal(view.getAllByRole("button", { name: /Venn\s*updated summary\s*Just now/u }).length, 2);
+	assert.equal(view.getAllByRole("button", { name: /Venn\s*updated .*Just now/u }).length, 3);
+	await view.click(view.getByRole("button", { name: "Hide updates" }));
+	assert.equal(view.getByRole("button", { name: /3 updates:/u }).getAttribute("aria-expanded"), "false");
 });
 
 test("the combined suggestion update uses the edit pencil", async () => {

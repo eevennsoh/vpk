@@ -228,7 +228,7 @@ test("parent comments keep Reply and reactions while resolved threads label the 
 	assert.match(COMMENT_SOURCE, /!resolved && allowResolve && onResolve \? handleResolveToggle/u);
 	assert.match(
 		COMMENT_SOURCE,
-		/replies\.map\(\(reply, index\) => \([\s\S]*onReopen=\{[\s\S]*index === replies\.length - 1[\s\S]*showResolvedStatus=\{resolved && index === replies\.length - 1\}/u,
+		/replies\.map\(\(reply, index\) => \{[\s\S]*onReopen=\{[\s\S]*index === replies\.length - 1[\s\S]*showResolvedStatus=\{resolved && index === replies\.length - 1\}/u,
 	);
 	assert.match(COMMENT_SOURCE, /parentResolvedStatus = resolved && !hasReplies/u);
 	assert.match(COMMENT_SOURCE, /className="text-sm leading-5 text-text"/u);
@@ -772,6 +772,24 @@ test("thread connectors branch only inside discussions while the spine continues
 	await view.click(view.getAllByRole("button", { name: "Reply" }).at(-1));
 	assert.equal(standalone.querySelector("[data-jira-activity-thread-stem]") !== null, true);
 	assert.equal(standalone.querySelectorAll("[data-jira-activity-thread-branch]").length, 1, "reply composer joins its parent thread");
+});
+
+test("a forced thread stem stops at the final expanded reply unless content follows", async () => {
+	const view = await renderThreadConnectors("thread", false, { forceThreadConnector: (entry) => entry.id === "thread" });
+	const thread = document.querySelector('[data-jira-activity-entry-id="thread"]');
+	await view.click(view.getByRole("button", { name: "Show more replies" }));
+	const replies = [...thread.querySelectorAll('[aria-label="Replies"] > div:not([hidden])')];
+	assert.equal(replies.length, 2);
+	assert.equal(replies[0].querySelector("[data-jira-activity-thread-continuation]") !== null, true);
+	assert.equal(replies[1].querySelector("[data-jira-activity-thread-continuation]") === null, true);
+});
+
+test("the final reply retains its connector when host content follows", async () => {
+	const view = await renderThreadConnectors("thread", false, { forceThreadConnector: (entry) => entry.id === "thread", continueThreadAfterReplies: (entry) => entry.id === "thread" });
+	await view.click(view.getByRole("button", { name: "Show more replies" }));
+	const thread = document.querySelector('[data-jira-activity-entry-id="thread"]');
+	const replies = [...thread.querySelectorAll('[aria-label="Replies"] > div:not([hidden])')];
+	assert.equal(replies.at(-1).querySelector("[data-jira-activity-thread-continuation]") !== null, true);
 });
 
 test("the default activity connector remains a continuous timeline", async () => {

@@ -13,6 +13,7 @@ import { RelativeTime } from "@/components/ui/elapsed-time";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { motionDuration } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+import { projectButterReplyParticipants } from "./activity-feed-model";
 
 export type ThreadSummary = Readonly<{ text: string; fixtureReplyCount: number }>;
 export function summarizeReplies(replies: readonly JiraActivityReply[]): ThreadSummary {
@@ -47,7 +48,9 @@ const PINNED_COLLAPSED_THREAD_RAIL = [
 	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-card-body]:has(>[data-jira-activity-thread-stem])]:static!",
 	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-stem]]:bottom-8!",
 	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-stem]]:bg-transparent!",
-	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-stem]]:[background-image:repeating-linear-gradient(to_bottom,var(--ds-background-accent-gray-subtler)_0_2px,transparent_2px_5px)]!",
+	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-stem]]:border-l!",
+	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-stem]]:border-dashed!",
+	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-stem]]:border-border!",
 	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-stem]]:[mask-image:linear-gradient(to_bottom,black_60%,transparent)]!",
 	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-continuation]]:hidden!",
 	"[&_[data-jira-activity-entry-id]:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-replies-disclosure]>div>button[aria-expanded=true]))_[data-jira-activity-thread-branch]]:hidden!",
@@ -74,7 +77,8 @@ export const SESSION_THREAD_RAIL = [
 	PINNED_COLLAPSED_THREAD_RAIL,
 ].join(" ");
 export const PINNED_THREAD_RAIL = [
-	"[&>div>ol>li:has(button[aria-label^=Unpin])]:mb-3",
+	"[&>div>ol>li:has(button[aria-label^=Unpin]):not(:has([data-jira-activity-group-separator]))]:mb-3",
+	"[&>div>ol>li:has([data-jira-activity-group-separator])]:mb-10",
 	"[&>div>ol>li:has(button[aria-label^=Unpin]):not([data-jira-activity-has-more])_[data-jira-activity-timeline-stem]]:hidden",
 	VISIBLE_REPLIES_THREAD_RAIL,
 	HIDDEN_REPLIES_THREAD_RAIL,
@@ -85,13 +89,13 @@ export const SUMMARIZED_THREAD = "[&_[data-slot=jira-activity-comment-header]:no
 const FOLD_TRANSITION = "transition-[grid-template-rows,opacity] duration-slow ease-out-practical motion-reduce:transition-none";
 const AVATAR_SIZE = 24;
 const AVATAR_STEP = 16;
-const IDENTITY_MOTION = { durationMs: motionDuration.slow * 1000, pauseWhenOffscreen: false } as const;
+const IDENTITY_MOTION = { durationMs: motionDuration.fast * 1000, pauseWhenOffscreen: false } as const;
 
 function threadParticipants(entry: JiraActivityCommentEntry) {
 	const author = entry.attributedBy;
 	const participants: JiraActivityActor[] = [entry.actor];
 	if (author) participants.push({ id: author.name, name: author.name, avatarSrc: author.avatarSrc, kind: "person" });
-	for (const { actor } of entry.replies ?? []) {
+	for (const actor of projectButterReplyParticipants(entry.replies ?? [])) {
 		if (!participants.some((participant) => participant.id === actor.id || participant.name === actor.name)) participants.push(actor);
 	}
 	return participants;
@@ -114,7 +118,7 @@ function ThreadHeaderAvatars({ entry, participants, width, avatar, summarized }:
 		<div className="relative flex size-8 items-center justify-center">
 			{pair ? <>
 				<span className="sr-only" role="img" aria-label={summarized ? undefined : `${pair.agent.name}, used by ${pair.human.name}`} aria-hidden={summarized} />
-				<div aria-hidden className={cn("pointer-events-none absolute left-1 top-1 z-10 transition-transform duration-slow ease-in-out motion-reduce:transition-none", summarized ? "translate-x-1" : null)} data-summary-avatar-pair>
+				<div aria-hidden className={cn("pointer-events-none absolute left-1 top-1 z-10 transition-transform duration-fast ease-in-out motion-reduce:transition-none", summarized ? "translate-x-1" : null)} data-summary-avatar-pair>
 					<HumanAgentAvatar agent={{ name: pair.agent.name, appearance: pair.agent.appearance, avatarSrc: pair.agent.avatarSrc, brandName: pair.agent.brandName, vpkLogo: activityActorVpkLogo(pair.agent) }} human={pair.human} sizePx={24} groupSizePx={24} animate composition={summarized ? "horizontal-group" : "compact"} motion={IDENTITY_MOTION} onAnimationComplete={summarized ? onPairSettled : undefined} />
 				</div>
 			</> : <div aria-hidden={summarized} className={cn("transition-[opacity,scale] duration-slow ease-out-practical motion-reduce:transition-none", summarized ? "scale-75 opacity-0" : null)}>{avatar}</div>}
@@ -132,9 +136,9 @@ function ThreadHeaderAvatars({ entry, participants, width, avatar, summarized }:
 						key={actor.id}
 						style={{ "--summary-avatar-offset": `${index * AVATAR_STEP}px`, transitionDelay: showParticipants ? `${(index - (pair ? 2 : 0)) * motionDuration.xxshort}s` : undefined, zIndex: shown.length - index } as CSSProperties}
 						className={cn(
-							"absolute flex size-6 items-center justify-center rounded-full bg-surface ring-1 ring-surface",
-							"transition-[translate,scale,opacity] duration-normal ease-out-practical motion-reduce:transition-none",
-							showParticipants ? "translate-x-(--summary-avatar-offset) scale-100 opacity-100" : "translate-x-1 scale-75 opacity-0",
+							"absolute flex size-6 translate-x-(--summary-avatar-offset) items-center justify-center rounded-full bg-surface ring-1 ring-surface",
+							"transition-opacity motion-reduce:transition-none",
+							showParticipants ? "duration-fast ease-linear opacity-100" : "duration-normal ease-in opacity-0",
 						)}
 					>
 						<JiraActivityEntryGlyph actor={actor} animate={false} sizePx={AVATAR_SIZE} />

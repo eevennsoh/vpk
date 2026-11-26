@@ -13,7 +13,6 @@ import { resolveJiraLinkingIdentityTint } from "@/components/blocks/jira-linking
 import { agentSessionAccentColor, agentSessionTintSeed } from "@/components/blocks/agent-session/agent-session-transfer-member";
 import { resolveAgentBrandTint, resolveAgentBrandTintVariable } from "@/components/blocks/agent-session/agent-brand-tint";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ProjectButterActivitySessionThreads, renderProjectButterEarlierRepliesLabel } from "./activity-session-threads";
 import { draftThreadInstruction, PINNED_THREAD_RAIL, summarizeReplies, SUMMARY_TRANSITION, THREAD_DISCLOSURE_SPACING, useWorkItemThreadSummaries } from "./activity-thread-summary";
@@ -56,7 +55,7 @@ import {
 } from "@/components/blocks/jira-work-item/project-butter/reference-activity-body";
 
 const HISTORY = new Map(PROJECT_BUTTER_REFERENCE_HISTORY.map((item) => [item.id, item]));
-const ACTIVITY_EVENT_TEXT = "text-sm text-text [&_[data-jira-activity-agent-mention]]:align-[-0.2em] [&_[data-jira-activity-user-mention]]:align-[-0.2em]";
+const ACTIVITY_EVENT_TEXT = "text-xs text-text [&_[data-jira-activity-agent-mention]]:align-[-0.2em] [&_[data-jira-activity-user-mention]]:align-[-0.2em]";
 /** Soft hover plate behind each comment thread, on its own isolated layer. Literal strings so Tailwind's scanner sees every class. */
 const FEED_ROWS = [
 	"[&>div>ol>li]:relative [&>div>ol>li]:isolate",
@@ -64,10 +63,6 @@ const FEED_ROWS = [
 	"[&>div>ol>li[data-jira-activity-entry-kind=comment]:has(>div.pb-6)]:after:bottom-4 [&>div>ol>li[data-jira-activity-entry-kind=comment]:has(>div.pb-4)]:after:bottom-2",
 	"[&>div>ol>li[data-jira-activity-entry-kind=comment]:hover_[data-jira-activity-reply-toggle-icon]]:bg-linear-to-b [&>div>ol>li[data-jira-activity-entry-kind=comment]:hover_[data-jira-activity-reply-toggle-icon]]:from-bg-neutral-subtle-hovered [&>div>ol>li[data-jira-activity-entry-kind=comment]:hover_[data-jira-activity-reply-toggle-icon]]:to-bg-neutral-subtle-hovered",
 ].join(" ");
-
-function ActivityTimelinePanel({ tabbed, children }: Readonly<{ tabbed: boolean; children: ReactNode }>) {
-	return tabbed ? <TabsContent value="timeline">{children}</TabsContent> : children;
-}
 
 export function ProjectButterActivity({
 	content,
@@ -136,11 +131,10 @@ export function ProjectButterActivity({
 	const ordered = useMemo(() => pinProjectButterComments(selectProjectButterActivity(content.activityEntries, filters, sort), content.pinnedCommentIds), [content.activityEntries, content.pinnedCommentIds, filters, sort]);
 	const previewEntryId = previewSessionId ? ordered.find((entry) => entry.id === `invocation-${previewSessionId}`)?.id : undefined;
 	const pullRequestStatus = content.activityEntries.some((entry) => entry.id === "merchant-merged") ? "Merged" : "Open";
-	// The work item feed folds adjacent updates; the Butter project's scripted journey (single view) keeps each step on its own row.
-	const { entries: allRows, groups } = useMemo<{ entries: readonly JiraActivityEntry[]; groups: ProjectButterUpdateGroups }>(() => singleView ? { entries: ordered, groups: new Map() } : groupProjectButterUpdates(ordered, (entry) => {
+	const { entries: allRows, groups } = useMemo<{ entries: readonly JiraActivityEntry[]; groups: ProjectButterUpdateGroups }>(() => groupProjectButterUpdates(ordered, (entry) => {
 		const item = content.auditChanges[entry.id] ?? HISTORY.get(entry.id);
 		return item?.changes.length ? item.changes.map((change) => change.label) : entry.icon === "status" ? ["status"] : [];
-	}), [ordered, content.auditChanges, singleView]);
+	}), [ordered, content.auditChanges]);
 	// The page limit counts rendered rows, so an update group is one row however many changes it holds.
 	const rowIndex = (id: string | null | undefined) => id ? allRows.findIndex((row) => row.id === id || groups.get(row.id)?.some((entry) => entry.id === id)) : -1;
 	const startedEntryId = startedSessionId ? `invocation-${startedSessionId}` : null;
@@ -216,7 +210,7 @@ export function ProjectButterActivity({
 	const header = (
 		<JiraWorkItemTimeline
 			actions={<div className="ml-auto flex items-center gap-1">
-				<div className="pointer-events-none flex items-center opacity-0 transition-opacity duration-normal ease-out group-hover/activity-header:pointer-events-auto group-hover/activity-header:opacity-100 has-[:focus-visible]:pointer-events-auto has-[:focus-visible]:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100">
+				<div className="flex items-center">
 					<ProjectButterActivityFilterMenu
 						expandDetails={expandedAudit}
 						filters={filters}
@@ -227,16 +221,19 @@ export function ProjectButterActivity({
 					/>
 				</div>
 				{sessionView ? (
-					<TabsList aria-label="Activity view" size="default" variant="default">
-						<Tooltip>
-							<TooltipTrigger render={<TabsTrigger aria-label="Timeline" value="timeline" />}><TimelineIcon label="" size="small" /></TooltipTrigger>
-							<TooltipContent collisionAvoidance={{ side: "shift", align: "shift" }} positionerClassName="z-[650]" role="tooltip" side="top">Timeline</TooltipContent>
-						</Tooltip>
-						<Tooltip>
-							<TooltipTrigger render={<TabsTrigger aria-label="Agent sessions" value="sessions" />}><AiAgentIcon label="" size="small" /></TooltipTrigger>
-							<TooltipContent collisionAvoidance={{ side: "shift", align: "shift" }} positionerClassName="z-[650]" role="tooltip" side="top">Agent sessions</TooltipContent>
-						</Tooltip>
-					</TabsList>
+					<div className="flex items-center" role="group" aria-label="Activity view">
+					<Tooltip>
+						<TooltipTrigger render={<Button aria-label="Timeline" aria-pressed={!showSessions} onClick={() => setView("timeline")} selectedAppearance="icon-only" size="icon" type="button" variant="ghost" />}><TimelineIcon label="" size="small" /></TooltipTrigger>
+						<TooltipContent collisionAvoidance={{ side: "shift", align: "shift" }} positionerClassName="z-[650]" role="tooltip" side="top">Timeline</TooltipContent>
+					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger render={<Button aria-label="Agent sessions" aria-pressed={showSessions} onClick={() => {
+							if (!showSessions) { setVisitedSessions(true); setSessionsActivatedAtMs(Date.now()); }
+							setView("sessions");
+						}} selectedAppearance="icon-only" size="icon" type="button" variant="ghost" />}><AiAgentIcon label="" size="small" /></TooltipTrigger>
+						<TooltipContent collisionAvoidance={{ side: "shift", align: "shift" }} positionerClassName="z-[650]" role="tooltip" side="top">Agent sessions</TooltipContent>
+					</Tooltip>
+					</div>
 				) : null}
 			</div>}
 			className="group/activity-header"
@@ -256,7 +253,7 @@ export function ProjectButterActivity({
 	const views = (
 		<>
 			{header}
-			<ActivityTimelinePanel tabbed={sessionView}>
+			<div hidden={showSessions}>
 			<div hidden={showSessions} className={cn(FEED_ROWS, PINNED_THREAD_RAIL, SUMMARY_TRANSITION, THREAD_DISCLOSURE_SPACING, "[&_[data-jira-activity-entry-id]]:scroll-mt-28 [&_li:has([data-summary-inset='8'])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:ps-2 [&_li:has([data-summary-inset='24'])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:ps-6 [&_li:has([data-summary-inset='40'])_[data-slot=jira-activity-comment-header]:not([data-jira-activity-reply-header])]:ps-10", (previewEntryId || selectedReply) && "[&_[data-active]]:after:bg-bg-neutral-subtle-hovered! [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:bg-linear-to-b [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:from-bg-neutral-subtle-hovered [&_[data-active]_[data-jira-activity-reply-toggle-icon]]:to-bg-neutral-subtle-hovered")} data-project-butter-activity-feed data-project-butter-preview-session={previewSessionId ?? undefined} ref={showSessions ? null : feedRef}>
 				<JiraActivity
 					actorAvatarSize={24}
@@ -272,10 +269,13 @@ export function ProjectButterActivity({
 					earlierRepliesSelectedAppearance="icon-only"
 					showEarlierRepliesIcon={false}
 					composer={null}
-					connectEntries="adjacent-events"
+					connectEntries
 					fadeAfterLast={allRows.length > rows.length}
 					connectorStyle="thread"
+					positionLayoutKey={content.pinnedCommentIds.join("|")}
+					separatorAfter={(entry, next) => content.pinnedCommentIds.includes(entry.id) && !content.pinnedCommentIds.includes(next.id) ? `${rows.filter((row) => content.pinnedCommentIds.includes(row.id)).length} pinned` : undefined}
 					forceThreadConnector={(entry) => summaryFor(entry).summarized || content.pinnedCommentIds.includes(entry.id)}
+					continueThreadAfterReplies={(entry) => summaryFor(entry).summarized}
 					currentUser={content.currentUser}
 					entries={rows.map((row) => row.kind === "comment" && canSummarize(row) && summaryFor(row).summarized ? { ...row, replyPreviewCount: 0 } : row)}
 					hideHeader
@@ -348,8 +348,8 @@ export function ProjectButterActivity({
 					Show more activity
 				</Button>
 			) : null}
-			</ActivityTimelinePanel>
-			{sessionView ? <TabsContent value="sessions">{visitedSessions ? (
+			</div>
+			{sessionView && visitedSessions ? (
 				<div hidden={!showSessions} ref={showSessions ? feedRef : null}>
 					<ProjectButterActivitySessionThreads
 						active={showSessions}
@@ -382,15 +382,12 @@ export function ProjectButterActivity({
 						renderTimestamp={(item) => <ProjectButterTimestamp item={item} />}
 					/>
 				</div>
-			) : null}</TabsContent> : null}
+			) : null}
 		</>
 	);
 	return (
 		<section aria-label="Activity" className="min-w-0" data-project-butter-activity ref={activityRef}>
-			{sessionView ? <Tabs onValueChange={(next) => {
-				if (next === "sessions") { setVisitedSessions(true); setSessionsActivatedAtMs(Date.now()); }
-				if (next === "timeline" || next === "sessions") setView(next);
-			}} value={view}>{views}</Tabs> : views}
+			{views}
 		</section>
 	);
 }

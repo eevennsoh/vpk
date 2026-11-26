@@ -15,8 +15,8 @@ const LAST_USED_AGENT_ID = "claude-code";
 
 const VIEWS: readonly { value: ButterAiSuggestionsView; label: string }[] = [
 	{ value: "global", label: "Global" },
-	{ value: "dropdown", label: "Dropdown" },
 	{ value: "inline", label: "Inline" },
+	{ value: "dropdown", label: "Dropdown" },
 ];
 
 export function ButterAiSuggestionsControls({ view, onViewChange }: Readonly<{ view: ButterAiSuggestionsView; onViewChange: (view: ButterAiSuggestionsView) => void }>) {

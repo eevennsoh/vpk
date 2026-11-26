@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { motion, useReducedMotion } from "motion/react";
 
 import GrowVerticalIcon from "@atlaskit/icon/core/grow-vertical";
 import ShrinkVerticalIcon from "@atlaskit/icon/core/shrink-vertical";
@@ -17,8 +18,9 @@ import TextContinuity from "@/components/visual/text-continuity";
 import { ArtifactList, type ArtifactListItem } from "@/components/ui-custom/artifact-list";
 import type { RichTextMentionItem } from "@/components/ui-custom/rich-text-editor";
 import { cn } from "@/lib/utils";
-import { motionDuration } from "@/lib/motion";
+import { motionDuration, motionEase } from "@/lib/motion";
 import { useLatestRef } from "@/lib/use-latest-ref";
+import "./jira-activity-replies.css";
 
 import { activityActorVpkLogo } from "./jira-activity-actor-mention";
 import { JiraActivityAddToChatButton } from "./jira-activity-add-to-chat-button";
@@ -237,8 +239,9 @@ function PrivateVisibilityMetadata({ visibility }: Readonly<{ visibility: "priva
 	const startedPrivate = useRef(visibility === "private");
 	useEffect(() => {
 		if (visibility !== "public" || !startedPrivate.current) return;
-		const exitTimer = window.setTimeout(() => setPhase("exiting"), 1000);
-		const hideTimer = window.setTimeout(() => setPhase("hidden"), 1000 + motionDuration.medium * 1000);
+		const holdDuration = 3000;
+		const exitTimer = window.setTimeout(() => setPhase("exiting"), holdDuration);
+		const hideTimer = window.setTimeout(() => setPhase("hidden"), holdDuration + motionDuration.medium * 1000);
 		return () => { window.clearTimeout(exitTimer); window.clearTimeout(hideTimer); };
 	}, [visibility]);
 	if (phase === "hidden") return null;
@@ -270,6 +273,7 @@ function ThreadReplyCard({
 	headerLayout,
 	tools,
 	hidden = false,
+	animateHidden = false,
 	threaded = false,
 	continued = false,
 	actionsPlacement = "footer",
@@ -299,6 +303,7 @@ function ThreadReplyCard({
 	headerLayout: JiraActivityCardProps["headerLayout"];
 	tools?: ReactNode;
 	hidden?: boolean;
+	animateHidden?: boolean;
 	threaded?: boolean;
 	continued?: boolean;
 	actionsPlacement?: "footer" | "hover";
@@ -343,7 +348,7 @@ const reactionSummaries = reactions.map((reaction) => ({
 	if (content === null) return null;
 
 	return (
-		<div className={cn("relative pt-3", threaded ? "pb-3" : null, indented ? "pl-6" : null)} hidden={hidden}>
+		<div className={cn("relative pt-3", threaded ? "pb-3" : null, indented ? "pl-6" : null)} data-jira-activity-animated-reply={animateHidden ? "" : undefined} hidden={hidden}>
 			{threaded && continued ? <ThreadContinuation /> : null}
 			{content === undefined ? <JiraActivityCard
 				action={hoverActions ? <>{addToChatAction}{actionRow}</> : addToChatAction ?? undefined}
@@ -402,6 +407,7 @@ export function JiraActivityComment({
 	renderCommentReplies,
 	onRepliesExpandedChange,
 	forceThreadConnector = false,
+	continueThreadAfterReplies = false,
 	renderTimestamp,
 	renderReplyBody,
 	renderReplyFooter,
@@ -442,6 +448,7 @@ export function JiraActivityComment({
 	renderCommentReplies?: (entry: JiraActivityCommentEntry, replies: ReactNode, expandReplies: () => void, disclosure: ReactNode, expanded: boolean) => ReactNode;
 	onRepliesExpandedChange?: (expanded: boolean) => void;
 	forceThreadConnector?: boolean;
+	continueThreadAfterReplies?: boolean;
 	renderTimestamp?: (item: JiraActivityEntry | JiraActivityReply) => ReactNode;
 	renderReplyBody?: (reply: JiraActivityReply) => ReactNode;
 	renderReplyFooter?: (reply: JiraActivityReply) => ReactNode;
@@ -464,6 +471,15 @@ export function JiraActivityComment({
 	threaded?: boolean;
 }>) {
 	const replies = (entry.replies ?? []).filter((reply) => renderReply?.(reply) !== null);
+	const reduceMotion = useReducedMotion();
+	const [replyArrival, setReplyArrival] = useState(() => ({ entryId: entry.id, known: new Set(replies.map((reply) => reply.id)), arrivals: new Set<string>() }));
+	const replyIds = new Set(replies.map((reply) => reply.id));
+	let arrivalIds = replyArrival.arrivals;
+	if (replyArrival.entryId !== entry.id || replyArrival.known.size !== replyIds.size || [...replyIds].some((id) => !replyArrival.known.has(id))) {
+		arrivalIds = replyArrival.entryId === entry.id ? new Set([...replyArrival.arrivals].filter((id) => replyIds.has(id))) : new Set<string>();
+		if (replyArrival.entryId === entry.id) for (const id of replyIds) if (!replyArrival.known.has(id)) arrivalIds.add(id);
+		setReplyArrival({ entryId: entry.id, known: replyIds, arrivals: arrivalIds });
+	}
 	const hasReplies = replies.length > 0;
 	const hasReplyPreview = entry.replyPreviewCount !== undefined;
 	const replyPreviewCount = Math.max(0, Math.floor(entry.replyPreviewCount ?? 0));
@@ -762,8 +778,9 @@ export function JiraActivityComment({
 						id={repliesId}
 						role="group"
 					>
-						{replies.map((reply, index) => (
-							<ThreadReplyCard
+						{replies.map((reply, index) => {
+							const earlier = hasReplyPreview && index < replies.length - replyPreviewCount;
+							const card = <ThreadReplyCard
 								actorAvatarSize={actorAvatarSize}
 								attributedBy={reply.actor.kind === "agent" && reply.actor.id === entry.actor.id ? entry.attributedBy : undefined}
 								headerLayout={headerLayout}
@@ -777,7 +794,8 @@ export function JiraActivityComment({
 								currentUser={currentUser}
 								actorsById={actorsById}
 								key={reply.id}
-								hidden={hasReplyPreview && !repliesExpanded && index < replies.length - replyPreviewCount}
+								hidden={earlier && !repliesExpanded}
+								animateHidden={earlier && threaded}
 								onAddToChat={
 									onAddReplyToChat ? () => onAddReplyToChat(reply) : undefined
 								}
@@ -794,13 +812,31 @@ export function JiraActivityComment({
 								resolved={resolved}
 								indented={!nested && !threaded}
 								threaded={threaded}
-								continued={index < replies.length - 1 || composerVisible || forceThreadConnector}
+								continued={index < replies.length - 1 || composerVisible || continueThreadAfterReplies}
 								actionsPlacement={commentActionsPlacement}
 								showResolvedStatus={resolved && index === replies.length - 1}
 								timestampContent={renderTimestamp?.(reply)}
 								tools={renderCommentTools?.(entry, reply)}
-							/>
-						))}
+							/>;
+							return earlier && threaded ? <motion.div
+								animate={{ height: repliesExpanded ? "auto" : 0, opacity: repliesExpanded ? 1 : 0 }}
+								aria-hidden={!repliesExpanded || undefined}
+								className="-ml-6 overflow-hidden pl-6"
+								data-jira-activity-earlier-reply
+								hidden={!repliesExpanded}
+								inert={!repliesExpanded || undefined}
+								initial={false}
+								key={reply.id}
+								transition={reduceMotion ? { duration: 0 } : { duration: motionDuration.slow, ease: motionEase.outPractical }}
+							>{card}</motion.div> : arrivalIds.has(reply.id) && threaded ? <motion.div
+								animate={{ height: "auto", opacity: 1 }}
+								className="-ml-6 overflow-hidden pl-6"
+								data-jira-activity-reply-arrival
+								initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+								key={reply.id}
+								transition={reduceMotion ? { duration: 0 } : { duration: motionDuration.slow, ease: motionEase.outPractical }}
+							>{card}</motion.div> : card;
+						})}
 					</div>
 					</>
 				), () => changeRepliesExpanded(true), repliesDisclosure, repliesExpanded) : undefined

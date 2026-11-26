@@ -21,11 +21,11 @@ export const BUTTER_WORK_ITEM_SESSIONS: readonly ProjectButterSessionItem[] = [.
 		title: "Review the onboarding flow",
 		message: "I reviewed the onboarding flow and identified the main account setup issues.",
 		activityReplies: [
-			{ id: "onboarding-cursor-reply-1", author: "Annie Cook", minutesAfter: 5, body: "Did you check the account setup step?" },
-			{ id: "onboarding-cursor-reply-2", author: "Marcus Kim", minutesAfter: 6, body: "Yes. The validation messages need to explain how to recover from an error." },
-			{ id: "onboarding-cursor-reply-3", author: "Annie Cook", minutesAfter: 7, body: "Please check keyboard navigation too." },
-			{ id: "onboarding-cursor-reply-4", author: "Marcus Kim", minutesAfter: 9, body: "The step controls are reachable by keyboard, but the error summary needs focus." },
-			{ id: "onboarding-cursor-reply-5", author: "Annie Cook", minutesAfter: 10, body: "Thanks. Let's include both fixes in the next pass." },
+			{ id: "onboarding-cursor-reply-1", author: "Annie Cook", minutesAfter: 5, visibility: "public", body: "Did you check the account setup step?" },
+			{ id: "onboarding-cursor-reply-2", author: "Marcus Kim", minutesAfter: 6, visibility: "public", body: "Yes. The validation messages need to explain how to recover from an error." },
+			{ id: "onboarding-cursor-reply-3", author: "Annie Cook", minutesAfter: 7, visibility: "public", body: "Please check keyboard navigation too." },
+			{ id: "onboarding-cursor-reply-4", author: "Marcus Kim", minutesAfter: 9, visibility: "public", body: "The step controls are reachable by keyboard, but the error summary needs focus." },
+			{ id: "onboarding-cursor-reply-5", author: "Annie Cook", minutesAfter: 10, visibility: "public", body: "Thanks. Let's include both fixes in the next pass." },
 		],
 	}),
 	{

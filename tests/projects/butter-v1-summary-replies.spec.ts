@@ -1,6 +1,114 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+for (const reducedMotion of ["no-preference", "reduce"] as const) test(`earlier replies disclose without replacing the preview (${reducedMotion})`, async ({ page }) => {
+	await page.emulateMedia({ reducedMotion });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]:visible');
+	const preview = thread.locator('[aria-label="Replies"] > div').last();
+	await preview.evaluate((node) => { node.setAttribute("data-preview-identity", "preserved"); });
+	const earlier = thread.locator("[data-jira-activity-earlier-reply]").first();
+	await expect(earlier).toHaveAttribute("inert", "");
+	await thread.getByRole("button", { name: /^Show \d+ replies/u }).click();
+	await expect(earlier).not.toHaveAttribute("inert", "");
+	if (reducedMotion === "no-preference") {
+		await expect.poll(() => earlier.evaluate((node) => node.getAnimations().some((animation) => animation.playState === "running"))).toBe(true);
+	}
+	await expect(preview).toHaveAttribute("data-preview-identity", "preserved");
+	await thread.getByRole("button", { name: "Hide replies", exact: true }).click();
+	await expect(earlier).toHaveAttribute("inert", "");
+	await expect(preview).toHaveAttribute("data-preview-identity", "preserved");
+	await thread.getByRole("button", { name: /^Show \d+ replies/u }).click();
+	await expect(earlier).not.toHaveAttribute("inert", "");
+});
+
+test("collapsing replies animates their height", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]:visible');
+	await thread.getByRole("button", { name: /^Show \d+ replies/u }).click();
+	const earlier = thread.locator("[data-jira-activity-earlier-reply]").first();
+	await expect.poll(() => earlier.evaluate((node) => node.getAnimations().every((animation) => animation.playState !== "running"))).toBe(true);
+	const samples = thread.evaluate(async (element) => {
+		const button = [...element.querySelectorAll("button")].find((item) => item.textContent?.includes("Hide replies"));
+		if (!button) throw new Error("Reply disclosure is missing");
+		await new Promise<void>((resolve) => button.addEventListener("click", () => resolve(), { once: true, capture: true }));
+		const frames: number[] = [];
+		const start = performance.now();
+		while (performance.now() - start < 500) {
+			const reply = element.querySelector<HTMLElement>("[data-jira-activity-earlier-reply]");
+			if (reply) frames.push(reply.getBoundingClientRect().height);
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+		}
+		return frames;
+	});
+	await thread.getByRole("button", { name: "Hide replies", exact: true }).click();
+	const heights = await samples;
+	const max = Math.max(...heights);
+	expect(max).toBeGreaterThan(20);
+	expect(heights.some((height) => height > 1 && height < max - 1), JSON.stringify(heights)).toBe(true);
+	await expect(earlier).toHaveCSS("height", "0px");
+});
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) test(`new thread replies enter without replaying existing replies (${reducedMotion})`, async ({ page }) => {
+	await page.emulateMedia({ reducedMotion });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery", exact: true }).click();
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]:visible');
+	await expect(thread.locator("[data-jira-activity-reply-arrival]")).toHaveCount(0);
+	await thread.getByRole("button", { name: /^Show \d+ replies/u }).click();
+	const latest = thread.locator('[aria-label="Replies"] > div').last();
+	await latest.hover();
+	await latest.getByRole("button", { name: "Reply", exact: true }).click();
+	const composer = page.getByRole("form", { name: "Comment editor" });
+	await composer.getByRole("textbox", { name: "Comment editor" }).fill("A new reply to the thread");
+	const frames = reducedMotion === "no-preference" ? thread.evaluate(async (element) => {
+		const start = performance.now();
+		const values: number[] = [];
+		while (performance.now() - start < 1500) {
+			const arrival = element.querySelector<HTMLElement>("[data-jira-activity-reply-arrival]");
+			if (arrival) values.push(Number(getComputedStyle(arrival).opacity));
+			if (values.length && values.at(-1) === 1) break;
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+		}
+		return values;
+	}) : undefined;
+	await composer.getByRole("button", { name: "Submit", exact: true }).click();
+	await expect(thread.getByText("A new reply to the thread", { exact: true })).toBeVisible();
+	if (frames) expect((await frames).some((opacity) => opacity > 0 && opacity < 1)).toBe(true);
+	await expect(thread.locator("[data-jira-activity-reply-arrival]")).toHaveCount(1);
+});
+
+test("an agent acknowledgment animates into the thread", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery", exact: true }).click();
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]:visible');
+	const header = thread.locator('[data-slot="jira-activity-comment-header"]').first();
+	await header.hover();
+	await header.getByRole("button", { name: "Reply", exact: true }).click();
+	const composer = page.getByRole("form", { name: "Comment editor" });
+	await composer.getByRole("textbox", { name: "Comment editor" }).pressSequentially(" Please check this");
+	const frames = thread.evaluate(async (element) => {
+		const start = performance.now();
+		const values: number[] = [];
+		while (performance.now() - start < 7000) {
+			const arrival = [...element.querySelectorAll<HTMLElement>("[data-jira-activity-reply-arrival]")].find((node) => node.textContent?.includes("I've received your request"));
+			if (arrival) values.push(Number(getComputedStyle(arrival).opacity));
+			if (values.length && values.at(-1) === 1) break;
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+		}
+		return values;
+	});
+	await composer.getByRole("button", { name: "Submit", exact: true }).click();
+	await expect(thread.getByText(/I've received your request and will follow up/u)).toBeVisible();
+	expect((await frames).some((opacity) => opacity > 0 && opacity < 1)).toBe(true);
+});
+
 test("expanded thread curves and spine use the same opaque color", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));
@@ -65,13 +173,13 @@ test("collapsed pinned sessions show a dashed stem and expanded replies stay con
 		await thread.hover();
 		await thread.getByRole("button", { name: "Pin comment" }).click();
 		await expect(stem).toBeVisible();
-		await expect(stem).toHaveCSS("background-image", /repeating-linear-gradient/u);
+		await expect(stem).toHaveCSS("border-left-style", "dashed");
 		const show = thread.getByRole("button", { name: /^Show \d+ repl/u });
 		await show.click();
 		await expect(stem).toHaveCSS("background-image", "none");
 		await hide.click();
 		await expect(stem).toBeVisible();
-		await expect(stem).toHaveCSS("background-image", /repeating-linear-gradient/u);
+		await expect(stem).toHaveCSS("border-left-style", "dashed");
 		await thread.getByRole("button", { name: "Unpin comment" }).click();
 		if (view === "Timeline") await expect(stem).toBeVisible();
 		else await expect(stem).toBeHidden();
@@ -206,6 +314,36 @@ test("pinned sessions keep only the filled pin visible at rest", async ({ page }
 	const timelineHeader = await thread.locator('[data-slot="jira-activity-comment-header"]:not([data-jira-activity-reply-header])').boundingBox();
 	const timelineAvatar = await thread.locator("[data-summary-avatar-stack]").boundingBox();
 	expect(timelineHeader && timelineAvatar && timelineHeader.height <= 33 && Math.abs(timelineHeader.y + timelineHeader.height / 2 - timelineAvatar.y - timelineAvatar.height / 2) <= 1).toBe(true);
+});
+
+test("teammate avatars stagger after the agent-owner pair", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery", exact: true }).click();
+	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]:visible');
+	await thread.getByRole("button", { name: /^Show \d+ replies/u }).click();
+	const avatars = thread.locator("[data-summary-avatar-stack] > span");
+	await expect(avatars.first()).toHaveCSS("opacity", "0");
+	const frames = thread.evaluate(async (element) => {
+		const button = [...element.querySelectorAll("button")].find((item) => item.textContent?.includes("Hide replies"));
+		if (!button) throw new Error("Reply disclosure is missing");
+		await new Promise<void>((resolve) => button.addEventListener("click", () => resolve(), { capture: true, once: true }));
+		const samples: { opacity: number[]; width: number[] }[] = [];
+		const start = performance.now();
+		while (performance.now() - start < 900) {
+			const participants = [...element.querySelectorAll<HTMLElement>("[data-summary-avatar-stack] > span")];
+			if (participants.length === 2) samples.push({ opacity: participants.map((node) => Number(getComputedStyle(node).opacity)), width: participants.map((node) => node.getBoundingClientRect().width) });
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+		}
+		return samples;
+	});
+	await thread.getByRole("button", { name: "Hide replies", exact: true }).click();
+	const samples = await frames;
+	expect(samples.some(({ opacity: [first] }) => first > 0.01 && first < 0.99)).toBe(true);
+	expect(samples.some(({ opacity: [first, second] }) => first > second + 0.05)).toBe(true);
+	for (const index of [0, 1]) expect(Math.max(...samples.map(({ width }) => width[index])) - Math.min(...samples.map(({ width }) => width[index]))).toBeLessThan(1);
+	await expect(avatars.first()).toHaveCSS("opacity", "1");
 });
 
 test("reply disclosure animates between the participant stack and the agent-owner pair", async ({ page }) => {

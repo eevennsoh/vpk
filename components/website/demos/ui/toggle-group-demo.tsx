@@ -16,7 +16,7 @@ const denseIconItemClassName = "p-1.5! text-icon-subtle";
 
 export default function ToggleGroupDemo() {
 	return (
-		<ToggleGroup defaultValue={["center"]}>
+		<ToggleGroup defaultValue={["center"]} size="icon">
 			<ToggleGroupItem value="left" aria-label="Left" className={iconItemClassName}>
 				<AlignLeftIcon size="small" />
 			</ToggleGroupItem>

@@ -19,6 +19,7 @@
 @import "./shadcn-theme.css";
 @import "./typeset.css";
 @import "tailwindcss" source(none);
+
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @source "../app/**/*.{ts,tsx}";

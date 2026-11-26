@@ -163,6 +163,28 @@ test("a seeded session thread shows its latest reply behind Show N replies", asy
 	assert.equal(view.getByRole("button", { name: "Hide replies" }).getAttribute("aria-expanded"), "true");
 });
 
+test("the Work item fixture's teammate replies are public comments", async () => {
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			import { ProjectButterActivity } from "@/components/blocks/jira-work-item/project-butter/project-butter-activity";
+			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+			import { BUTTER_WORK_ITEM_SESSIONS } from "@/components/projects/butter-v1/data/gallery-work-item-sessions";
+			const sessions = BUTTER_WORK_ITEM_SESSIONS.filter((session) => session.id === "butter-cursor-forecast");
+			export default function Fixture() {
+				const content = useProjectButterContent("filled", undefined, sessions);
+				return <ThemeWrapper><ProjectButterActivity content={content} onOpenSession={() => {}} sessions={sessions} sidePanel={false} /></ThemeWrapper>;
+			}`,
+	});
+	const thread = view.container.querySelector('[data-jira-activity-entry-id="invocation-butter-cursor-forecast"]');
+	await view.click(view.getByRole("button", { name: /Show 4 replies/u }));
+	const replies = [...thread.querySelectorAll('[aria-label="Replies"] > div')];
+	assert.equal(replies.length, 5);
+	assert.equal(replies.every((reply) => !reply.textContent.includes("Only visible to you") && !reply.textContent.includes("Add reply")), true);
+	assert.equal(replies.some((reply) => reply.textContent.includes("Did you check the account setup step?")), true);
+	assert.equal(replies.some((reply) => reply.textContent.includes("Thanks. Let's include both fixes in the next pass.")), true);
+});
+
 test("shared Activity still renders ordinary reply cards when no reply replacement is provided", async () => {
 	const view = await renderComponent({
 		source: `import React from "react";

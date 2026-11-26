@@ -683,7 +683,7 @@ test("Jira Activity exposes controlled entries and replaceable composer contract
 	assert.match(INDEX_SOURCE, /customEntry !== undefined \? customEntry : defaultEntry/u);
 	// Timeline rows shrink inside narrow rails so artifact titles can truncate.
 	assert.match(INDEX_SOURCE, /className=\{cn\("group\/activity flex w-full min-w-0 flex-col gap-4", className\)\}/u);
-	assert.match(INDEX_SOURCE, /className="flex min-w-0 gap-2"/u);
+	assert.match(INDEX_SOURCE, /className="relative flex min-w-0 gap-2"/u);
 });
 
 test("activity comments expose an outlined Add to chat control left of expand/collapse", () => {

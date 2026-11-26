@@ -4,6 +4,43 @@ import { activityHeaderTimeLabel } from "@/components/blocks/jira-work-item/proj
 
 const ACTIVITY_TIMESTAMP = '[data-slot="jira-activity-timestamp"]';
 
+for (const motion of ["no-preference", "reduce"] as const) test(`activity updates expand and collapse with ${motion} motion`, async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: motion });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	const group = page.locator("[data-project-butter-update-group]").first();
+	const reveal = group.locator("[data-project-butter-update-reveal]");
+	const toggle = group.locator("button").first();
+	const chevron = group.locator("[data-update-chevron]");
+	await expect(toggle).toHaveAttribute("aria-expanded", "false");
+	await expect(reveal).toHaveAttribute("inert", "");
+	await toggle.click();
+	await expect(toggle).toHaveText("Hide updates");
+	await expect(reveal).not.toHaveAttribute("inert", "");
+	if (motion === "no-preference") {
+		await expect.poll(() => reveal.evaluate((node) => node.getAnimations().some((animation) => animation.playState === "running"))).toBe(true);
+		await expect.poll(() => chevron.evaluate((node) => node.getAnimations().some((animation) => animation.playState === "running"))).toBe(true);
+	}
+	const glyph = reveal.locator("[data-update-glyph]").first();
+	await expect(glyph).toHaveCSS("background-color", await glyph.evaluate((node) => {
+		const probe = document.createElement("span");
+		probe.style.backgroundColor = "var(--ds-surface)";
+		node.append(probe);
+		const color = getComputedStyle(probe).backgroundColor;
+		probe.remove();
+		return color;
+	}));
+	await toggle.click();
+	await expect(reveal).toHaveAttribute("inert", "");
+	if (motion === "no-preference") {
+		await expect(reveal).toHaveCSS("display", "block");
+		await expect.poll(() => reveal.evaluate((node) => node.getAnimations().some((animation) => animation.playState === "running"))).toBe(true);
+	}
+	await toggle.click();
+	await expect(toggle).toHaveText("Hide updates");
+	await expect(reveal).not.toHaveAttribute("inert", "");
+});
+
 test("activity timestamp underlines when its detailed tooltip is shown", async ({ page }) => {
 	await page.setViewportSize({ width: 1800, height: 1100 });
 	await page.goto(appUrl("/butter-v1"));

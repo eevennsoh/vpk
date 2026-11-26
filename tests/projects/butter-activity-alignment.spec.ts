@@ -76,7 +76,8 @@ for (const motion of ["no-preference", "reduce"] as const) test(`adding a privat
 	await reply.getByRole("button", { name: "Add reply" }).click();
 	await expect(reply).toContainText("Visible to everyone");
 	const shownAt = Date.now();
-	await expect.poll(async () => (await reply.textContent())?.includes("Visible to everyone") && Date.now() - shownAt >= 900, { intervals: [100] }).toBe(true);
+	await expect.poll(async () => (await reply.textContent())?.includes("Visible to everyone") && Date.now() - shownAt >= 2400, { intervals: [100], timeout: 3000 }).toBe(true);
+	await expect(reply.locator('[data-visibility-metadata] > span:last-child')).toHaveCSS("opacity", "1");
 	await expect(reply.getByRole("button", { name: "Add reply" })).toHaveCount(0);
 	if (motion === "no-preference") {
 		await expect.poll(() => reply.locator('[data-visibility-metadata] > span:last-child').evaluate((node) => node.getAnimations({ subtree: true }).some((animation) => animation.playState === "running")), { intervals: [50], timeout: 2000 }).toBe(true);
