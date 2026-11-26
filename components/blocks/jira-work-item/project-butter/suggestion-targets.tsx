@@ -116,6 +116,11 @@ export function useIsSuggestionTarget(field: string) {
 	return use(TargetState)?.id === field;
 }
 
+/** The field a suggestion is being previewed in, if any. */
+export function useSuggestionTargetField(): SuggestionFieldId | null {
+	return use(TargetState)?.id ?? null;
+}
+
 /** The suggested value previewed in this field right now, or null when nothing previews here. */
 export function useSuggestionPreviewText(field: string): string | null {
 	const preview = use(TargetState);

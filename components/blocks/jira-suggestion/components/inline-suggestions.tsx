@@ -27,8 +27,11 @@ const ANCHOR_SEARCH_FRAMES = 30;
  * field's own dashed preview box (the description).
  */
 function findPreviewAnchor(field: SuggestionFieldId): HTMLElement | null {
-	return document.querySelector<HTMLElement>(`[data-field-id="${field}"] [data-project-butter-detail-value-row]`)
+	const found = document.querySelector<HTMLElement>(`[data-field-id="${field}"] [data-project-butter-detail-value-row]`)
 		?? document.querySelector<HTMLElement>(`[data-suggestion-preview="${field}"]`);
+	// A field still folded away (zero size) is not a place to sit yet; keep looking until it has room on screen.
+	const bounds = found?.getBoundingClientRect();
+	return found && bounds && bounds.width > 0 && bounds.height > 0 ? found : null;
 }
 
 function ToolbarButton({ label, hint = label, disabled = false, onClick, children, ...aria }: Readonly<{ label: string; hint?: string; disabled?: boolean; onClick: () => void; children: React.ReactNode; "aria-expanded"?: boolean; "aria-controls"?: string }>) {
@@ -37,7 +40,8 @@ function ToolbarButton({ label, hint = label, disabled = false, onClick, childre
 			<TooltipTrigger render={<Button {...aria} aria-label={label} className="size-7 any-pointer-coarse:size-8 aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_svg]:text-icon-subtle" disabled={disabled} onClick={onClick} shape="circle" size="icon-compact" type="button" variant="ghost" />}>
 				{children}
 			</TooltipTrigger>
-			<TooltipContent>{hint}</TooltipContent>
+			{/* Above the toolbar's own popover layer (z-650), or the tip renders behind the toolbar it labels. */}
+			<TooltipContent positionerClassName="z-[700]">{hint}</TooltipContent>
 		</Tooltip>
 	);
 }
@@ -52,6 +56,8 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 	const pending = feed.review.pending;
 	const [position, setPosition] = useState(0);
 	const [whyOpen, setWhyOpen] = useState(false);
+	// The toolbar stays reasoning-wide until the reasoning has finished closing, so it never reflows across a narrow box.
+	const [wide, setWide] = useState(false);
 	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 	const whyId = useId();
 	// A decided suggestion leaves the list, so the one after it slides into the same position.
@@ -104,7 +110,7 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 					anchor={anchored}
 					aria-label={`AI suggestion for ${field}, ${pending.length} left to review`}
 					// ADS overlay elevation without its 1px perimeter: just the overlay's 8px spread, per theme (no token has it alone).
-					className={cn("gap-0 overflow-hidden p-0 shadow-[0px_8px_12px_#1E1F2126] dark:shadow-[0px_8px_12px_#0104045C]", expanded ? "w-80" : "w-auto")}
+					className={cn("gap-0 overflow-hidden p-0 shadow-[0px_8px_12px_#1E1F2126] transition-[opacity,translate,width] dark:shadow-[0px_8px_12px_#0104045C]", expanded || wide ? "w-80" : "w-auto")}
 					initialFocus={false}
 					positionerClassName="z-[650]"
 					side="bottom"
@@ -114,7 +120,7 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 						{/* The toolbar sits right under the field it previews, so it never names the field again. */}
 						<div className="flex h-9 items-center gap-1 px-1">
 							{hasWhy ? (
-								<ToolbarButton aria-controls={whyId} aria-expanded={expanded} hint={expanded ? "Hide" : "Why this was suggested"} label={`Why ${field} was suggested`} onClick={() => setWhyOpen(!expanded)}>
+								<ToolbarButton aria-controls={whyId} aria-expanded={expanded} hint={expanded ? "Hide" : "Why this was suggested"} label={`Why ${field} was suggested`} onClick={() => { if (!expanded) setWide(true); setWhyOpen(!expanded); }}>
 									<LightbulbIcon color="currentColor" label="" size="small" />
 								</ToolbarButton>
 							) : null}
@@ -137,7 +143,7 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 								<ChevronRightIcon color="currentColor" label="" size="small" />
 							</ToolbarButton>
 						</div>
-						<AnimatePresence initial={false}>
+						<AnimatePresence initial={false} onExitComplete={() => setWide(false)}>
 							{expanded ? (
 								<motion.div animate={{ height: "auto", opacity: 1, transition: SETTLE }} className="overflow-hidden" exit={{ height: 0, opacity: 0, transition: SETTLE }} id={whyId} initial={{ height: 0, opacity: 0 }} key="why">
 									<div className="border-t border-border-disabled">
