@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 
 import { SUGGESTIONS_ICON_RESOLVE_MS, SuggestionsStatusIcon } from "@/components/blocks/jira-suggestion/components/suggestions-status-icon";
@@ -24,9 +24,16 @@ export function RecommendingAgentRow({ done, onDone, doneLabel }: Readonly<{
 	const reduced = useReducedMotion() ?? false;
 	const finished = useRef(onDone);
 	useEffect(() => { finished.current = onDone; });
+	// Settled is the moment a sibling selector's agent takes its slot; a done label waits for it too, so selectors
+	// shown side by side change together.
+	const [settled, setSettled] = useState(false);
+	if (!done && settled) setSettled(false);
 	useEffect(() => {
 		if (!done) return undefined;
-		const timer = window.setTimeout(() => finished.current(), reduced ? 0 : SUGGESTIONS_ICON_RESOLVE_MS + RESOLVED_HOLD_MS);
+		const timer = window.setTimeout(() => {
+			setSettled(true);
+			finished.current();
+		}, reduced ? 0 : SUGGESTIONS_ICON_RESOLVE_MS + RESOLVED_HOLD_MS);
 		return () => window.clearTimeout(timer);
 	}, [done, reduced]);
 	return (
@@ -35,7 +42,7 @@ export function RecommendingAgentRow({ done, onDone, doneLabel }: Readonly<{
 				<span aria-hidden className="grid size-6 shrink-0 place-items-center text-icon-subtle">
 					<SuggestionsStatusIcon state={done ? "done" : "loading"} />
 				</span>
-				{done && doneLabel ? (
+				{settled && doneLabel ? (
 					<span className="menu-row-title block min-w-0 flex-1 truncate text-text-subtle">{doneLabel}</span>
 				) : (
 					// The same sweep as an agent's Working label (JiraIssueAgentRowLabel), on subtle text: a placeholder, not an agent yet.
