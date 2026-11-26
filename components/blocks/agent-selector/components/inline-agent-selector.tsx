@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
-import { motion } from "motion/react";
+import { motion, type Transition } from "motion/react";
 import type { AgentSelectorAgent } from "./agent-selector";
 import { FavoriteButton } from "./favorite-button";
 import { RecommendingAgentRow } from "./recommending-agent-row";
@@ -19,10 +19,11 @@ import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 /**
- * The recommended agent arriving in the slot its spinner just finished in: the avatar grows in on a soft spring while
- * its label writes itself in with the suggestion rainbow, so the reveal reads as one gradual arrival rather than a pop.
+ * The recommended agent arriving in the slot where the AI suggestion icon just resolved: the avatar makes the pop a new
+ * agent makes as it joins a work item's Agents field (ProjectButterCrew), in place, growing past full size, holding and
+ * settling, while its label rises in with the suggestion reveal.
  */
-const RECOMMENDATION_AVATAR_IN = { type: "spring", visualDuration: 0.45, bounce: 0.15, opacity: { duration: motionDuration.slower, ease: motionEase.outPractical } } as const;
+const RECOMMENDATION_AVATAR_IN: Transition = { duration: motionDuration.slowest, ease: motionEase.outPractical, times: [0, 0.4, 0.55, 1] };
 
 export interface InlineAgentAction {
 	id: string;
@@ -120,7 +121,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 					else { setActiveId(null); onActiveAgentChange?.(null); actions[0]?.onSelect(); }
 				}}>
 					{renderAgentFeedback?.(agent, avatar) ?? <>
-						<motion.span animate={{ opacity: 1, scale: 1, transition: RECOMMENDATION_AVATAR_IN }} aria-hidden className="grid size-6 shrink-0 place-items-center" initial={reveal ? { opacity: 0, scale: 0.4 } : false}>{avatar}</motion.span>
+						<motion.span animate={reveal ? { opacity: [0, 1, 1, 1], scale: [0.6, 1.15, 1.15, 1], transition: RECOMMENDATION_AVATAR_IN } : { opacity: 1, scale: 1 }} aria-hidden className="grid size-6 shrink-0 place-items-center" initial={reveal ? { opacity: 0, scale: 0.6 } : false}>{avatar}</motion.span>
 						{reveal ? (
 							// An AI pick, so it arrives with the same reveal an accepted suggestion gets; "(Recommended)" keeps its subtlest tone.
 							<span className="menu-row-title min-w-0 flex-1 [&_[aria-hidden]>span:last-child]:text-text-subtlest">
