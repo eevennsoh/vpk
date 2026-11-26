@@ -385,9 +385,6 @@ importers:
       motion:
         specifier: ^13.5.1
         version: 13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      motion-plus:
-        specifier: npm:@motionplus/core@^3.0.0
-        version: '@motionplus/core@3.0.0(motion@13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)'
       nanoid:
         specifier: ^6.0.2
         version: 6.0.2
@@ -557,6 +554,10 @@ importers:
       typescript:
         specifier: npm:@typescript/typescript6@^6.0.2
         version: '@typescript/typescript6@6.0.2'
+    optionalDependencies:
+      motion-plus:
+        specifier: npm:@motionplus/core@^3.0.0
+        version: '@motionplus/core@3.0.0(motion@13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)'
 
   backend:
     dependencies:
@@ -10012,6 +10013,7 @@ snapshots:
     optionalDependencies:
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
+    optional: true
 
   '@mozilla/readability@0.6.0': {}
 
@@ -15426,6 +15428,7 @@ snapshots:
   motion-plus-dom@3.0.0(motion@13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)):
     dependencies:
       motion: 13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+    optional: true
 
   motion-utils@13.5.0: {}
 

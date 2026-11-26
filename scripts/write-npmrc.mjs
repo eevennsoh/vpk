@@ -75,12 +75,6 @@ function main() {
 				"@atlassian/logo-third-party redirects to public npm and 404s.",
 		);
 	}
-	if (!motionToken) {
-		missing.push(
-			"MOTION_TOKEN is empty. Add it as a secret in this environment; without it " +
-				"motion-plus (@motionplus/core) fails with a 401 from api.motion.dev.",
-		);
-	}
 	if (missing.length > 0) {
 		for (const message of missing) {
 			console.error(message);
@@ -92,7 +86,7 @@ function main() {
 	const existing = fs.existsSync(target) ? fs.readFileSync(target, "utf8") : "";
 	fs.writeFileSync(target, upsertNpmrc(existing, managedEntries(token, motionToken)), { mode: 0o600 });
 	fs.chmodSync(target, 0o600);
-	console.log(`Updated ${target} (atlassian-npm + Motion+ auth, registry routing).`);
+	console.log(`Updated ${target} (registry routing and available auth).`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
