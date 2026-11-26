@@ -15,7 +15,12 @@ const RESOLVED_HOLD_MS = 250;
  * replaces it without a jump. Once `done`, the spinner resolves into the AI suggestion icon (the same choreography as
  * the Review suggestions action) and, after a beat, `onDone` hands the slot to the agent.
  */
-export function RecommendingAgentRow({ done, onDone }: Readonly<{ done: boolean; onDone: () => void }>) {
+export function RecommendingAgentRow({ done, onDone, doneLabel }: Readonly<{
+	done: boolean;
+	onDone: () => void;
+	/** Settle on this status once done (the icon stays) instead of handing the slot to an agent. */
+	doneLabel?: string;
+}>) {
 	const reduced = useReducedMotion() ?? false;
 	const finished = useRef(onDone);
 	useEffect(() => { finished.current = onDone; });
@@ -30,8 +35,12 @@ export function RecommendingAgentRow({ done, onDone }: Readonly<{ done: boolean;
 				<span aria-hidden className="grid size-6 shrink-0 place-items-center text-icon-subtle">
 					<SuggestionsStatusIcon state={done ? "done" : "loading"} />
 				</span>
-				{/* The same sweep as an agent's Working label (JiraIssueAgentRowLabel), on subtle text: a placeholder, not an agent yet. */}
-				<Shimmer as="span" className="menu-row-title block min-w-0 flex-1 truncate text-text-subtle" duration={1.4} spread={2}>Recommending agent</Shimmer>
+				{done && doneLabel ? (
+					<span className="menu-row-title block min-w-0 flex-1 truncate text-text-subtle">{doneLabel}</span>
+				) : (
+					// The same sweep as an agent's Working label (JiraIssueAgentRowLabel), on subtle text: a placeholder, not an agent yet.
+					<Shimmer as="span" className="menu-row-title block min-w-0 flex-1 truncate text-text-subtle" duration={1.4} spread={2}>Recommending agent</Shimmer>
+				)}
 			</div>
 		</div>
 	);
