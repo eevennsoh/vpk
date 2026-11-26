@@ -6,7 +6,7 @@ import { JiraActivityEntryGlyph, type JiraActivityActor, type JiraActivityCommen
 import { activityActorVpkLogo } from "@/components/blocks/jira-activity/jira-activity-actor-mention";
 import { JiraActivityTimestamp } from "@/components/blocks/jira-activity/jira-activity-timestamp";
 import { ThreadConnector } from "@/components/blocks/jira-activity/jira-activity-comment";
-import { SuggestionRainbowText } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
+import { DescriptionRainbowText } from "@/components/blocks/jira-work-item/project-butter/description-rainbow-text";
 import { HumanAgentAvatar } from "@/components/ui-custom/human-agent-avatar";
 import { Button } from "@/components/ui/button";
 import { RelativeTime } from "@/components/ui/elapsed-time";
@@ -280,7 +280,7 @@ export function useWorkItemThreadSummaries(auto?: AutoSummary) {
 											} />
 										) : null}
 									</div>
-									<p className="text-sm text-text">{sources ? run?.animate ? <SuggestionRainbowText key={sources.map((reply) => reply.id).join("|")} text={result.text} onComplete={() => setState((current) => {
+									<p className="text-sm text-text">{sources ? run?.animate ? <DescriptionRainbowText key={sources.map((reply) => reply.id).join("|")} text={result.text} onComplete={() => setState((current) => {
 										const previous = current.runs.get(entryId);
 										if (!previous?.animate || previous.sources !== sources) return current;
 										const next = new Map(current.runs);

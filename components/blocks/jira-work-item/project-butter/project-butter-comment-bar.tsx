@@ -135,6 +135,7 @@ export function ProjectButterCommentBar({ active, activityRows, content, keepVis
 		if (!existingSession) return;
 		if (choice === "continue") {
 			setChoosingSession(true); setSelectedTargetIndex(0);
+			onPreviewSession(existingSession.id);
 		} else {
 			setNewSessionAgentName(mentionedAgent?.name ?? null);
 			setFocusRequest((value) => value + 1);

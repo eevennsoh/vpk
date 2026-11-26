@@ -29,7 +29,7 @@ function AcceptanceCriteria({ items }: Readonly<{ items: readonly string[] }>) {
 	);
 }
 
-export function ProjectButterBody({ active, compact, sidePanel, content, descriptionReveal, detailsSlotRef, empty, inlineSessionReplies = false, onDescriptionRevealComplete, onOpenSession, onPreviewSession, onStartAgent, onStartedSessionRevealed, openRelatedItem, previewSessionId, startedSessionId, relatedScope, sessions, sessionActivityView = false, singleActivityView = false, workItemKey }: Readonly<{
+export function ProjectButterBody({ active, compact, sidePanel, content, descriptionReveal, detailsSlotRef, empty, inlineSessionReplies = false, onDescriptionRevealComplete, onOpenSession, onPreviewSession, onStartAgent, onStartedSessionRevealed, openRelatedItem, previewSessionId, startedSessionId, relatedScope, sessions, sessionActivityView = false, showAgentReplyProgress = false, singleActivityView = false, workItemKey }: Readonly<{
 	active: boolean;
 	compact?: boolean;
 	sidePanel: boolean;
@@ -50,6 +50,7 @@ export function ProjectButterBody({ active, compact, sidePanel, content, descrip
 	sessions: readonly ProjectButterSessionItem[];
 	singleActivityView?: boolean;
 	sessionActivityView?: boolean;
+	showAgentReplyProgress?: boolean;
 	workItemKey?: string;
 }>) {
 	// The bar keeps 24px below the Activity header with no rows, and 24px below the lone "created" row of a new item.
@@ -94,7 +95,7 @@ export function ProjectButterBody({ active, compact, sidePanel, content, descrip
 			<AcceptanceCriteria items={content.detailFields.acceptanceCriteria} />
 			<div className={sidePanel ? undefined : "@[860px]/butter:hidden"} ref={detailsSlotRef} />
 			<ProjectButterRelatedWork active={active} content={content} empty={empty} openRelatedItem={openRelatedItem} scope={relatedScope} workItemKey={workItemKey} />
-			<ProjectButterActivity content={content} onOpenSession={onOpenSession} onSelectReply={selectReply} selectedReply={replyTarget} onStartedSessionRevealed={onStartedSessionRevealed} previewSessionId={previewSessionId} startedSessionId={startedSessionId} sessions={sessions} sidePanel={sidePanel} singleView={singleActivityView} sessionView={sessionActivityView} latestReplyEntryIds={latestReplyEntryIds} onDraftSessionInstruction={({ entry }, text) => {
+			<ProjectButterActivity content={content} onOpenSession={onOpenSession} onSelectReply={selectReply} selectedReply={replyTarget} onStartedSessionRevealed={onStartedSessionRevealed} previewSessionId={previewSessionId} startedSessionId={startedSessionId} sessions={sessions} sidePanel={sidePanel} singleView={singleActivityView} sessionView={sessionActivityView} showAgentReplyProgress={showAgentReplyProgress} latestReplyEntryIds={latestReplyEntryIds} onDraftSessionInstruction={({ entry }, text) => {
 				if (replyTarget?.entryId !== entry.id || instructionDraft === null) setInstructionDraft(text);
 				setReplyTarget({ entryId: entry.id, targetId: entry.id, actor: entry.actor, mentionAgent: true });
 				setReplyFocusRequest((current) => current + 1);

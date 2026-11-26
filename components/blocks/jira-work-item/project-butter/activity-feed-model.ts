@@ -27,6 +27,10 @@ const UPDATE_GROUP_PREFIX = "updates-";
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 
+export function latestVisibleActivityReply(entry: JiraActivityCommentEntry, showAgentReplyProgress: boolean) {
+	return entry.replies?.findLast((reply) => showAgentReplyProgress || reply.generationStartedAtMs === undefined);
+}
+
 export function projectButterSessionIdFromEntry(id: string): string | null {
 	return id.startsWith(INVOCATION_PREFIX) ? id.slice(INVOCATION_PREFIX.length) : null;
 }

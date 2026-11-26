@@ -33,6 +33,52 @@ async function openPanel(view) {
 	assert.equal(view.queryByRole("dialog", { name: /Review suggestions for PAY-999/ }) !== null, true, "the panel opens");
 }
 
+test("accepting all keeps the confirmation open and allows the batch to be undone", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	await openPanel(view);
+	await view.click(view.getByRole("button", { name: "Accept all" }));
+	await wait(700);
+	assert.equal(view.queryByText("6 suggestions accepted") !== null, true);
+	assert.equal(view.queryByRole("dialog", { name: /6 suggestions accepted/ }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Check again" }) !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Close suggestions" }) !== null, true);
+	await view.click(view.getByRole("button", { name: /^Undo accepting/ }));
+	await waitForList(view);
+	assert.equal(listShown(view), true);
+});
+
+test("checking again from the confirmation uses the compact checking header and can be stopped", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	await openPanel(view);
+	await view.click(view.getByRole("button", { name: "Accept all" }));
+	await wait(700);
+	await view.click(view.getByRole("button", { name: "Check again" }));
+	assert.equal(view.queryByText("Checking for suggestions") !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Stop checking for suggestions" }) !== null, true);
+	assert.equal(view.isFocused(view.getByRole("button", { name: "Stop checking for suggestions" })), true);
+	await view.click(view.getByRole("button", { name: "Stop checking for suggestions" }));
+	await wait(100);
+	assert.equal(view.queryByText("6 suggestions accepted") !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Check again" }) !== null, true);
+	assert.equal(view.isFocused(view.getByRole("button", { name: "Check again" })), true);
+});
+
+test("a check with no new suggestions replaces the reviewed count with its result", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	await openPanel(view);
+	await view.click(view.getByRole("button", { name: "Accept all" }));
+	await wait(700);
+	assert.equal(view.queryByText("6 suggestions accepted") !== null, true);
+	await view.click(view.getByRole("button", { name: "Check again" }));
+	await waitForList(view);
+	await view.click(view.getByRole("button", { name: "Accept all" }));
+	await wait(700);
+	await view.click(view.getByRole("button", { name: "Check again" }));
+	await wait(3600);
+	assert.equal(view.queryByText("No new suggestions") !== null, true);
+	assert.equal(view.queryByRole("button", { name: "Check again" }) !== null, true);
+});
+
 test("a header check folds the panel to its header, and its spinner stops the check and unpacks the cards again", async () => {
 	const view = await renderComponent({ source: SOURCE });
 	await openPanel(view);
@@ -73,7 +119,8 @@ test("a header check that finds suggestions unpacks them into the list", async (
 	await view.click(view.getByRole("button", { name: "Check for new suggestions" }));
 	await wait(900);
 	const panel = document.querySelector("[role=dialog][aria-labelledby]");
-	assert.equal(panel.style.height, "52px", "the panel folds to just its header while the check runs");
+	assert.equal(panel.style.height, "44px", "the panel folds to just its header while the check runs");
+	assert.equal(panel.querySelector("header").style.marginTop, "", "the checking header has no extra top inset");
 	await waitForList(view);
 	assert.equal(listShown(view), true, "the finished check unpacks the stack");
 	assert.equal(view.queryByRole("button", { name: "Stop checking for suggestions" }) === null, true);

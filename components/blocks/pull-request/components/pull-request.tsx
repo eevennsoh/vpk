@@ -487,12 +487,13 @@ function PullRequestFlyoutBody({
 
 	return (
 		<>
-			{onToggleDetails ? <div className={cn("min-w-0 px-1", showDetails && "bg-bg-neutral-subtle-hovered")}>
-				<div className={cn("relative flex min-w-0 items-start gap-3 px-2 py-2 transition-[height] duration-normal ease-in-out", showDetails ? "h-auto" : "h-9")}>
-					<Button aria-expanded={showDetails} aria-label={`#${number} ${title} ${status}`} className="absolute inset-0 h-full w-full aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:hover:bg-transparent aria-expanded:active:bg-transparent aria-expanded:focus-visible:border-ring" onClick={onToggleDetails} type="button" variant="ghost" />
-					<PullRequestInlineTitle className={cn("pointer-events-none relative flex-1 [&_a]:pointer-events-auto [&_span:last-child]:no-underline", !showDetails && "truncate whitespace-nowrap")} href={showDetails ? href : undefined} number={number} title={title} />
+			{onToggleDetails ? <div className="relative min-w-0 px-1">
+				<Button aria-expanded={showDetails} aria-label={`#${number} ${title} ${status}`} className="absolute inset-x-0 -top-1 bottom-0 h-auto w-full hover:bg-transparent active:bg-transparent aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:hover:bg-transparent aria-expanded:active:bg-transparent aria-expanded:focus-visible:border-ring" onClick={onToggleDetails} type="button" variant="ghost" />
+				<div className={cn("pointer-events-none relative flex min-w-0 items-start gap-3 px-2 py-2 transition-[height] duration-normal ease-in-out", showDetails ? "h-auto" : "h-9")}>
+					<PullRequestInlineTitle className={cn("relative flex-1 [&_a]:pointer-events-auto [&_span:last-child]:no-underline", !showDetails && "truncate whitespace-nowrap")} href={showDetails ? href : undefined} number={number} title={title} />
 					<div className="pointer-events-none relative"><PullRequestStatusLozenge status={status} /></div>
 				</div>
+				{showDetails && authorMeta ? <div className="pointer-events-none relative px-2 pb-2">{authorMeta}</div> : null}
 			</div> : <div className="flex w-full min-w-0 items-start gap-3 px-3">
 				<div className="flex min-w-0 flex-1 flex-col gap-1">
 					<PullRequestInlineTitle href={href} number={number} title={title} />
@@ -502,7 +503,6 @@ function PullRequestFlyoutBody({
 			</div>}
 			{onToggleDetails ? <Collapsible open={showDetails}>
 				<CollapsibleContent hiddenUntilFound={false} className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-normal ease-in-out data-starting-style:h-0 data-ending-style:h-0 data-open:has-[:hover]:overflow-visible data-open:has-[:focus-visible]:overflow-visible">
-					{authorMeta ? <div className="bg-bg-neutral-subtle-hovered px-3 pb-2">{authorMeta}</div> : null}
 					{details}
 				</CollapsibleContent>
 			</Collapsible> : showDetails ? details : null}

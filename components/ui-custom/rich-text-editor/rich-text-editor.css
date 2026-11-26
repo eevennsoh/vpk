@@ -365,6 +365,10 @@
 	pointer-events: none;
 }
 
+.rich-text-editor-content[data-instruction-placeholder="true"] .tiptap-editor > p:last-child > br.ProseMirror-trailingBreak {
+	display: none;
+}
+
 .tiptap-editor ::selection {
 	background-color: var(--ds-background-selected, #deebff);
 }

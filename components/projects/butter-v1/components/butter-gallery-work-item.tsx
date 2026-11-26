@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { Suspense, useRef, useState, type ComponentProps, type ComponentRef } from "react";
+import { Suspense, useCallback, useRef, useState, type ComponentProps, type ComponentRef } from "react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
 import { JiraFloatingSuggestions, JiraInlineSuggestions } from "@/components/blocks/jira-suggestion";
@@ -37,6 +37,9 @@ function ButterGalleryWorkItemContent({ compact, galleryOpen, initialSessions, o
 	const router = useRouter();
 	const scriptedCreation = useButterScriptedCreation();
 	const suggestionPanelRef = useRef<ComponentRef<typeof JiraFloatingSuggestions>>(null);
+	const showSuggestionCompletion = useCallback(() => suggestionPanelRef.current?.showCompletion(), []);
+	const decideInlineSuggestion = useCallback<NonNullable<ComponentProps<typeof JiraInlineSuggestions>["onDecide"]>>((id, decision) => suggestionPanelRef.current?.decide(id, decision), []);
+	const [suggestionReviewOpen, setSuggestionReviewOpen] = useState(false);
 	const [agentsDirectoryOpen, setAgentsDirectoryOpen] = useState(false);
 	const createAgent = () => { if (process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true" && scriptedCreation) { setAgentsDirectoryOpen(false); scriptedCreation.open("agent"); } else router.push("/studio"); };
 	const [added, setAdded] = useState<{ session: ProjectButterSessionItem; workItem: { code: string; summary: string } } | null>(null);
@@ -90,7 +93,12 @@ function ButterGalleryWorkItemContent({ compact, galleryOpen, initialSessions, o
 						onCreateAgent={createAgent}
 						onOpenCloudSession={openCloudSession}
 						open={open}
-						renderSuggestions={showAiSuggestions && aiSuggestionSurface === "inline" ? (feed) => <JiraInlineSuggestions feed={feed} /> : showAiSuggestions ? (feed) => <JiraFloatingSuggestions analyzeOnMount feed={feed} notification={notification} portalContainer={portalContainer} ref={suggestionPanelRef} workItemKey={BUTTER_AI_SUGGESTION_ITEM.code} /> : undefined}
+						renderSuggestions={showAiSuggestions ? (feed) => (
+							<>
+								{aiSuggestionSurface === "inline" && !suggestionReviewOpen ? <JiraInlineSuggestions feed={feed} onComplete={showSuggestionCompletion} onDecide={decideInlineSuggestion} /> : null}
+								<JiraFloatingSuggestions analyzeOnMount={aiSuggestionSurface === "floating"} feed={feed} notification={notification} onReviewOpenChange={setSuggestionReviewOpen} portalContainer={portalContainer} ref={suggestionPanelRef} workItemKey={BUTTER_AI_SUGGESTION_ITEM.code} />
+							</>
+						) : undefined}
 						sessionActivityView={sessionActivityView}
 						shell="gallery"
 						showAuditInActivity={showAiSuggestions}

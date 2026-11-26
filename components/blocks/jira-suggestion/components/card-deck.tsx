@@ -30,7 +30,7 @@ export interface CardDeckProps {
 	exitKind: CardExit;
 	/** The morph between stack and list is still in flight. */
 	morphing: boolean;
-	returning: { ids: readonly SuggestionFieldId[]; direction: SwipeDirection } | null;
+	returning: { ids: readonly SuggestionFieldId[]; entrance: SwipeDirection | "new" } | null;
 	registerDepth: (element: HTMLElement) => () => void;
 	deckRef: RefObject<HTMLDivElement | null>;
 	whyAnchor: RefObject<HTMLElement | null>;
@@ -119,7 +119,7 @@ export function CardDeck({
 	const onFocus = (event: FocusEvent<HTMLDivElement>) => setFocused(!listed && event.target === event.currentTarget && event.currentTarget.matches(":focus-visible"));
 
 	const entranceOf = (id: SuggestionFieldId): CardEntrance => {
-		if (returning?.ids.includes(id)) return returning.direction;
+		if (returning?.ids.includes(id)) return returning.entrance;
 		if (!floating && feed.newIds.has(id)) return "new";
 		return listed && feed.review.decisionOf(id) !== "pending" ? "reveal" : "none";
 	};

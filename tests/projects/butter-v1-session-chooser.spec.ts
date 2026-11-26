@@ -70,14 +70,14 @@ test("owned session replies progress privately and can be added publicly", async
 	await expect(thread).toContainText("Only visible to you");
 	const metadata = thread.getByText("Only visible to you", { exact: false }).last();
 	const placement = await metadata.evaluate((label) => {
-		const timestamp = label.parentElement?.querySelector('[data-slot="jira-activity-timestamp"]');
+		const timestamp = label.closest('[data-jira-activity-reply-header]')?.querySelector('[data-slot="jira-activity-timestamp"]');
 		if (!timestamp) return null;
 		const labelStyle = getComputedStyle(label);
 		const timestampStyle = getComputedStyle(timestamp);
 		return { before: Boolean(label.compareDocumentPosition(timestamp) & Node.DOCUMENT_POSITION_FOLLOWING), color: labelStyle.color === timestampStyle.color, size: labelStyle.fontSize === timestampStyle.fontSize, weight: labelStyle.fontWeight === timestampStyle.fontWeight };
 	});
 	expect(placement).toEqual({ before: true, color: true, size: true, weight: true });
-	await expect(thread.getByRole("progressbar", { name: "Agent is preparing a reply" })).toBeVisible({ timeout: 10_000 });
+	await expect(thread.getByRole("progressbar", { name: "Agent is preparing a reply" })).toHaveCount(0);
 	const replies = thread.getByRole("group", { name: "Replies" }).locator(":scope > div");
 	const humanReply = replies.filter({ hasText: "Please check this" });
 	const agentReply = replies.filter({ hasText: "I've received your request" });
@@ -85,12 +85,21 @@ test("owned session replies progress privately and can be added publicly", async
 	const humanAction = reactionRow.getByRole("button", { name: "Add reply" });
 	const reaction = reactionRow.getByRole("button", { name: /reacted with eyes/u });
 	await expect(reaction).toBeVisible();
+	await expect(thread.getByText("Complete", { exact: true })).toBeVisible();
+	await expect(thread.getByText("Working", { exact: true })).toHaveCount(0);
+	await expect(thread.getByText("I grouped the onboarding feedback into setup, navigation, and sign-in themes for the next review.")).toBeHidden();
+	await expect(agentReply).toHaveCount(0);
+	await expect(thread.getByText("Working", { exact: true })).toBeVisible({ timeout: 4_000 });
+	await expect(agentReply).toBeVisible();
 	const actionBox = await humanAction.boundingBox();
 	const reactionBox = await reaction.boundingBox();
 	const bodyBox = await humanReply.locator("[data-jira-activity-card-body] > div:not([data-slot])").first().boundingBox();
 	expect(actionBox && reactionBox && actionBox.height === 24 && Math.abs(actionBox.y + actionBox.height / 2 - reactionBox.y - reactionBox.height / 2) <= 1).toBe(true);
 	expect(actionBox && bodyBox && Math.abs(actionBox.y - (bodyBox.y + bodyBox.height) - 16) <= 1).toBe(true);
 	await expect(agentReply.getByRole("button", { name: "Add reply" })).toBeVisible({ timeout: 20_000 });
+	const humanBox = await humanReply.boundingBox();
+	const agentBox = await agentReply.boundingBox();
+	expect(humanBox && agentBox && humanBox.y < agentBox.y).toBe(true);
 	const replyCount = await replies.count();
 	await humanReply.getByRole("button", { name: "Add reply" }).click();
 	await expect(humanReply).not.toContainText("Only visible to you");
@@ -120,12 +129,18 @@ test("session choices use the shared dropdown hover color for pointer and keyboa
 	await page.getByRole("listbox", { name: "Mention" }).getByRole("option", { name: "Claude", exact: true }).click();
 	await page.getByRole("option", { name: "Continue in existing session" }).click();
 	const sessions = page.getByRole("list", { name: "Choose a session" });
+	const activity = page.locator('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"]');
+	await expect(activity).toHaveAttribute("data-active", "");
+	await expect.poll(() => activity.evaluate((row) => getComputedStyle(row, "::after").backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
 	const first = sessions.locator("article").first();
 	await first.hover();
 	await expect.poll(() => first.evaluate((row) => getComputedStyle(row).backgroundColor)).toBe(referenceColor);
 	await editor.focus();
 	await editor.press("ArrowDown");
 	await expect.poll(() => sessions.locator('article[data-selected="true"]').evaluate((row) => getComputedStyle(row).backgroundColor)).toBe(referenceColor);
+	await expect(page.locator('[data-jira-activity-entry-id="invocation-butter-claude-postmortem"]')).toHaveAttribute("data-active", "");
+	await editor.press("Escape");
+	await expect(page.locator("[data-project-butter-activity-feed]")).not.toHaveAttribute("data-project-butter-preview-session");
 });
 
 test("work item session cards show Venn as their owner", async ({ page }) => {
@@ -193,7 +208,7 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) test(`an ackno
 	const thread = page.locator('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"]');
 	const card = thread.getByTestId("agent-session-row-butter-claude-onboarding-feedback");
 	const other = page.getByTestId("agent-session-row-butter-claude-postmortem");
-	await expect(card).toContainText("Finished");
+	await expect(card).toContainText("Complete");
 	await page.keyboard.press("m");
 	const editor = page.getByRole("textbox", { name: "Comment editor" });
 	await editor.pressSequentially("@Claude");
@@ -207,8 +222,8 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) test(`an ackno
 		const started = performance.now();
 		let seenWorking = false;
 		function sample() {
-			const button = document.querySelector('[data-testid="agent-session-row-butter-claude-onboarding-feedback"] button[aria-label="Working"]');
-			const visuals = button?.querySelectorAll<HTMLElement>("[data-agent-session-lifecycle-state]");
+			const row = document.querySelector('[data-testid="agent-session-row-butter-claude-onboarding-feedback"]');
+			const visuals = row?.querySelectorAll<HTMLElement>("[data-agent-session-lifecycle-state]");
 			const visual = visuals?.[0];
 			if (visual) {
 				const label = visual.querySelector<HTMLElement>("[data-agent-session-lifecycle-label]");
@@ -228,13 +243,13 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) test(`an ackno
 		requestAnimationFrame(sample);
 	}));
 	await reply.press("Enter");
-	await expect(card).toContainText("Finished");
+	await expect(card).toContainText("Complete");
 	await expect(thread.getByRole("group", { name: "Reactions" }).getByText("👀")).toBeVisible({ timeout: 10_000 });
 	await expect(card).toContainText("Working");
 	const frames = await transition;
 	expect(frames.every((frame) => frame.count === 1)).toBe(true);
 	expect(frames.every((frame) => frame.label === frame.state && frame.labelTransform === "none"), JSON.stringify(frames)).toBe(true);
-	if (reducedMotion === "reduce") expect(frames.every((frame) => frame.state === "running" && frame.opacity === 1 && frame.scale === 1 && frame.blur === 0), JSON.stringify(frames)).toBe(true);
+	if (reducedMotion === "reduce") expect(frames.every((frame) => frame.opacity === 1 && frame.scale === 1 && frame.blur === 0), JSON.stringify(frames)).toBe(true);
 	else {
 		expect(frames.some((frame) => frame.state === "complete" && frame.opacity < 0.95 && frame.scale < 0.99 && frame.blur > 0.1), JSON.stringify(frames)).toBe(true);
 		expect(frames.some((frame) => frame.state === "running" && frame.opacity < 0.95 && frame.scale < 0.99 && frame.blur > 0.1), JSON.stringify(frames)).toBe(true);
@@ -242,7 +257,7 @@ for (const reducedMotion of ["reduce", "no-preference"] as const) test(`an ackno
 		expect(frames.findIndex((frame) => frame.state === "running")).toBeGreaterThan(frames.findLastIndex((frame) => frame.state === "complete"));
 	}
 	await page.getByRole("button", { name: "Show more activity" }).click();
-	await expect(other).toContainText("Finished");
+	await expect(other).toContainText("Complete");
 });
 
 test("a submitted handoff does not prefill later manual replies", async ({ page }) => {

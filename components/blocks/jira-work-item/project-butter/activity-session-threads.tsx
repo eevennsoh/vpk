@@ -11,7 +11,7 @@ import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { ProjectButterSessionStart } from "./activity-session-start";
 import { ProjectButterPinComment } from "./activity-comment-tools";
-import { pinProjectButterComments } from "./activity-feed-model";
+import { latestVisibleActivityReply, pinProjectButterComments } from "./activity-feed-model";
 import { draftThreadInstruction, SESSION_THREAD_RAIL, summarizeReplies, SUMMARIZED_THREAD, SUMMARY_TRANSITION, useWorkItemThreadSummaries } from "./activity-thread-summary";
 import type { ProjectButterSessionItem } from "./data";
 
@@ -33,7 +33,7 @@ export function renderProjectButterEarlierRepliesLabel(replies: readonly JiraAct
 	);
 }
 
-function SessionThreadCard({ thread, summary, onDraft, onOpenSession, onTogglePin, pinned, latestReplyEntryIds, ...activity }: ThreadProps & Readonly<{
+function SessionThreadCard({ thread, summary, onDraft, onOpenSession, onTogglePin, pinned, latestReplyEntryIds, showAgentReplyProgress = false, ...activity }: ThreadProps & Readonly<{
 	thread: SessionThread;
 	summary: SummaryControl;
 	onDraft?: DraftInstruction;
@@ -41,12 +41,13 @@ function SessionThreadCard({ thread, summary, onDraft, onOpenSession, onTogglePi
 	onTogglePin: (id: string) => void;
 	pinned: boolean;
 	latestReplyEntryIds?: ReadonlySet<string>;
+	showAgentReplyProgress?: boolean;
 }>) {
 	const { entry, session } = thread;
 	const canSummarize = getAgentSessionRole(session) === "owner";
 	const canDraft = onDraft && matchingAgentSessions({ id: session.agent.id ?? session.id, name: session.agent.name }, [session], { includeCompleted: true }).length > 0;
 	const previewLatest = latestReplyEntryIds?.has(entry.id) ?? false;
-	const previewCount = entry.replies?.at(-1)?.actor.kind === "agent" ? 2 : 1;
+	const previewCount = latestVisibleActivityReply(entry, showAgentReplyProgress)?.actor.kind === "agent" ? 2 : 1;
 
 	return (
 		<div style={{ "--summary-header-inset": `${summary.showAvatarStack ? summary.headerInset : 0}px` } as CSSProperties}>
@@ -57,7 +58,7 @@ function SessionThreadCard({ thread, summary, onDraft, onOpenSession, onTogglePi
 				className={cn(SESSION_THREAD_RAIL, SUMMARY_TRANSITION, summary.showAvatarStack && SUMMARIZED_THREAD)}
 				onRepliesExpandedChange={canSummarize ? (_entry, expanded) => summary.setRepliesExpanded(expanded) : undefined}
 				entries={pinProjectButterComments([{ ...entry, defaultRepliesExpanded: false, replyPreviewCount: previewLatest ? previewCount : 0 }], pinned ? [entry.id] : []).map((item) => previewLatest && item.kind === "comment" ? { ...item, replyPreviewCount: previewCount } : item)}
-				replyCollapseKey={(item) => previewLatest ? `reply:${item.replies?.at(-1)?.id}` : pinned ? `pinned:${item.id}` : undefined}
+				replyCollapseKey={(item) => previewLatest ? `reply:${latestVisibleActivityReply(item, showAgentReplyProgress)?.id}` : pinned ? `pinned:${item.id}` : undefined}
 				activeEntryId={activity.selectedReply?.entryId}
 				composer={null}
 				hideHeader
@@ -94,6 +95,7 @@ export function ProjectButterActivitySessionThreads({ entries, sessions, pinnedI
 	onDraft?: DraftInstruction;
 	onOpenSession: (id: string) => void;
 	latestReplyEntryIds?: ReadonlySet<string>;
+	showAgentReplyProgress?: boolean;
 }>) {
 	const [expanded, setExpanded] = useState(false);
 	const summaryFor = useWorkItemThreadSummaries({ entries: entries.filter(({ session }) => getAgentSessionRole(session) === "owner").map(({ entry }) => entry), active, activatedAtMs, latestReplyEntryIds: props.latestReplyEntryIds });

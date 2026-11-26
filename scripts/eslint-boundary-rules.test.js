@@ -419,6 +419,24 @@ export const Tip = () => <TooltipContent className="shadow-xl" />;
 	assert.equal(pilotOverride.length, 1, "per-file pilot overrides keep the repo-wide overlay contract");
 });
 
+test("raw Base UI popovers use menu radius without a second perimeter", async () => {
+	const findings = await ruleFindings(`
+import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
+export const Popup = () => <PopoverPrimitive.Popup className="rounded-xl border shadow-xl" />;
+export const Valid = () => <PopoverPrimitive.Popup className="rounded-lg border-0 shadow-2xl" />;
+export const WrongRadius = () => <PopoverPrimitive.Popup className="rounded-xl" />;
+export const WrongBorder = () => <PopoverPrimitive.Popup className="border" />;
+export const WrongShadow = () => <PopoverPrimitive.Popup className="shadow-xl" />;
+export const Focus = () => <PopoverPrimitive.Popup className="rounded-lg shadow-2xl focus-visible:ring-2" />;
+export const Arbitrary = () => <PopoverPrimitive.Popup className="border-[1px] ring-[1px]" />;
+export const DefaultRadius = () => <PopoverPrimitive.Popup className="rounded" />;
+export const ExtraShadow = () => <PopoverPrimitive.Popup className="shadow-[0_0_0_1px_red]" />;
+`, "components/blocks/demo/lint-contract-fixture.tsx", ["shadcn/no-restyle", "vpk-tokens/no-popover-perimeter"]);
+	assert.deepEqual([...new Set(findings.map((finding) => finding.line))], [3, 5, 6, 7, 9, 10, 11]);
+	assert.equal(findings.every((finding) => finding.severity === 2), true);
+	assert.match(findings[0].message, /rounded-lg|overlay/u);
+});
+
 test("primitives may compose dynamic classes and art scenes may pass literal colors", async () => {
 	const rules = ["shadcn/no-raw-colors", "shadcn/require-static-classes", "shadcn/no-arbitrary-values"];
 	const primitive = await ruleFindings(`

@@ -340,6 +340,7 @@ const reactionSummaries = reactions.map((reaction) => ({
 			trailingActions={tools}
 		/>
 	);
+	if (content === null) return null;
 
 	return (
 		<div className={cn("relative pt-3", threaded ? "pb-3" : null, indented ? "pl-6" : null)} hidden={hidden}>
@@ -462,7 +463,7 @@ export function JiraActivityComment({
 	renderReplyComposer?: (composer: JiraActivityReplyComposerProps) => ReactNode;
 	threaded?: boolean;
 }>) {
-	const replies = entry.replies ?? [];
+	const replies = (entry.replies ?? []).filter((reply) => renderReply?.(reply) !== null);
 	const hasReplies = replies.length > 0;
 	const hasReplyPreview = entry.replyPreviewCount !== undefined;
 	const replyPreviewCount = Math.max(0, Math.floor(entry.replyPreviewCount ?? 0));

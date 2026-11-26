@@ -6,7 +6,6 @@ import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
 
 import type { WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 import { WHY_CLOSE_DELAY, WHY_OPEN_DELAY } from "./constants";
@@ -34,7 +33,7 @@ export interface CardWhyProps {
 const TRIGGER: Readonly<Record<CardWhyProps["appearance"], string>> = {
 	line: "-mx-1.5 h-6 any-pointer-coarse:min-h-8 gap-1 rounded-md px-1.5 text-xs text-text-subtlest hover:text-text-subtle focus-visible:text-text-subtle data-popup-open:text-text-subtle",
 	icon: "size-7 any-pointer-coarse:size-8 justify-center rounded-full text-icon-subtlest hover:text-icon-subtle focus-visible:text-icon-subtle",
-	toolbar: "size-6 any-pointer-coarse:size-8 justify-center rounded-md text-icon-subtle data-popup-open:bg-bg-selected data-popup-open:text-icon-selected data-popup-open:hover:bg-bg-selected-hovered",
+	toolbar: "size-6 any-pointer-coarse:size-8 justify-center rounded-md text-icon-subtle",
 };
 
 /**
@@ -72,7 +71,7 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container, app
 	const trigger = (
 			<PopoverPrimitive.Trigger
 				aria-label={`Why ${suggestion.label.toLowerCase()} was suggested`}
-				className={cn("inline-flex shrink-0 items-center outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-bg-neutral-subtle-hovered", TRIGGER[appearance])}
+				className={cn("inline-flex shrink-0 items-center outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring", !clickOnly && "data-popup-open:bg-bg-neutral-subtle-hovered", clickOnly && open && "bg-bg-selected text-icon-selected hover:bg-bg-selected-hovered", TRIGGER[appearance])}
 				closeDelay={WHY_CLOSE_DELAY}
 				delay={WHY_OPEN_DELAY}
 				onBlur={onBlur}
@@ -113,11 +112,10 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container, app
 					sideOffset={side === "bottom" ? 4 : 8}
 				>
 					<PopoverPrimitive.Popup
-						className={`flex max-h-(--available-height) w-72 max-w-(--available-width) flex-col overflow-hidden rounded-xl bg-surface-overlay text-sm text-text outline-hidden ${POPUP_MOTION}`}
+						className={`flex max-h-(--available-height) w-72 max-w-(--available-width) flex-col overflow-hidden rounded-lg bg-surface-overlay text-sm text-text shadow-2xl outline-hidden ${POPUP_MOTION}`}
 						finalFocus={(closeType) => (closeType === "keyboard" ? triggerRef.current : false)}
 						initialFocus={false}
 						ref={popupRef}
-						style={{ boxShadow: token("elevation.shadow.overlay") }}
 					>
 						<WhyCard showField={!clickOnly} suggestion={suggestion} />
 					</PopoverPrimitive.Popup>

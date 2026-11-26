@@ -39,6 +39,15 @@ const overlaySurfaceContract = {
 		effects: "Overlay elevation is shadow-2xl; shadow-xl doubles the 1px perimeter (DESIGN.md › Shadow vocabulary).",
 	},
 };
+const rawPopoverSurfaceContract = {
+	...overlaySurfaceContract,
+	pattern: "^PopoverPopup$",
+	deny: ["shadow-xs", "shadow-sm", "shadow-md", "shadow-lg", "shadow-xl", "shadow-inner", "shadow-[*", "rounded-none", "rounded-xs", "rounded-sm", "rounded-md", "rounded-xl", "rounded-2xl", "rounded-3xl", "rounded-full", "rounded-[*", "rounded-t-*", "rounded-r-*", "rounded-b-*", "rounded-l-*", "rounded-tl-*", "rounded-tr-*", "rounded-br-*", "rounded-bl-*"],
+	message: {
+		...overlaySurfaceContract.message,
+		shape: "Popover surfaces use rounded-lg (8px) and overlay elevation without an extra border or ring (DESIGN.md).",
+	},
+};
 // DESIGN.md › Menu and picker separators: DropdownMenuSeparator, not a border on a row.
 const menuRowSeparatorContract = {
 	pattern: "^DropdownMenu(Item|Label|Group|CheckboxItem|RadioItem|SubTrigger)$",
@@ -55,7 +64,8 @@ const menuRowSeparatorContract = {
 const designSystemRestyleOptions = {
 	// Other primitives remain flexible until their contracts are reviewed.
 	allow: ["*"],
-	contracts: [buttonRestyleContract, badgeRestyleContract, overlaySurfaceContract, menuRowSeparatorContract],
+	componentImports: ["^@base-ui/react/popover$"],
+	contracts: [buttonRestyleContract, badgeRestyleContract, overlaySurfaceContract, rawPopoverSurfaceContract, menuRowSeparatorContract],
 };
 
 const vpkIconRestrictedImportNames = [
@@ -231,6 +241,7 @@ const apiRouteRestrictedSyntax = [
 // can only shrink, instead of hiding inside the shared no-restricted-syntax total.
 const vpkTokens = {
 	rules: {
+		"no-popover-perimeter": builtinRules.get("no-restricted-syntax"),
 		"no-raw-white-black": builtinRules.get("no-restricted-syntax"),
 		"no-tailwind-heading-type": builtinRules.get("no-restricted-syntax"),
 		"no-arbitrary-tile-radius": builtinRules.get("no-restricted-syntax"),
@@ -311,7 +322,7 @@ const eslintConfig = defineConfig([
 		plugins: { shadcn },
 		rules: {
 			// Repo-wide contracts only for established policy; the pilot blocks below add the rest.
-			"shadcn/no-restyle": ["error", { allow: ["*"], contracts: [overlaySurfaceContract, menuRowSeparatorContract] }],
+			"shadcn/no-restyle": ["error", { allow: ["*"], componentImports: ["^@base-ui/react/popover$"], contracts: [overlaySurfaceContract, rawPopoverSurfaceContract, menuRowSeparatorContract] }],
 			// Theme-token contracts. A class Tailwind cannot generate, or a color the theme does not
 			// declare (`text-danger`, `shadow-raised`), renders nothing, so these catch silent no-ops.
 			"shadcn/no-raw-colors": "error",
@@ -365,6 +376,7 @@ const eslintConfig = defineConfig([
 					},
 					badgeRestyleContract,
 					overlaySurfaceContract,
+					rawPopoverSurfaceContract,
 					menuRowSeparatorContract,
 				],
 			}],
@@ -387,6 +399,7 @@ const eslintConfig = defineConfig([
 					},
 					badgeRestyleContract,
 					overlaySurfaceContract,
+					rawPopoverSurfaceContract,
 					menuRowSeparatorContract,
 				],
 			}],
@@ -530,6 +543,10 @@ const eslintConfig = defineConfig([
 		ignores: ["**/*.test.{ts,tsx}"],
 		plugins: { "vpk-tokens": vpkTokens },
 		rules: {
+			"vpk-tokens/no-popover-perimeter": ["error", {
+				selector: "JSXOpeningElement[name.object.name=/^Popover(Primitive)?$/][name.property.name='Popup'] > JSXAttribute[name.name='className'] :matches(Literal[value=/(^|\\s)(rounded|border(-[xysetrbl])?(-([1248]|\\[[^\\s\\]]+\\]))?|ring(-([1248]|\\[[^\\s\\]]+\\]))?)(\\s|$)/], TemplateElement[value.raw=/(^|\\s)(rounded|border(-[xysetrbl])?(-([1248]|\\[[^\\s\\]]+\\]))?|ring(-([1248]|\\[[^\\s\\]]+\\]))?)(\\s|$)/])",
+				message: "Use rounded-lg for popovers; overlay elevation provides the edge without a resting border or ring (DESIGN.md).",
+			}],
 			"vpk-tokens/no-raw-white-black": ["error", {
 				selector: classStringSelector(rawWhiteBlackPattern),
 				message: "Raw white/black ignores the theme: use bg-surface or bg-bg-neutral-bold (token-priority.md).",

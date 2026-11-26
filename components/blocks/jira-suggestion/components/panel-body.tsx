@@ -27,7 +27,7 @@ export interface PanelBodyProps {
 	stackInteractive: boolean;
 	/** A check is running: the gathered stack looks as it will when the check ends, but stays inert until then. */
 	checking?: boolean;
-	/** The panel has folded away for a check: the cards fade and drop out of view, and come back as it reopens. */
+	/** The panel is folding for a check: the cards are hidden until it reopens. */
 	folded?: boolean;
 	/** The list's height budget: the popover's, less its header and footer. */
 	maxHeight: number;
@@ -41,6 +41,8 @@ export interface PanelBodyProps {
 	onGrab: (grab: { id: SuggestionFieldId; progress: MotionValue<number> } | null) => void;
 	onCommit: (direction: SwipeDirection) => void;
 	onUndo: () => void;
+	onClose: () => void;
+	onRerun?: () => void;
 	onUnpack: () => void;
 }
 
@@ -51,7 +53,7 @@ const SWAP_OUT = { opacity: 0, transition: FADE_OUT };
  * The popover body, which is also the list's scrollport: the card deck (stack or list), and under the stack its
  * ✕ · ↶ · ✓ controls or the caught-up state. Its height eases with the morph; the list scrolls natively with depth.
  */
-export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, checking = false, folded = false, maxHeight, grab, deckRef, checkRef, whyAnchor, whyContainer, whyId, onWhyIdChange, onGrab, onCommit, onUndo, onUnpack }: Readonly<PanelBodyProps>) {
+export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, checking = false, folded = false, maxHeight, grab, deckRef, checkRef, whyAnchor, whyContainer, whyId, onWhyIdChange, onGrab, onCommit, onUndo, onClose, onRerun, onUnpack }: Readonly<PanelBodyProps>) {
 	const scroller = useRef<HTMLDivElement>(null);
 	const content = useRef<HTMLDivElement>(null);
 	const { height, settled, overflow, viewport } = useBodyHeight(content, mode, maxHeight);
@@ -93,8 +95,8 @@ export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, 
 	}, [listed]);
 
 	return (
-		<motion.div className={cn("relative overscroll-contain", floating ? "-mt-4 min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-gutter-stable" : "shrink-0")} ref={scroller} data-scrollport="" inert={checking || (mode === "stack" && !stackInteractive)} style={floating ? undefined : { height, ...overflow }}>
-			<div aria-busy={checking || undefined} className={cn(floating ? "px-4 pt-6 pb-4" : listed ? "px-4 pt-2 pb-4" : "px-5 pt-3 pb-5", floating ? "transition-[opacity,translate]" : null, folded ? "translate-y-2 opacity-0 duration-fast ease-in" : "duration-medium ease-out")} ref={content}>
+		<motion.div className={cn("relative overscroll-contain", floating ? "min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-gutter-stable" : "shrink-0", floating && mode !== "caught-up" ? "-mt-4" : null)} ref={scroller} data-scrollport="" inert={checking || (mode === "stack" && !stackInteractive)} style={floating ? undefined : { height, ...overflow }}>
+			<div aria-busy={checking || undefined} className={cn(floating && mode === "caught-up" ? "" : floating ? "px-4 pt-6 pb-4" : listed ? "px-4 pt-2 pb-4" : "px-5 pt-3 pb-5", folded ? "opacity-0" : floating ? "transition-opacity duration-medium ease-out" : null)} ref={content}>
 				<AnimatePresence initial={false} mode="popLayout">
 					{listed && running ? (
 						<motion.div animate={SWAP} className="pb-2.5" exit={SWAP_OUT} initial={{ opacity: 0 }} key="ghost"><GhostCard /></motion.div>
@@ -131,7 +133,7 @@ export function PanelBody({ feed, deck, view, mode, floating, stackInteractive, 
 					) : null}
 					{mode === "caught-up" ? (
 						<motion.div animate={{ opacity: 1, transition: CONTROLS_IN }} exit={SWAP_OUT} initial={{ opacity: 0 }} key="caught-up">
-							<CaughtUp checkRef={checkRef} deck={deck} feed={feed} onUndo={onUndo} />
+							<CaughtUp checkRef={checkRef} deck={deck} feed={feed} onClose={floating ? onClose : undefined} onRerun={onRerun} onUndo={onUndo} />
 						</motion.div>
 					) : null}
 				</AnimatePresence>

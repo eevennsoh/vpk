@@ -110,7 +110,7 @@ test("PR icon identifies draft and failed pull requests", async () => {
 });
 
 test("multiple PRs show open, failed, draft, then merged, retaining order within a status", async () => {
-	const item = (number, status) => ({ number, status, preview: { title: `PR ${number}`, href: `https://example.com/pull/${number}`, repository: `repo-${number}`, additions: 0, deletions: 0 } });
+	const item = (number, status) => ({ number, status, preview: { title: `PR ${number}`, href: `https://example.com/pull/${number}`, author: { name: "Venn" }, repository: `repo-${number}`, additions: 0, deletions: 0 } });
 	const view = await renderComponent({
 		entry: "components/blocks/jira-issue/project-butter-summary.tsx",
 		exportName: "ProjectButterSummary",
@@ -128,6 +128,7 @@ test("multiple PRs show open, failed, draft, then merged, retaining order within
 	assert.equal(view.isFocused(first), true);
 	assert.equal(first.closest("[data-pull-request]").textContent.includes("repo-3"), true);
 	assert.equal(view.getByRole("link", { name: "PR 3" }).getAttribute("href"), "https://example.com/pull/3");
+	assert.equal(first.parentElement.textContent.includes("Venn"), true);
 	await view.click(second);
 	assert.equal(first.getAttribute("aria-expanded"), "false");
 	assert.equal(second.getAttribute("aria-expanded"), "true");

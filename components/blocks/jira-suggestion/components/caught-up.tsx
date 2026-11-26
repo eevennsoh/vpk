@@ -2,42 +2,33 @@
 
 import type { Ref } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
+import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
+import CrossIcon from "@atlaskit/icon/core/cross";
+import UndoIcon from "@atlaskit/icon/core/undo";
 
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
-import { Button } from "@/components/ui/button";
-import { IconTile } from "@/components/ui/icon-tile";
+import { Icon } from "@/components/ui/icon";
 import { motionRecipe } from "@/lib/motion";
-import { token } from "@/lib/tokens";
 
 import { FADE_OUT, FAN, INSTANT } from "./constants";
+import { HeaderButton, PanelHeaderLayout } from "./panel-header";
+import { SuggestionsStatusIcon } from "./suggestions-status-icon";
 import type { Deck } from "./use-deck";
 
-/** What is happening or was decided: the check in flight, a check that found nothing, or the tally of decisions. */
-function summary(feed: SuggestionFeed, deck: Deck): string {
-	if (feed.status === "running") return "Checking for anything new…";
-	if (deck.quietCheck) return "Nothing new since you last checked";
-	const added = feed.review.accepted.length;
-	const dismissed = feed.review.dismissed.length;
-	return [added > 0 ? `${added} added` : null, dismissed > 0 ? `${dismissed} dismissed` : null].filter(Boolean).join(" · ") || "Nothing left to review";
-}
-
 /**
- * The empty stack at its natural height: one calm confirmation, a single summary line, then Undo for the last
- * decision (even a bulk one) beside Check again. A check runs in place: the line and the button say so while the
- * layout holds still, so a check that finds nothing never makes the popover jump; only real finds replace it.
+ * The compact confirmation keeps Undo for the last decision beside Check again and the optional close action.
  */
-export function CaughtUp({ feed, deck, checkRef, onUndo }: Readonly<{ feed: SuggestionFeed; deck: Deck; checkRef: Ref<HTMLButtonElement>; onUndo: () => void }>) {
+export function CaughtUp({ feed, deck, checkRef, onUndo, onClose, onRerun }: Readonly<{ feed: SuggestionFeed; deck: Deck; checkRef: Ref<HTMLButtonElement>; onUndo: () => void; onClose?: () => void; onRerun?: () => void }>) {
 	const running = feed.status === "running";
-	const line = summary(feed, deck);
+	const line = deck.completionLabel;
 	const last = deck.lastDecision;
 	const reduced = useReducedMotion() ?? false;
 	return (
-		<motion.div animate={{ opacity: 1, transition: motionRecipe.popup.enter }} className="flex flex-col items-center gap-3.5 px-4 pt-5 pb-3 text-center" initial={{ opacity: 0 }}>
-			<IconTile aria-hidden as="span" icon={<CheckMarkIcon color="currentColor" label="" />} label="" size="large" variant="green" />
-			<div className="flex flex-col items-center gap-0.5">
-				<p className="text-text" style={{ font: token("font.heading.xsmall") }}>All caught up</p>
-				<p aria-live="polite" className="grid text-sm leading-5 text-text-subtle">
+		<motion.div animate={{ opacity: 1, transition: motionRecipe.popup.enter }} initial={{ opacity: 0 }}>
+			<PanelHeaderLayout floating={Boolean(onClose)} view="list">
+			<div className="flex h-5 shrink-0 items-center justify-center text-icon-success"><Icon aria-hidden render={<StatusSuccessIcon color="currentColor" label="" size="medium" spacing="none" />} /></div>
+			<div className="min-w-0 flex-1">
+				<p aria-live="polite" className="grid text-sm leading-5 font-medium text-text-subtle">
 					<AnimatePresence initial={false} mode="popLayout">
 						<motion.span
 							animate={{ opacity: 1, y: 0, transition: motionRecipe.popup.enter }}
@@ -50,9 +41,10 @@ export function CaughtUp({ feed, deck, checkRef, onUndo }: Readonly<{ feed: Sugg
 						</motion.span>
 					</AnimatePresence>
 				</p>
+				<span aria-live="polite" className="sr-only">{running ? "Checking for anything new…" : ""}</span>
 			</div>
 			{/* Undo steps aside while a check runs (never a dead disabled button); Check again glides to centre and back. */}
-			<div className="flex items-center justify-center gap-2 pt-0.5">
+			<div className="flex shrink-0 items-center gap-1">
 				<AnimatePresence initial={false} mode="popLayout">
 					{last && !running ? (
 						<motion.div
@@ -61,16 +53,16 @@ export function CaughtUp({ feed, deck, checkRef, onUndo }: Readonly<{ feed: Sugg
 							initial={{ opacity: 0, scale: 0.8 }}
 							key="undo"
 						>
-							<Button aria-label={deck.undoLabel ?? "Undo"} onClick={onUndo} type="button" variant="outline">Undo</Button>
+							<HeaderButton label={deck.undoLabel ?? "Undo"} onClick={onUndo} portalOutsidePanel tip="Undo"><UndoIcon color="currentColor" label="" size="medium" /></HeaderButton>
 						</motion.div>
 					) : null}
 					<motion.div key="check" layout="position" transition={reduced ? INSTANT : FAN}>
-						<Button aria-disabled={running || undefined} onClick={running ? undefined : feed.rerun} ref={checkRef} type="button" variant="outline">
-							Check again
-						</Button>
+						<HeaderButton buttonRef={checkRef} disabled={running} label="Check again" onClick={onRerun ?? feed.rerun} portalOutsidePanel tip="Check again"><SuggestionsStatusIcon state={running ? "loading" : "done"} /></HeaderButton>
 					</motion.div>
 				</AnimatePresence>
+				{onClose ? <HeaderButton label="Close suggestions" onClick={onClose} portalOutsidePanel tip="Close"><CrossIcon color="currentColor" label="" size="medium" /></HeaderButton> : null}
 			</div>
+			</PanelHeaderLayout>
 		</motion.div>
 	);
 }

@@ -236,10 +236,13 @@ export function SuggestionCard({
 					// Rows only take their elevation once the morph settles, so ease it (and a sheet's inset edge) in rather than snap.
 					floating ? "dark:bg-surface-overlay dark:ring-0" : null,
 					"transition-[box-shadow,background-color] duration-slower ease-in-out",
-					// List rows are raised elevation: the raised surface and shadow, and its hovered surface while the field is
-					// previewed or the card's reasoning is open (held, so an open card stays marked as the one being read).
+					// Expanded rows use the hover surface only while the pointer is over them.
 					role === "row" ? "group/suggestion-card bg-surface-raised dark:bg-surface-raised dark:ring-0" : null,
-					role === "row" && (previewing || whyOpen) ? "bg-surface-raised-hovered dark:bg-surface-raised-hovered" : null,
+					// Motion can leave a scale-corrected percentage radius after the stack morph; keep settled rows at 8px.
+					role === "row" && !morphing ? "rounded-lg!" : null,
+					role === "row" && decision === "pending" && suggestion.reason.evidence.length > 0 ? "cursor-pointer" : null,
+					role === "row" && whyOpen ? "hover:bg-surface-raised-hovered dark:hover:bg-surface-raised-hovered" : null,
+					role === "row" && previewing && !whyOpen ? "bg-surface-raised-hovered dark:bg-surface-raised-hovered" : null,
 					role !== "row" && previewing ? "bg-surface-overlay-hovered dark:bg-surface-overlay-hovered" : null,
 					parked || !elevated ? "shadow-none" : floating || role === "row" || sheet ? "shadow-sm" : null,
 					floatingSheetEdge,
@@ -251,8 +254,13 @@ export function SuggestionCard({
 					isPresent ? null : "pointer-events-none",
 				)}
 				data-top-card={top ? "" : undefined}
-				layout
+				layout={role === "row" && !morphing ? false : true}
 				layoutAnchor={floating ? false : undefined}
+				onClick={role === "row" && decision === "pending" && suggestion.reason.evidence.length > 0 ? (event) => {
+					const selection = window.getSelection();
+					if (!(event.target instanceof Element) || event.target.closest("button, a, input, textarea, select, [contenteditable], [role=button], [role=menuitem]") || (selection && !selection.isCollapsed && event.currentTarget.contains(selection.anchorNode))) return;
+					onWhyOpenChange(!whyOpen);
+				} : undefined}
 				{...(top ? handlers : null)}
 				style={{ ...CARD_PAPER_STYLE, x, y: poseY, rotate, opacity }}
 				transition={morph}

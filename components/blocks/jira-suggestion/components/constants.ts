@@ -57,7 +57,7 @@ export const LIST_HEADER_TOP_INSET = 8;
 /** The list's top fade once it has scrolled (3rem); a card brought to the top stops just below it, fully legible. */
 export const LIST_TOP_FADE = 48;
 /** Space between list cards. */
-export const LIST_GAP = 10;
+export const LIST_GAP = 8;
 
 /** Hover intent for the why card: long enough to skim past, short enough to feel immediate. */
 export const WHY_OPEN_DELAY = motionDuration.slow * 1000;

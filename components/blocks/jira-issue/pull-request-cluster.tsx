@@ -111,8 +111,8 @@ export function PullRequestList({ pullRequests }: Readonly<{ pullRequests: reado
 	return (
 		<ul aria-label="Pull requests">
 			{pullRequests.toSorted((a, b) => PULL_REQUEST_STATUS_ORDER[a.status] - PULL_REQUEST_STATUS_ORDER[b.status]).map((item, index, items) => (
-				<li className={cn(selected?.number === item.number && index > 0 && "border-t border-border-disabled", selected?.number === item.number && index < items.length - 1 && "border-b border-border-disabled", ((index === items.length - 1 && selected?.number !== item.number) || (selected && selected.number === items[index + 1]?.number)) && "pb-1")} key={item.number}>
-					{index === 0 || selected?.number === item.number || selected?.number === items[index - 1]?.number ? <div aria-hidden="true" className={cn("h-1", selected?.number === item.number && "bg-bg-neutral-subtle-hovered")} /> : null}
+				<li className={cn("transition-opacity duration-normal ease-out-practical", selected && selected.number !== item.number && "opacity-30 hover:opacity-100 focus-within:opacity-100", selected?.number === item.number && index > 0 && "border-t border-border-disabled", selected?.number === item.number && index < items.length - 1 && "border-b border-border-disabled", ((index === items.length - 1 && selected?.number !== item.number) || (selected && selected.number === items[index + 1]?.number)) && "pb-1")} key={item.number}>
+					{index === 0 || selected?.number === item.number || selected?.number === items[index - 1]?.number ? <div aria-hidden="true" className="h-1" /> : null}
 					<PullRequest {...item.preview} additions={item.preview.additions ?? 0} checksExpandable={false} className="gap-0 rounded-none border-none bg-transparent p-0 shadow-none" deletions={item.preview.deletions ?? 0} number={item.number} onToggleDetails={() => setSelected((current) => current?.number === item.number ? null : item)} showDetails={selected?.number === item.number} showFix={false} status={toPullRequestCardStatus(item.status)} variant="flyout" />
 				</li>
 			))}

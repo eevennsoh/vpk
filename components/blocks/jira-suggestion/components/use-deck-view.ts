@@ -18,7 +18,7 @@ export function useDeckView(feed: SuggestionFeed, deck: Deck, floatingView?: "st
 	const [listBase, setListBase] = useState<readonly SuggestionFieldId[] | null>(null);
 	const [gathering, setGathering] = useState<readonly SuggestionFieldId[]>([]);
 	const [exitKind, setExitKind] = useState<CardExit | null>(null);
-	const [returning, setReturning] = useState<{ ids: readonly SuggestionFieldId[]; direction: SwipeDirection } | null>(null);
+	const [returning, setReturning] = useState<{ ids: readonly SuggestionFieldId[]; entrance: SwipeDirection | "new" } | null>(null);
 
 	// A re-run's finds join the list at the top. Pending cards and decisions from the current review keep their place.
 	const visibleIds = [...deck.order, ...deck.reviewed].map((suggestion) => suggestion.id);
@@ -53,14 +53,14 @@ export function useDeckView(feed: SuggestionFeed, deck: Deck, floatingView?: "st
 		setListBase(null);
 	};
 
-	/** Undo in the stack: the card (or a bulk decision's cards) comes back from the side it left by. */
+	/** Single-card undo returns from its decision side; bulk undo brings the cards down from above. */
 	const undo = () => {
 		const last = deck.lastDecision;
 		if (!last) return;
-		setReturning({ ids: last.ids, direction: last.decision });
+		setReturning({ ids: last.ids, entrance: last.bulk ? "new" : last.decision });
 		deck.undo();
 	};
 
-	const bulkAccept = deck.lastDecision?.bulk && deck.lastDecision.decision === "accept";
-	return { listed: listBase !== null, listIds, gathering, exitKind: exitKind ?? (bulkAccept ? "silent" : deck.exitDirection), returning, unpack, collapse, undo, release };
+	const bulkDecision = deck.lastDecision?.bulk;
+	return { listed: listBase !== null, listIds, gathering, exitKind: exitKind ?? (bulkDecision ? "silent" : deck.exitDirection), returning, unpack, collapse, undo, release };
 }

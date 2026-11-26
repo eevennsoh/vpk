@@ -67,6 +67,7 @@ export interface ProjectButterJiraWorkItemProps {
 	onOpenCloudSession?: (session: ProjectButterSessionItem, draft: string | undefined, workItem: { code: string; summary: string }) => boolean | void | Promise<boolean | void>;
 	inlineSessionReplies?: boolean;
 	sessionActivityView?: boolean;
+	showAgentReplyProgress?: boolean;
 	/** Standalone only: the host's sidebar chat, mounted beside the work item. Pair with `onOpenCloudSession`. */
 	chatPanel?: ReactNode;
 	overlayContainerRef?: (element: HTMLDivElement | null) => void;
@@ -109,6 +110,7 @@ export function ProjectButterJiraWorkItem({
 	onOpenCloudSession,
 	inlineSessionReplies = false,
 	sessionActivityView = false,
+	showAgentReplyProgress = false,
 	chatPanel,
 	overlayContainerRef,
 	onStoryPointsChange,
@@ -431,6 +433,7 @@ export function ProjectButterJiraWorkItem({
 				>
 					<AttachmentDropZone content={content} targetRef={columnRef} />
 					<ProjectButterBody
+						showAgentReplyProgress={showAgentReplyProgress}
 						inlineSessionReplies={inlineSessionReplies}
 						sessionActivityView={sessionActivityView}
 						compact={compact}

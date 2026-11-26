@@ -8,7 +8,7 @@ import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/u
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-import { CHROME_HEIGHT, LIST_HEADER_TOP_INSET } from "./constants";
+import { CHROME_HEIGHT, FOOTER_HEIGHT, LIST_HEADER_TOP_INSET } from "./constants";
 import { PanelBody } from "./panel-body";
 import { PanelHeader } from "./panel-header";
 import { StackFooter } from "./stack-footer";
@@ -60,7 +60,7 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 	const titleId = `${id}-title`;
 	const view = useDeckView(feed, deck, listStage === "intro" ? "stack" : listStage === undefined ? undefined : "list");
 	const headerView = view.listed || listStage !== undefined ? "list" : "stack";
-	// A check from the caught-up state runs in place there: the stack and footer only come back for real finds.
+	// The body remains caught up during a check; the floating header takes over until the check ends.
 	const mode: BodyMode = deck.order.length === 0 ? "caught-up" : view.listed ? "list" : "stack";
 	const stackInteractive = mode === "stack" && listStage === undefined;
 	const shortcuts = [
@@ -89,12 +89,13 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 	// Cancel leaves with the check, whichever ends it; keep focus on the action that started the check.
 	const wasChecking = useRef(checking);
 	useEffect(() => {
+		const started = !wasChecking.current && checking;
 		const ended = wasChecking.current && !checking;
 		wasChecking.current = checking;
-		if (!ended) return;
+		if (!started && !ended) return;
 		const active = document.activeElement;
-		if (active === document.body || active === null) rerunRef.current?.focus({ preventScroll: true });
-	}, [checking]);
+		if (active === document.body || active === null || (started && active === checkRef.current) || (ended && active === rerunRef.current)) (started || mode !== "caught-up" ? rerunRef.current : checkRef.current)?.focus({ preventScroll: true });
+	}, [checking, mode]);
 	const cancelCheck = () => {
 		rerunRef.current?.focus({ preventScroll: true });
 		feed.cancelRerun();
@@ -144,6 +145,7 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 
 	// A row's reasoning is open in the list: the panel grows so the card and its reasoning can be read together.
 	const reading = listStage === "list" && mode === "list" && whyId !== null;
+	const compactCaughtUp = mode === "caught-up" && listStage !== undefined;
 	const panel = (
 		<div
 			aria-keyshortcuts={shortcuts}
@@ -157,12 +159,13 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 			ref={panelRef}
 			role="dialog"
 			style={listStage !== undefined ? {
-				height: mode === "caught-up" ? undefined : reading ? READING_HEIGHT : introHeight ?? (feed.runs.length === 1 ? maxHeight : undefined),
+				height: compactCaughtUp ? CHROME_HEIGHT - FOOTER_HEIGHT : introHeight,
 				maxHeight: reading ? READING_HEIGHT : `min(${maxHeight}px, ${feed.onPreviewCard ? "56dvh" : "calc(100dvh - 3rem)"})`,
 			} : undefined}
 			tabIndex={-1}
 		>
 			<PanelHeader
+				compact={compactCaughtUp ? { label: deck.completionLabel, undoLabel: deck.undoLabel, onUndo: undo, checkRef } : undefined}
 				feed={feed}
 				floating={listStage !== undefined}
 				onClose={onClose}
@@ -175,7 +178,7 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 				toggleRef={toggleRef}
 				view={headerView}
 			/>
-			<LayoutGroup id={layoutGroup}>
+			{!compactCaughtUp ? <LayoutGroup id={layoutGroup}>
 				<PanelBody
 					key={listStage === "measuring" ? "measure" : "review"}
 					checkRef={checkRef}
@@ -190,6 +193,8 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 					mode={mode}
 					stackInteractive={stackInteractive}
 					onCommit={commit}
+					onClose={onClose}
+					onRerun={onRerun}
 					onGrab={setGrab}
 					onUndo={undo}
 					onUnpack={toggleView}
@@ -199,7 +204,7 @@ export function StackPanel({ id, className, title, listStage, introHeight, focus
 					whyContainer={overlay}
 					whyId={whyId}
 				/>
-			</LayoutGroup>
+			</LayoutGroup> : null}
 			<AnimatePresence initial={false}>
 				{/* The footer folds away with the cards while a check runs and comes back as the panel reopens. */}
 				{mode === "caught-up" || checking ? null : <StackFooter animateEntrance deck={deck} key="footer" />}

@@ -6,10 +6,10 @@ import { AnimatePresence, cancelFrame, frame, motion, useReducedMotion } from "m
 
 import { useRovoChatControls } from "@/app/contexts/context-rovo-chat-controls";
 import FloatingRovoButton, { type FloatingRovoButtonSuggestion } from "@/components/blocks/rovo-button";
-import { motionRecipe } from "@/lib/motion";
+import { motionDuration, motionRecipe } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-import { CHROME_HEIGHT, FOOTER_HEIGHT, LIST_HEADER_TOP_INSET } from "./components/constants";
+import { CHROME_HEIGHT, FOOTER_HEIGHT } from "./components/constants";
 import { MockDetailsRail } from "./components/mock-details-rail";
 import { reconcileFloatingPanelStage, settleMeasuredStage, type FloatingPanelStage } from "./floating-panel-stage";
 import { SUGGESTIONS_ICON_RESOLVE_MS, SuggestionsStatusIcon } from "./components/suggestions-status-icon";
@@ -23,6 +23,8 @@ import { useJustFilled } from "./components/use-just-filled";
 import { useOverlayPlacement } from "./components/use-overlay-placement";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import type { SuggestionFeed } from "./hooks/use-suggestion-feed";
+import type { SuggestionFieldId } from "./data/suggestions";
+import type { SwipeDirection } from "./components/use-deck";
 import type { TwgToolSource } from "@/components/ui-custom/twg-tool";
 
 const FLOATING_PANEL_MAX_HEIGHT = 500;
@@ -33,20 +35,20 @@ export const SUGGESTION_ANALYSIS_MS = 2600;
 /** How long cards found while the panel is already open (Undo, Check again) rest as a stack before unpacking. */
 const IN_PLACE_UNPACK_MS = 260;
 /** How long the panel takes to fold around a check, matching its height transition (slower). */
-const CHECK_FOLD_MS = 420;
+const CHECK_FOLD_MS = motionDuration.slower * 1000 + 20;
 /**
  * How long the reopening panel shows the stack before it starts to unpack. The unpack's own hold (IN_PLACE_UNPACK_MS)
  * follows, so the cards spread as the panel finishes growing (220 + 260 ms clears the 400 ms height transition)
  * instead of waiting for it to settle first.
  */
 const CHECK_REOPEN_MS = 220;
-/** The folded panel during a check: just the list header's inset and the header. */
-const CHECK_FOLDED_HEIGHT = CHROME_HEIGHT - FOOTER_HEIGHT + LIST_HEADER_TOP_INSET;
+/** The folded panel during a check is just the header. */
+const CHECK_FOLDED_HEIGHT = CHROME_HEIGHT - FOOTER_HEIGHT;
 
 /** Landing intro for the review action: finding suggestions, resolving into the icon, then ready with dot and nudge. */
 type IntroPhase = "analyzing" | "resolving" | "ready";
 
-export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notification, panelTransition, portalContainer, ref, workItemKey }: Readonly<{ analyzeOnMount?: boolean; feed: SuggestionFeed; notification?: FloatingRovoButtonSuggestion | null; panelTransition?: "button" | "dot"; portalContainer?: HTMLElement; ref?: Ref<{ reopen: () => true }>; workItemKey: string }>) {
+export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notification, onReviewOpenChange, panelTransition, portalContainer, ref, workItemKey }: Readonly<{ analyzeOnMount?: boolean; feed: SuggestionFeed; notification?: FloatingRovoButtonSuggestion | null; onReviewOpenChange?: (open: boolean) => void; panelTransition?: "button" | "dot"; portalContainer?: HTMLElement; ref?: Ref<{ reopen: () => true; showCompletion: () => void; decide: (id: SuggestionFieldId, decision: SwipeDirection) => void }>; workItemKey: string }>) {
 	const { closeChat } = useRovoChatControls();
 	const [panelStage, setPanelStage] = useState<FloatingPanelStage>({ phase: "closed" });
 	const [openFromIndicator, setOpenFromIndicator] = useState(false);
@@ -76,10 +78,10 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	// "unpacking" replays the open's stack→list beat in place, since no open animation will come to finish it.
 	const isUnpacking = phase === "unpacking";
 	// A check gathers the list into an inert stack as the panel folds to its header and footer, and reopens once it ends.
-	const isChecking = phase === "checking";
+	const isChecking = phase === "checking" || phase === "checking-caught-up";
 	const isReopening = phase === "reopening";
 	const introHeight = isChecking ? CHECK_FOLDED_HEIGHT : panelStage.phase === "expanding" || panelStage.phase === "unpacking" || panelStage.phase === "reopening" ? panelStage.height : undefined;
-	// While folding, the faded cards keep their list layout; they become a stack only once the fold has finished.
+	// While folding, the hidden cards keep their list layout; they become a stack only once the fold has finished.
 	const isFolding = panelStage.phase === "checking" && panelStage.step === "folding";
 	const listStage = isMeasuring ? "measuring" : isFolding ? "list" : isExpanding || isUnpacking || isChecking || isReopening ? "intro" : "list";
 	useEffect(() => {
@@ -122,11 +124,13 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 		if (running) return;
 		feed.rerun();
 		if (phase === "list" || phase === "unpacking") setPanelStage({ phase: "checking", step: "folding", height: panelRef.current?.offsetHeight || FLOATING_PANEL_MAX_HEIGHT });
+		else if (phase === "caught-up") setPanelStage({ phase: "checking-caught-up" });
 	};
 	const finishClose = useCallback(() => {
 		setPanelStage({ phase: "closed" });
 		setOpenFromIndicator(false);
-	}, []);
+		onReviewOpenChange?.(false);
+	}, [onReviewOpenChange]);
 	const close = () => {
 		feed.acknowledgeNew();
 		// Anything a check found while the panel was open has been seen too.
@@ -145,8 +149,8 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 		setOpenRequested(true);
 		return true;
 	};
-	useImperativeHandle(ref, () => ({ reopen }));
 	const openReview = () => {
+		onReviewOpenChange?.(true);
 		setIntro("ready");
 		setSeenRuns(feed.runs.length);
 		setOpenRequested(false);
@@ -157,6 +161,7 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 			setPanelStage({ phase: "caught-up" });
 		}
 	};
+	useImperativeHandle(ref, () => ({ reopen, showCompletion: () => { closeChat(); setOpenRequested(true); }, decide: deck.decide }));
 
 	if (typeof document === "undefined") return null;
 	return createPortal(

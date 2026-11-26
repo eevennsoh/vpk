@@ -170,22 +170,19 @@ export function DecidedFace({ suggestion, decision, onRestore }: Readonly<{ sugg
 	const accepted = decision === "accepted";
 	return (
 		<div className="flex min-h-10 items-center gap-2 px-4 text-sm">
-			<span className={cn("flex shrink-0", accepted ? "text-icon-success" : "text-icon-subtlest")}>
+			<span className={cn("flex shrink-0", accepted ? "text-icon-subtle" : "text-icon-subtlest")}>
 				{accepted ? <CheckMarkIcon color="currentColor" label="" size="small" /> : <CrossIcon color="currentColor" label="" size="small" />}
 			</span>
 			<span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-1.5">
 				<span className={accepted ? "text-text" : "text-text-subtle"}>{suggestion.label}</span>
-				<span className="text-xs text-text-subtlest">{[accepted ? "Added" : "Dismissed", valueGist(suggestion.value)].filter(Boolean).join(" · ")}</span>
+				<span className="text-xs text-text-subtlest">{[accepted ? "Accepted" : "Discarded", valueGist(suggestion.value)].filter(Boolean).join(" · ")}</span>
 			</span>
-			<button
-				aria-label={`Undo ${suggestion.label.toLowerCase()}`}
-				className={cn("-mr-2 inline-flex h-7 any-pointer-coarse:min-h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-xs text-text-subtle outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered hover:text-text focus-visible:ring-2 focus-visible:ring-ring", CARD_ACTION_REVEAL)}
-				onClick={onRestore}
-				type="button"
-			>
-				<UndoIcon color="currentColor" label="" size="small" />
-				Undo
-			</button>
+			<span className={cn("-mr-3 inline-flex shrink-0", CARD_ACTION_REVEAL)}>
+				<Button aria-label={`Undo ${suggestion.label.toLowerCase()}`} onClick={onRestore} type="button" variant="ghost">
+					<UndoIcon color="currentColor" label="" size="small" />
+					Undo
+				</Button>
+			</span>
 		</div>
 	);
 }

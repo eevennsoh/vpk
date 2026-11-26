@@ -1,29 +1,15 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 
 import { Button } from "@/components/ui/button";
 import { motionRecipe } from "@/lib/motion";
 
 import { FOOTER_HEIGHT, SETTLE } from "./constants";
-import type { Deck, DeckReceipt } from "./use-deck";
-
-/** One line in the progress slot: a mark for which way it went, then what. "Nothing new" after an empty re-run. */
-function Receipt({ receipt }: Readonly<{ receipt: DeckReceipt }>) {
-	if (receipt.kind === "nothing-new") return <span className="text-xs whitespace-nowrap text-text-subtlest">No new suggestions</span>;
-	return (
-		<span className="flex min-w-0 items-center gap-1 text-xs whitespace-nowrap">
-			<span className="flex shrink-0 text-icon-success">
-				<CheckMarkIcon color="currentColor" label="" size="small" />
-			</span>
-			<span className="min-w-0 text-text-subtle">{receipt.subject} added</span>
-		</span>
-	);
-}
+import type { Deck } from "./use-deck";
 
 /**
- * Under a full-width hairline: "1 of 6 reviewed" on the left (briefly replaced by a receipt for the latest change),
+ * Under a full-width hairline: "1 of 6 reviewed" on the left (briefly replaced after an empty re-check),
  * then Discard all as quiet text and Accept all as the one primary action, while anything is pending. It folds away
  * when everything is caught up, where the body owns the summary, and while a check runs, when the panel folds to its header.
  */
@@ -48,13 +34,13 @@ export function StackFooter({ deck, animateEntrance }: Readonly<{ deck: Deck; an
 						initial={{ opacity: 0, y: 4 }}
 						key={receipt ? `receipt-${receipt.key}` : "progress"}
 					>
-						{receipt ? <Receipt receipt={receipt} /> : <span className="text-xs whitespace-nowrap text-text-subtlest tabular-nums">{reviewed} of {total} reviewed</span>}
+						<span className="text-xs whitespace-nowrap text-text-subtlest tabular-nums">{receipt ? "No new suggestions" : `${reviewed} of ${total} reviewed`}</span>
 					</motion.span>
 				</AnimatePresence>
 			</div>
 			{pending > 0 ? (
 				<div className="flex shrink-0 items-center gap-1">
-					<Button className="text-text-subtlest hover:text-text-subtle" onClick={() => deck.decideAll("dismiss")} type="button" variant="ghost">Discard all</Button>
+					<Button onClick={() => deck.decideAll("dismiss")} type="button" variant="ghost">Discard all</Button>
 					<Button onClick={() => deck.decideAll("accept")} type="button">Accept all</Button>
 				</div>
 			) : null}

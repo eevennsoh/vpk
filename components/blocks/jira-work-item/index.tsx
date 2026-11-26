@@ -64,6 +64,8 @@ export interface JiraWorkItemProps {
 	projectButterPresentation?: ProjectButterPresentation;
 	/** Opens Project butter in the suggestion state, with Teamwork Graph fills for empty fields. */
 	projectButterSuggestion?: boolean;
+	/** Shows the optional agent reply loading state in Project butter activity. */
+	projectButterShowAgentReplyProgress?: boolean;
 	/** Project butter: a host sidebar chat plus the opener that routes agent sessions into it. */
 	projectButterChat?: ProjectButterChatHost;
 }
@@ -82,6 +84,7 @@ export function JiraWorkItem({
 	initialExperimentalPreset = "filled",
 	projectButterPresentation = "full-screen",
 	projectButterSuggestion = false,
+	projectButterShowAgentReplyProgress = false,
 	projectButterChat,
 }: Readonly<JiraWorkItemProps>) {
 	return variant === "default" ? (
@@ -94,6 +97,7 @@ export function JiraWorkItem({
 			projectButterPresentation={projectButterPresentation}
 			projectButterChat={projectButterChat}
 			projectButterSuggestion={projectButterSuggestion}
+			projectButterShowAgentReplyProgress={projectButterShowAgentReplyProgress}
 			surface={variant}
 		/>
 	);
@@ -148,6 +152,7 @@ function JiraWorkItemExperimentalView({
 	surface,
 	projectButterPresentation,
 	projectButterSuggestion,
+	projectButterShowAgentReplyProgress,
 	projectButterChat,
 }: Readonly<{
 	initialIssueOpen: boolean;
@@ -156,6 +161,7 @@ function JiraWorkItemExperimentalView({
 	surface: ExperimentalVariant;
 	projectButterPresentation: ProjectButterPresentation;
 	projectButterSuggestion: boolean;
+	projectButterShowAgentReplyProgress: boolean;
 	projectButterChat?: ProjectButterChatHost;
 }>) {
 	const [isIssueOpen, setIsIssueOpen] = useState(initialIssueOpen);
@@ -168,7 +174,7 @@ function JiraWorkItemExperimentalView({
 
 	return (
 		<JiraWorkItemShell onOpen={() => setIsIssueOpen(true)}>
-			{surface === "project-butter" ? <ProjectButterJiraWorkItem chatPanel={projectButterChat?.panel} initialPresentation={projectButterPresentation} onOpenCloudSession={projectButterChat?.onOpenCloudSession} overlayContainerRef={projectButterChat?.overlayContainerRef} initialPreset={initialExperimentalPreset} initialSuggestion={projectButterSuggestion} onClose={handleIssueClose} open={isIssueOpen} /> : <ExperimentalSurface
+			{surface === "project-butter" ? <ProjectButterJiraWorkItem chatPanel={projectButterChat?.panel} initialPresentation={projectButterPresentation} onOpenCloudSession={projectButterChat?.onOpenCloudSession} overlayContainerRef={projectButterChat?.overlayContainerRef} initialPreset={initialExperimentalPreset} initialSuggestion={projectButterSuggestion} showAgentReplyProgress={projectButterShowAgentReplyProgress} onClose={handleIssueClose} open={isIssueOpen} /> : <ExperimentalSurface
 				open={isIssueOpen}
 				onClose={handleIssueClose}
 				initialPreset={initialExperimentalPreset}

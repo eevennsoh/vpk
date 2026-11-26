@@ -34,7 +34,7 @@ function clearProjectButterDetailField(id: ProjectButterDetailFieldId, content: 
 	}
 }
 
-export function ProjectButterDetailsFields({ agentField, agentFieldHasSessions = false, content, expanded, cursor = null, fieldReveals, reflow = false }: Readonly<{ agentField?: ReactNode; agentFieldHasSessions?: boolean; content: ProjectButterContent; empty: boolean; expanded: boolean; cursor?: FillCursorPosition | null; fieldReveals?: ProjectButterSuggestionFill["fieldReveals"]; reflow?: boolean }>) {
+export function ProjectButterDetailsFields({ agentField, agentFieldHasSessions = false, animateExpansion = true, content, expanded, cursor = null, fieldReveals, reflow = false }: Readonly<{ agentField?: ReactNode; agentFieldHasSessions?: boolean; animateExpansion?: boolean; content: ProjectButterContent; empty: boolean; expanded: boolean; cursor?: FillCursorPosition | null; fieldReveals?: ProjectButterSuggestionFill["fieldReveals"]; reflow?: boolean }>) {
 	const id = useId();
 	const rootRef = useRef<HTMLDivElement>(null);
 	const heightRef = useRef<number | null>(null);
@@ -61,7 +61,7 @@ export function ProjectButterDetailsFields({ agentField, agentFieldHasSessions =
 		const expansionChanged = previousExpandedRef.current !== expanded;
 		previousExpandedRef.current = expanded;
 		heightRef.current = to;
-		if (!expansionChanged || reduced || from === null || Math.abs(from - to) < 1) return;
+		if (!expansionChanged || !animateExpansion || reduced || from === null || Math.abs(from - to) < 1) return;
 		let active = true;
 		animatingRef.current = true;
 		root.style.height = `${from}px`;
@@ -85,7 +85,7 @@ export function ProjectButterDetailsFields({ agentField, agentFieldHasSessions =
 			root.style.overflow = "";
 			animatingRef.current = false;
 		};
-	}, [expanded, reduced]);
+	}, [animateExpansion, expanded, reduced]);
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 	const fields = content.detailFields;
 	const order = fields.order.filter((field) => field !== "status" && (field === "agents" ? Boolean(agentField) : !fields.hidden.includes(field)));

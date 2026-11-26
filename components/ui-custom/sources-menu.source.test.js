@@ -65,25 +65,6 @@ test("app stack represents distinct source apps", async () => {
 	assert.deepEqual(getSourcePreviewApps([...SOURCE_PREVIEW_PAGES, slack, slack]).map((app) => app.id), ["confluence", "slack"]);
 });
 
-test("preview-menu leading tiles follow an explicit source, then the href product", () => {
-	assert.match(MENU_SOURCE, /function SourcePreviewLeadingTile/u);
-	assert.match(MENU_SOURCE, /if \(source\.source\) \{/u);
-	assert.match(MENU_SOURCE, /const product = getSourcePreviewProduct\(source\.href\)/u);
-	assert.match(MENU_SOURCE, /case "jira":/u);
-	assert.match(MENU_SOURCE, /case "confluence":/u);
-	assert.match(MENU_SOURCE, /case "github":/u);
-	assert.match(MENU_SOURCE, /case "slack":/u);
-	assert.match(MENU_SOURCE, /<TwgToolSourceIcon/u);
-	assert.match(MENU_SOURCE, /provider: "jira"/u);
-	assert.match(MENU_SOURCE, /name: "github"/u);
-	assert.match(MENU_SOURCE, /name: "slack"/u);
-	assert.match(
-		MENU_SOURCE,
-		/case "github":[\s\S]*<TwgToolSourceIcon[\s\S]*aria-hidden[\s\S]*name: "github"[\s\S]*case "slack":[\s\S]*<TwgToolSourceIcon[\s\S]*aria-hidden[\s\S]*name: "slack"/u,
-	);
-	assert.match(MENU_SOURCE, /variant="blue"/u);
-});
-
 test("preview-menu product mapping follows href host and path", async () => {
 	const { code } = await esbuild.transform(readFileSync(DATA_PATH, "utf8"), {
 		format: "cjs",

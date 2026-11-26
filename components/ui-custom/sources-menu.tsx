@@ -4,9 +4,14 @@
 
 import { useId, useState, type ReactElement, type ReactNode } from "react";
 import GrowDiagonalIcon from "@atlaskit/icon/core/grow-diagonal";
+import AngleBracketsIcon from "@atlaskit/icon/core/angle-brackets";
+import CommentIcon from "@atlaskit/icon/core/comment";
+import FileIcon from "@atlaskit/icon/core/file";
 import LinkIcon from "@atlaskit/icon/core/link";
 import PageIcon from "@atlaskit/icon/core/page";
 import ShowMoreHorizontalIcon from "@atlaskit/icon/core/show-more-horizontal";
+import VideoIcon from "@atlaskit/icon/core/video";
+import WorkItemIcon from "@atlaskit/icon/core/work-item";
 import TeamworkGraphIcon from "@atlaskit/icon-lab/core/teamwork-graph";
 import { toast } from "sonner";
 
@@ -33,12 +38,11 @@ import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/compone
 import { SonnerToast, Toaster } from "@/components/ui/sonner";
 import {
 	formatSourcePreviewDate,
-	getSourcePreviewIconTileVariant,
 	getSourcePreviewApps,
 	getSourcePreviewProduct,
 	type SourcePreviewPage,
 } from "@/components/ui-custom/sources-menu-data";
-import { TWGAppstack, TwgToolSourceIcon } from "@/components/ui-custom/twg-appstack";
+import { TWGAppstack } from "@/components/ui-custom/twg-appstack";
 import "@/components/ui-custom/rich-text-editor/rich-text-editor.css";
 import { cn } from "@/lib/utils";
 
@@ -158,73 +162,21 @@ function SourcePreviewActions({
 	);
 }
 
+type SimpleSource = Pick<SourcePreviewPage, "id" | "title" | "href" | "source">;
+
 function SourcePreviewLeadingTile({
 	source,
-}: Readonly<{ source: SourcePreviewPage }>) {
-	if (source.source) {
-		return (
-			<TwgToolSourceIcon
-				aria-hidden
-				size="small"
-				source={source.source}
-			/>
-		);
-	}
-
+}: Readonly<{ source: SimpleSource }>) {
 	const product = getSourcePreviewProduct(source.href);
-
-	switch (product) {
-		case "jira":
-			return (
-				<TwgToolSourceIcon
-					aria-hidden
-					size="small"
-					source={{ id: "jira", label: "Jira", provider: "jira" }}
-				/>
-			);
-		case "confluence":
-			return (
-				<IconTile
-					aria-hidden={true}
-					as="span"
-					icon={<PageIcon label="" size="small" />}
-					label={source.title}
-					size="small"
-					variant="blue"
-				/>
-			);
-		case "github":
-			return (
-				<TwgToolSourceIcon
-					aria-hidden
-					size="small"
-					source={{ id: "github", label: "GitHub", name: "github", provider: "twg" }}
-				/>
-			);
-		case "slack":
-			return (
-				<TwgToolSourceIcon
-					aria-hidden
-					size="small"
-					source={{ id: "slack", label: "Slack", name: "slack", provider: "twg" }}
-				/>
-			);
-		case "other":
-			return (
-				<IconTile
-					aria-hidden={true}
-					as="span"
-					icon={<PageIcon label="" size="small" />}
-					label={source.title}
-					size="small"
-					variant={getSourcePreviewIconTileVariant(source.href)}
-				/>
-			);
-		default: {
-			const _exhaustive: never = product;
-			return _exhaustive;
-		}
-	}
+	const kind = source.source?.name ?? source.source?.provider ?? product;
+	const confluence = !source.source?.icon && (kind === "confluence" || (kind === "twg" && product === "confluence"));
+	const icon = source.source?.icon ?? (confluence ? <PageIcon label="" size="small" />
+		: kind === "jira" ? <WorkItemIcon label="" size="small" />
+		: kind === "loom" ? <VideoIcon label="" size="small" />
+		: kind === "slack" ? <CommentIcon label="" size="small" />
+		: kind === "github" || kind === "bitbucket" ? <AngleBracketsIcon label="" size="small" />
+		: <FileIcon label="" size="small" />);
+	return <IconTile aria-hidden as="span" className={confluence ? undefined : "text-icon-subtle"} icon={icon} label={source.title} size="small" variant={confluence ? "blue" : "gray"} />;
 }
 
 function SourcePreviewCard({
@@ -276,20 +228,18 @@ function SourcePreviewCard({
 	);
 }
 
-function SourceSimpleRow({ source }: Readonly<{ source: SourcePreviewPage }>) {
-	return (
-		<a
-			className={cn(dropdownStyles.itemBase, "gap-3 px-2 text-text no-underline hover:bg-bg-neutral-subtle-hovered hover:no-underline focus-visible:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring")}
-			href={source.href}
-			rel="noreferrer"
-			target="_blank"
-		>
+function SourceSimpleRow({ source }: Readonly<{ source: SimpleSource }>) {
+	const contents = (
+		<>
 			<span className="inline-flex size-6 shrink-0 items-center justify-center">
 				<SourcePreviewLeadingTile source={source} />
 			</span>
 			<span className="min-w-0 truncate">{source.title}</span>
-		</a>
+		</>
 	);
+	return source.href ? (
+		<a className={cn(dropdownStyles.itemBase, "gap-3 px-2 text-text no-underline hover:bg-bg-neutral-subtle-hovered hover:no-underline focus-visible:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring")} data-menu-row="" href={source.href} rel="noreferrer" target="_blank">{contents}</a>
+	) : <div className={cn(dropdownStyles.itemBase, "cursor-default gap-3 px-2 text-text hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-hovered")} data-menu-row="">{contents}</div>;
 }
 
 function SourcePreviewDialog({
@@ -333,18 +283,22 @@ function SourcePreviewDialog({
 }
 
 export function SourcesMenu({
-	pages,
+	pages = [],
+	simpleSources,
 	children,
 	trigger,
 	toasterId,
 	align = "start",
+	positionerClassName,
 	variant = "verbose",
 }: Readonly<{
-	pages: readonly SourcePreviewPage[];
+	pages?: readonly SourcePreviewPage[];
+	simpleSources?: readonly SimpleSource[];
 	children?: ReactNode;
 	trigger?: ReactElement;
 	toasterId?: string;
 	align?: "start" | "center" | "end";
+	positionerClassName?: string;
 	variant?: "simple" | "verbose";
 }>) {
 	const generatedToasterId = useId();
@@ -365,19 +319,20 @@ export function SourcesMenu({
 						<>
 							<Icon aria-hidden className="size-3 [&_svg]:size-3!" render={<TeamworkGraphIcon label="" size="small" />} />
 							<span>Context</span>
-							<TWGAppstack animated={false} aria-hidden iconSize="xxsmall" sources={getSourcePreviewApps(pages)} />
+							<TWGAppstack animated={false} aria-hidden iconSize="xxsmall" sources={simpleSources ? [...new Map(simpleSources.flatMap((item) => item.source ? [[item.source.id, item.source] as const] : [])).values()] : getSourcePreviewApps(pages)} />
 						</>
 					)}
 				</PopoverTrigger>
 				<PopoverContent
 					align={align}
+					positionerClassName={positionerClassName}
 					className={cn(variant === "simple" ? "w-[min(20rem,var(--available-width,20rem))]" : "w-[min(26rem,var(--available-width,26rem))]", "max-h-[min(22rem,var(--available-height,22rem))] gap-0 overflow-x-hidden overflow-y-auto border-0 shadow-2xl", dropdownStyles.surface, dropdownStyles.padding)}
 					initialFocus={(openType) => openType === "keyboard"}
 				>
 					<PopoverTitle className="sr-only">Source previews</PopoverTitle>
-					{pages.map((previewItem) => variant === "simple" ? (
+					{variant === "simple" ? (simpleSources ?? pages).map((previewItem) => (
 						<SourceSimpleRow key={previewItem.id} source={previewItem} />
-					) : (
+					)) : pages.map((previewItem) => (
 						<SourcePreviewCard
 							key={previewItem.id}
 							onPreview={openPreview}

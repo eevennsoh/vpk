@@ -103,7 +103,7 @@ test("the persistent review action reopens suggestions after closing and complet
 	await expect(review).toBeVisible();
 	await expect(review.locator("[data-notification-dot]")).toHaveCount(0);
 	await review.click();
-	await expect(panel.getByText("All caught up", { exact: true })).toBeVisible();
+	await expect(panel.getByText(/^\d+ suggestions? reviewed$/u)).toBeVisible();
 });
 
 test("the notification remains until all remaining suggestions are dismissed", async ({ page }) => {
@@ -121,7 +121,7 @@ test("the notification remains until all remaining suggestions are dismissed", a
 	await expect(panel).toHaveCount(0);
 	await expect(review.locator("[data-notification-dot]")).toHaveCount(0);
 	await review.click();
-	await expect(panel.getByText("All caught up", { exact: true })).toBeVisible();
+	await expect(panel.getByText(/^\d+ suggestions? reviewed$/u)).toBeVisible();
 });
 
 for (const opener of ["Review suggestions", "Review AI suggestions"]) test(`closing the panel opened from ${opener} returns it to the button`, async ({ page }) => {
@@ -367,7 +367,7 @@ test("AI suggestions starts with an empty work item and opens the Rovo review li
 	await panel.getByRole("button", { name: "Accept all", exact: true }).click();
 	await expect(panel).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Open Rovo chat", exact: true })).toBeFocused();
-	await expect(page.getByText("All caught up", { exact: true })).toHaveCount(0);
+	await expect(page.getByText(/^\d+ suggestions? reviewed$/u)).toHaveCount(0);
 	await expect(review).toBeVisible();
 	await expect(description).toContainText(descriptionSuggestion);
 	await expect(page.getByRole("button", { name: "Change assignee" })).toContainText("Robi Lopez");
@@ -380,7 +380,7 @@ test("AI suggestions starts with an empty work item and opens the Rovo review li
 	await expect(chat.getByRole("button", { name: /Last 7 days of work/ })).toHaveCount(0);
 	await firstPrompt.click();
 	await expect(chat).toHaveCount(0);
-	await expect(panel.getByText("All caught up", { exact: true })).toBeVisible();
+	await expect(panel.getByText(/^\d+ suggestions? reviewed$/u)).toBeVisible();
 	const checkAgain = panel.getByRole("button", { name: "Check again", exact: true });
 	await expect.poll(async () => {
 		const [surface, action] = await Promise.all([panel.boundingBox(), checkAgain.boundingBox()]);
@@ -623,7 +623,7 @@ test("Check again finds different suggestions for the remaining empty fields", a
 	const openCaughtUp = async () => {
 		await page.getByRole("button", { name: "Open Rovo chat", exact: true }).click();
 		await page.getByRole("button", { name: "Suggest work item fields", exact: true }).click();
-		await expect(panel.getByText("All caught up", { exact: true })).toBeVisible();
+		await expect(panel.getByText(/^\d+ suggestions? reviewed$/u)).toBeVisible();
 	};
 	const recheck = async () => {
 		const opening = await panel.evaluateHandle((dialog) => {
@@ -647,7 +647,7 @@ test("Check again finds different suggestions for the remaining empty fields", a
 			return samples;
 		});
 		await panel.getByRole("button", { name: "Check again", exact: true }).press("Enter");
-		await expect(panel.getByText("Checking for anything new…")).toBeVisible();
+		await expect(panel.getByText("Checking for anything new…")).toHaveText("Checking for anything new…");
 		await expect.poll(() => opening.evaluate((samples) => samples.gaps.length)).toBe(30);
 		const { sawStack, interactiveOverlap, heights, gaps } = await opening.jsonValue();
 		expect(sawStack).toBe(true);
@@ -692,7 +692,7 @@ test("Check again finds different suggestions for the remaining empty fields", a
 	await panel.getByRole("button", { name: "Accept all", exact: true }).click();
 	await openCaughtUp();
 	await panel.getByRole("button", { name: "Check again", exact: true }).click();
-	await expect(panel.getByText("Nothing new since you last checked")).toBeVisible();
+	await expect(panel.getByText("Nothing new since you last checked")).toHaveText("Nothing new since you last checked");
 });
 
 test("Suggest work item fields brings dismissed suggestions back for review", async ({ page }) => {
@@ -729,6 +729,58 @@ test("wheel input over a suggestion's text scrolls the review list", async ({ pa
 	await expect.poll(() => scrollport.evaluate((element) => getComputedStyle(element).maskImage)).toContain("rgb(0, 0, 0) 48px");
 	await scrollport.evaluate((element) => { element.scrollTop = 0; });
 	await expect.poll(() => scrollport.evaluate((element) => getComputedStyle(element).maskImage)).not.toContain("rgb(0, 0, 0) 48px");
+});
+
+test("an expanded suggestion only has the hover background while hovered", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	await page.getByRole("button", { name: "Review suggestions", exact: true }).click();
+	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
+	const row = panel.locator('[data-suggestion-field="assignee"]');
+	const surface = row.locator(":scope > div");
+	const colors = await surface.evaluate((element) => {
+		const swatch = document.createElement("span");
+		element.append(swatch);
+		swatch.style.backgroundColor = "var(--ds-surface-raised)";
+		const resting = getComputedStyle(swatch).backgroundColor;
+		swatch.style.backgroundColor = "var(--ds-surface-raised-hovered)";
+		const hovered = getComputedStyle(swatch).backgroundColor;
+		swatch.remove();
+		return { resting, hovered };
+	});
+	await row.hover();
+	await row.getByRole("button", { name: "Why assignee was suggested" }).click();
+	await expect(row.getByRole("button", { name: "Why assignee was suggested" })).toHaveAttribute("aria-expanded", "true");
+	await page.mouse.move(5, 5);
+	await expect(surface).toHaveCSS("background-color", colors.resting);
+	await row.hover();
+	await expect(surface).toHaveCSS("background-color", colors.hovered);
+});
+
+test("clicking a suggestion card toggles its reasoning without intercepting its actions", async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	await page.getByRole("button", { name: "Review suggestions", exact: true }).click();
+	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
+	const row = panel.locator('[data-suggestion-field="assignee"]');
+	const why = row.getByRole("button", { name: "Why assignee was suggested" });
+	const value = row.getByText("Robi Lopez", { exact: true });
+	await expect(row.locator(":scope > div")).toHaveCSS("cursor", "pointer");
+	await value.click();
+	await expect(why).toHaveAttribute("aria-expanded", "true");
+	await value.click();
+	await expect(why).toHaveAttribute("aria-expanded", "false");
+	await why.focus();
+	await page.keyboard.press("Enter");
+	await expect(why).toHaveAttribute("aria-expanded", "true");
+	await row.getByRole("button", { name: "Context" }).click();
+	await expect(page.getByRole("dialog", { name: "Source previews" })).toBeVisible();
+	await expect(why).toHaveAttribute("aria-expanded", "true");
+	await page.keyboard.press("Escape");
+	await row.getByRole("button", { name: "Discard assignee" }).click();
+	await expect(row.getByRole("button", { name: "Discard assignee" })).toHaveCount(0);
 });
 
 test.use({ viewport: { width: 1800, height: 1100 }, ignoreHTTPSErrors: true });
@@ -834,6 +886,23 @@ test("the Butter board work item combines comments and changes under Activity", 
 	await comment.press("Enter");
 	await expect(activity).toContainText("Ready for review");
 	await expect(activity).toContainText("updated summary");
+});
+
+test("the Project butter demo can enable the agent reply loading state", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/jira-work-item#project-butter"));
+	const loading = page.getByRole("switch", { name: "Agent reply loading state" });
+	await expect(loading).not.toBeChecked();
+	await loading.check();
+	await page.getByRole("button", { name: "Full screen", exact: true }).click();
+	const dialog = page.getByRole("dialog", { name: "Project butter" });
+	const thread = dialog.locator('[data-jira-activity-entry-id="invocation-butter-claude-onboarding-feedback"]');
+	await thread.hover();
+	await thread.getByRole("button", { name: "Reply", exact: true }).first().click();
+	const editor = dialog.getByRole("textbox", { name: "Comment editor" });
+	await editor.pressSequentially("Please check this");
+	await editor.press("Enter");
+	await expect(thread.getByRole("progressbar", { name: "Agent is preparing a reply" })).toBeVisible({ timeout: 10_000 });
+	await expect(thread.getByText("I've received your request", { exact: false })).toBeVisible({ timeout: 20_000 });
 });
 
 test("empty activity starts with who created the work item and places the comment bar 24 pixels below it", async ({ page }) => {

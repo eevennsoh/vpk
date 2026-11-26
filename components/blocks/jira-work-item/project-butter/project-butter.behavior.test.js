@@ -844,6 +844,28 @@ test("reopened comment drafts report restored agent mentions before submission",
 	assert.deepEqual(mentionedNames, ["Claude"]);
 });
 
+test("comment editor remains safe when its state snapshot outlives the editor", async (t) => {
+	const { Editor } = require("@tiptap/core");
+	const { StarterKit } = require("@tiptap/starter-kit");
+	const editor = new Editor({ element: document.createElement("div"), extensions: [StarterKit], content: "Draft" });
+	editor.destroy();
+	globalThis.__destroyedButterEditor = editor;
+	t.after(() => { delete globalThis.__destroyedButterEditor; });
+	const view = await renderComponent({
+		entry: "components/blocks/jira-work-item/project-butter/project-butter-comment-editor.tsx",
+		exportName: "ProjectButterCommentEditor",
+		props: { agents: [], focusRequest: 0, value: "", onSave() {}, onValueChange() {} },
+		mocks: {
+			"@tiptap/react": `export function useEditor() { return null; }
+				export function useEditorState({ selector }) { return selector({ editor: globalThis.__destroyedButterEditor }); }
+				export function EditorContent() { return null; }
+				export function NodeViewContent() {} export function NodeViewWrapper() {}
+				export function ReactNodeViewRenderer() {} export class ReactRenderer {} export function useCurrentEditor() {}`,
+		},
+	});
+	assert.equal(view.getByRole("button", { name: "Submit" }).disabled, true);
+});
+
 test("header status offers options and custom status updates", async () => {
 	const view = await renderWorkItem();
 	await view.click(view.getByRole("button", { name: "Change status, In progress" }));

@@ -16,12 +16,9 @@ interface DeckDecision {
 	reviewRun: number;
 }
 
-/** A short confirmation of the latest change, shown where the progress line normally sits. */
+/** A short acknowledgement of a re-check that found nothing new. */
 export interface DeckReceipt {
 	key: number;
-	kind: "accept" | "nothing-new";
-	/** What was decided: one field's label, or "N suggestions" for a bulk action. Empty for "nothing new". */
-	subject: string;
 }
 
 export interface Deck {
@@ -48,6 +45,8 @@ export interface Deck {
 	formation: string;
 	/** Everything was decided, then a check from there found nothing new. */
 	quietCheck: boolean;
+	/** Compact confirmation for the last action or an empty re-check. */
+	completionLabel: string;
 	/** What Undo would bring back, named: "Undo dismissing Due date", "Undo accepting 6 suggestions". */
 	undoLabel: string | null;
 	/** Plain-language summary of the last change, for a polite live region. */
@@ -79,14 +78,12 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 		return () => window.clearTimeout(timer);
 	}, [receipt]);
 
-	const nextReceipt = (kind: DeckReceipt["kind"], subject: string) => setReceipt((current) => ({ key: (current?.key ?? 0) + 1, kind, subject }));
-
 	if (seenRuns !== feed.runs.length) {
 		setSeenRuns(feed.runs.length);
 		const ids = feed.runs.at(-1)?.ids ?? [];
 		if (ids.length === 0) {
 			setAnnouncement("No new suggestions.");
-			nextReceipt("nothing-new", "");
+			setReceipt((current) => ({ key: (current?.key ?? 0) + 1 }));
 		} else {
 			setFront(ids);
 			setReceipt(null);
@@ -103,6 +100,10 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 	const emptiedAt = order.length === 0 ? (emptied ?? feed.runs.length) : null;
 	if (emptiedAt !== emptied) setEmptied(emptiedAt);
 	const quietCheck = emptiedAt != null && feed.runs.length > emptiedAt && feed.runs.at(-1)?.ids.length === 0;
+	const lastDecision = history.at(-1) ?? null;
+	const completedCount = lastDecision?.bulk ? lastDecision.ids.length : review.accepted.length + review.dismissed.length;
+	const completedAction = lastDecision?.bulk ? lastDecision.decision === "accept" ? "accepted" : "discarded" : "reviewed";
+	const completionLabel = quietCheck ? "No new suggestions" : `${completedCount} ${completedCount === 1 ? "suggestion" : "suggestions"} ${completedAction}`;
 	const reviewRun = feed.runs.findLast((run) => run.ids.length > 0)?.number ?? 1;
 	const decidedIds = history.filter((entry) => entry.reviewRun === reviewRun).flatMap((entry) => entry.ids).toReversed();
 	const reviewed = [...new Set(decidedIds)].flatMap((id) => review.suggestions.filter((suggestion) => suggestion.id === id && review.decisionOf(id) !== "pending"));
@@ -111,8 +112,7 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 	const record = (entry: Omit<DeckDecision, "reviewRun">) => {
 		setExitDirection(entry.decision);
 		setHistory((current) => [...current, { ...entry, reviewRun }]);
-		if (entry.decision === "accept") nextReceipt("accept", subjectOf(entry.ids.map(labelOf)));
-		else setReceipt(null);
+		setReceipt(null);
 		if (entry.decision === "accept") onAccepted(entry.ids, entry.bulk === true);
 	};
 
@@ -168,7 +168,7 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 		order,
 		reviewed,
 		exitDirection,
-		lastDecision: history.at(-1) ?? null,
+		lastDecision,
 		undoDepth: history.length,
 		receipt,
 		decide,
@@ -182,6 +182,7 @@ export function useDeck(feed: SuggestionFeed, onAccepted: (ids: readonly Suggest
 		},
 		formation: `${order[0]?.id ?? ""}:${feed.runs.length}:${order.length}:${gathers}`,
 		quietCheck,
+		completionLabel,
 		undoLabel: history.length > 0 ? undoLabelOf(history[history.length - 1], labelOf) : null,
 		announcement,
 	};

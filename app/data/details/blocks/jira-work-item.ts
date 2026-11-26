@@ -45,7 +45,7 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 		{
 			title: "Project butter",
 			id: "project-butter",
-			description: "Open Project butter in full screen, a modal, or a side panel. Toggle Empty or Suggestion before opening, or through the global header Settings cog.",
+			description: "Open Project butter in full screen, a modal, or a side panel. Toggle Empty, Suggestion, or the agent reply loading state before opening.",
 			demoSlug: "jira-work-item-demo-project-butter",
 		},
 	],
@@ -78,6 +78,12 @@ export const JIRA_WORK_ITEM_DETAIL: ComponentDetail = {
 			type: "boolean",
 			default: "false",
 			description: "Opens the Project butter variant in the suggestion state. Teamwork Graph proposes values for empty details fields, which can be accepted one at a time or all at once.",
+		},
+		{
+			name: "projectButterShowAgentReplyProgress",
+			type: "boolean",
+			default: "false",
+			description: "Show the optional loading state while an agent prepares a reply in Project butter activity.",
 		},
 		{
 			name: "initialExperimentalPreset",

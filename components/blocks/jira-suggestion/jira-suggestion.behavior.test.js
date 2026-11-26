@@ -174,12 +174,20 @@ test("Accept all can be undone in one step from the caught-up state", async () =
 	const view = await renderComponent({ source: SOURCE });
 	await view.click(view.getByRole("button", { name: "Accept all" }));
 	assert.equal(view.queryByRole("button", { name: "Check again" }) !== null, true, "the empty deck offers another check");
-	assert.equal(view.queryByText("6 added") !== null, true, "…with one summary of what was decided");
+	assert.equal(view.queryByText("6 suggestions accepted") !== null, true, "…with one summary of what was decided");
 
 	await view.click(view.getByRole("button", { name: "Undo accepting 6 suggestions" }));
 	await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
 	assert.equal(view.queryByRole("button", { name: "Check again" }) === null, true, "the caught-up state gives way to the deck");
 	assert.equal(view.getAllByRole("button", { name: "Accept description" }).length, 1, "every card is back in the deck");
+});
+
+test("the reviewed total includes accepted and dismissed suggestions", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	await view.click(view.getByRole("button", { name: "Show as list" }));
+	await view.click(view.getAllByRole("button", { name: "Accept description" }).find((button) => button.closest('[role="list"]')));
+	await view.click(view.getByRole("button", { name: "Discard all" }));
+	assert.equal(view.queryByText("5 suggestions discarded") !== null, true);
 });
 
 test("arrow keys and undo work while focus is on the suggestion controls", async () => {
@@ -243,12 +251,14 @@ test("a check from the caught-up state runs in place and says when it found noth
 	await view.click(view.getByRole("button", { name: "Check again" }));
 	assert.equal(view.getByRole("button", { name: "Checking for new suggestions" }).getAttribute("aria-disabled"), "true");
 	assert.equal(view.queryByRole("button", { name: "Check again" }) !== null, true, "the caught-up state holds while the check runs");
-	assert.equal(document.body.textContent.includes("reviewed"), false, "…with no footer or stack sliding in for it");
+	assert.equal(view.getByRole("button", { name: "Check again" }).querySelector("svg")?.getAttribute("data-state"), "loading");
+	assert.equal(view.queryByText("8 suggestions accepted") !== null, true, "the compact summary stays visible while checking");
 	await act(() => new Promise((resolve) => setTimeout(resolve, 400)));
 	assert.equal(view.queryByRole("button", { name: /^Undo/ }) === null, true, "Undo steps aside while the check runs instead of sitting there disabled");
 	await waitForRun();
 	assert.equal(view.queryByRole("button", { name: /^Undo/ }) !== null, true, "…and comes back once the check is done");
-	assert.equal(view.queryByText("Nothing new since you last checked") !== null, true, "a quiet check is acknowledged in the body");
+	assert.equal(view.getByRole("button", { name: "Check again" }).querySelector("svg")?.getAttribute("data-state"), "done");
+	assert.equal(view.queryByText("No new suggestions") !== null, true, "a quiet check is acknowledged in the body");
 	assert.equal(view.queryByText("Checked just now") !== null, true, "…and in the header");
 	await view.click(view.getByRole("button", { name: "Check for new suggestions" }));
 	assert.equal(view.getByRole("button", { name: "Checking for new suggestions" }).getAttribute("aria-disabled"), "true", "the header action starts the same check");

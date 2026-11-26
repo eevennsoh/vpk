@@ -177,7 +177,7 @@ export function TwgToolSourceIcon({
 	if (source.icon) {
 		return (
 			<Tile
-				className={cn("shrink-0", APPSTACK_TILE_FILL_CLASS, className)}
+				className={cn("shrink-0", className)}
 				isInset={false}
 				label={source.label}
 				size={size}

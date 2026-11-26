@@ -26,6 +26,7 @@ import { useProjectButterMentionAgents } from "@/components/blocks/jira-work-ite
 import { cn } from "@/lib/utils";
 import {
 	groupProjectButterUpdates,
+	latestVisibleActivityReply,
 	PROJECT_BUTTER_ACTIVITY_FILTERS_ALL,
 	projectButterSessionIdFromEntry,
 	pinProjectButterComments,
@@ -89,6 +90,7 @@ export function ProjectButterActivity({
 	sessionView = false,
 	onDraftSessionInstruction,
 	latestReplyEntryIds,
+	showAgentReplyProgress = false,
 }: Readonly<{
 	content: ProjectButterContent;
 	traceReplyId?: number | null;
@@ -110,6 +112,7 @@ export function ProjectButterActivity({
 	sessionView?: boolean;
 	onDraftSessionInstruction?: (thread: Readonly<{ entry: JiraActivityCommentEntry; session: ProjectButterSessionItem }>, text: string) => void;
 	latestReplyEntryIds?: ReadonlySet<string>;
+	showAgentReplyProgress?: boolean;
 }>) {
 	const activityRef = useRef<HTMLElement>(null);
 	const [expandedAudit, setExpandedAudit] = useState(false);
@@ -144,7 +147,7 @@ export function ProjectButterActivity({
 	const previewLimit = rowIndex(previewEntryId) + 1;
 	const selectedLimit = rowIndex(selectedReply?.entryId) + 1;
 	if (Math.max(previewLimit, selectedLimit) > limit) setLimit(Math.max(previewLimit, selectedLimit));
-	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, rowIndex(replyRequest?.entryId) + 1, selectedLimit, previewLimit, rowIndex(startedEntryId) + 1)).map((row) => row.kind === "comment" && latestReplyEntryIds?.has(row.id) ? { ...row, replyPreviewCount: row.replies?.at(-1)?.actor.kind === "agent" ? 2 : 1 } : row);
+	const rows = allRows.slice(0, Math.max(limit, rowIndex(content.activityFocusId) + 1, rowIndex(replyRequest?.entryId) + 1, selectedLimit, previewLimit, rowIndex(startedEntryId) + 1)).map((row) => row.kind === "comment" && latestReplyEntryIds?.has(row.id) ? { ...row, replyPreviewCount: latestVisibleActivityReply(row, showAgentReplyProgress)?.actor.kind === "agent" ? 2 : 1 } : row);
 	const visible = rows.flatMap<JiraActivityEntry>((row) => groups.get(row.id) ?? [row]);
 	const { feedRef, headerRef, progress, scrollToEntry, seekToProgress, stuck, visibleId } = useJiraWorkItemTimelineNavigation(rows, { layoutKey: sidePanel, focusId: content.activityFocusId, viewKey: view });
 	const visibleRow = rows.find((row) => row.id === visibleId) ?? rows[0];
@@ -313,7 +316,7 @@ export function ProjectButterActivity({
 						return summaryFor(entry).renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraftSessionInstruction({ entry, session }, draftThreadInstruction(sources)) : undefined, { disclosure, expanded });
 					}}
 					renderEarlierRepliesLabel={renderProjectButterEarlierRepliesLabel}
-					replyCollapseKey={(entry) => latestReplyEntryIds?.has(entry.id) ? `reply:${entry.replies?.at(-1)?.id}` : content.pinnedCommentIds.includes(entry.id) ? `pinned:${entry.id}` : undefined}
+					replyCollapseKey={(entry) => latestReplyEntryIds?.has(entry.id) ? `reply:${latestVisibleActivityReply(entry, showAgentReplyProgress)?.id}` : content.pinnedCommentIds.includes(entry.id) ? `pinned:${entry.id}` : undefined}
 					renderReplyComposer={(composer) => {
 						const request = replyRequest?.entryId === composer.entryId && replyRequest.id === composer.requestId ? replyRequest : undefined;
 						const prefill = request?.prefill;
@@ -334,7 +337,7 @@ export function ProjectButterActivity({
 					}}
 					renderReplyBody={(reply) => <ProjectButterReferenceCommentBody agents={activityMentionAgents} markdown={reply.body} pullRequestStatus={reply.id === "merchant-pr" || reply.id === "merchant-fix" ? pullRequestStatus : undefined} />}
 					renderReplyFooter={(reply) => reply.visibility === "private" && reply.generationStartedAtMs === undefined ? <ProjectButterAgentReplyAction reply={reply} onPublish={content.publishActivityReply} /> : null}
-					renderReply={(reply) => reply.generationStartedAtMs === undefined ? undefined : <AgentReplyProgress startedAtMs={reply.generationStartedAtMs} />}
+					renderReply={(reply) => reply.generationStartedAtMs === undefined ? undefined : showAgentReplyProgress ? <AgentReplyProgress startedAtMs={reply.generationStartedAtMs} /> : null}
 					renderTimestamp={(item) => <ProjectButterTimestamp item={item} />}
 					replyDrafts={content.replyDrafts}
 					sortOrder="ascending"
@@ -364,6 +367,7 @@ export function ProjectButterActivity({
 						onDraft={onDraftSessionInstruction}
 						onOpenSession={onOpenSession}
 						latestReplyEntryIds={latestReplyEntryIds}
+						showAgentReplyProgress={showAgentReplyProgress}
 						onEntriesChange={([updated]) => {
 							if (updated?.kind !== "comment") return;
 							const [canonical] = unpinProjectButterEntries([updated], content.activityEntries, content.pinnedCommentIds);
@@ -374,7 +378,7 @@ export function ProjectButterActivity({
 						renderCommentTools={(entry, reply) => <ProjectButterCommentTools content={content} entry={entry} reply={reply} />}
 						renderReplyBody={(reply) => <ProjectButterReferenceCommentBody agents={activityMentionAgents} markdown={reply.body} />}
 						renderReplyFooter={(reply) => reply.visibility === "private" && reply.generationStartedAtMs === undefined ? <ProjectButterAgentReplyAction reply={reply} onPublish={content.publishActivityReply} /> : null}
-						renderReply={(reply) => reply.generationStartedAtMs === undefined ? undefined : <AgentReplyProgress startedAtMs={reply.generationStartedAtMs} />}
+						renderReply={(reply) => reply.generationStartedAtMs === undefined ? undefined : showAgentReplyProgress ? <AgentReplyProgress startedAtMs={reply.generationStartedAtMs} /> : null}
 						renderTimestamp={(item) => <ProjectButterTimestamp item={item} />}
 					/>
 				</div>

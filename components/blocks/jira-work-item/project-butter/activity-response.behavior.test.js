@@ -294,6 +294,34 @@ test("an agent reacts after the reply appears, even if the activity view remount
 	assert.equal(reply.textContent.includes("👀"), true);
 });
 
+test("a reply that finishes after another comment appears at the end of the thread", { timeout: 30000 }, async () => {
+	const view = await renderComponent({
+		source: `import React from "react";
+			import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+			import { ProjectButterActivity } from "@/components/blocks/jira-work-item/project-butter/project-butter-activity";
+			import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+			const session = { id: "ordering-test", title: "Review", agent: { id: "claude", name: "Claude", kind: "agent", brandName: "claude" }, host: "local", state: "running", timeLabel: "Just now", role: "owner", invokedBy: { name: "Venn" } };
+			export default function Probe() {
+				const content = useProjectButterContent("filled", undefined, [session]);
+				return <ThemeWrapper><button onClick={() => content.submitActivityReply("invocation-ordering-test", "First request", ["claude"], { session })}>First</button><button onClick={() => content.submitActivityReply("invocation-ordering-test", "Later comment", [], { session })}>Later</button><ProjectButterActivity content={content} onOpenSession={() => {}} sessions={[session]} sidePanel={false} latestReplyEntryIds={new Set(["invocation-ordering-test"])} /></ThemeWrapper>;
+			}`,
+	});
+	await view.click(view.getByRole("button", { name: "First" }));
+	const thread = view.container.querySelector('[data-jira-activity-entry-id="invocation-ordering-test"]');
+	assert.equal(thread.textContent.includes("👀"), false);
+	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 2200)); });
+	assert.equal(thread.textContent.includes("👀"), true);
+	assert.equal(thread.textContent.includes("I've received your request"), false);
+	await view.click(view.getByRole("button", { name: "Later" }));
+	const deadline = Date.now() + 20000;
+	while (!thread.textContent.includes("I've received your request") && Date.now() < deadline) await act(async () => { await new Promise((resolve) => setTimeout(resolve, 100)); });
+	const rows = [...thread.querySelectorAll('[aria-label="Replies"] > div')];
+	const later = rows.find((row) => row.textContent.includes("Later comment"));
+	const response = rows.find((row) => row.textContent.includes("I've received your request"));
+	assert.equal(Boolean(later && response && (later.compareDocumentPosition(response) & Node.DOCUMENT_POSITION_FOLLOWING)), true);
+	assert.equal(response?.closest("[hidden]") === null, true);
+});
+
 test("owned session replies stay private until the agent response is added publicly", { timeout: 45000 }, async () => {
 	const view = await renderComponent({
 		source: `import React from "react";
@@ -303,17 +331,27 @@ test("owned session replies stay private until the agent response is added publi
 			const session = { id: "private-test", title: "Review the onboarding flow", agent: { id: "claude", name: "Claude", kind: "agent", brandName: "claude" }, host: "local", state: "running", timeLabel: "Just now", role: "owner", invokedBy: { name: "Venn" }, activityReplies: [{ id: "earlier-1", author: "Venn", body: "Earlier request", minutesAfter: 1 }, { id: "earlier-2", author: "Claude", body: "Earlier response", minutesAfter: 2 }] };
 			export default function ReplyProbe() {
 				const content = useProjectButterContent("filled", undefined, [session]);
-				return <ThemeWrapper><button onClick={() => content.submitActivityReply("invocation-private-test", "Please review this", ["claude"], { session })}>Send private request</button><ProjectButterActivity content={content} onOpenSession={() => {}} sessions={[session]} sidePanel={false} latestReplyEntryIds={new Set(["invocation-private-test"])} /></ThemeWrapper>;
+				const [showProgress, setShowProgress] = React.useState(false);
+				return <ThemeWrapper><button onClick={() => content.submitActivityReply("invocation-private-test", "Please review this", ["claude"], { session })}>Send private request</button><button onClick={() => setShowProgress((shown) => !shown)}>Toggle progress</button><ProjectButterActivity content={content} onOpenSession={() => {}} sessions={[session]} sidePanel={false} latestReplyEntryIds={new Set(["invocation-private-test"])} showAgentReplyProgress={showProgress} /></ThemeWrapper>;
 			}`,
 	});
 	await view.click(view.getByRole("button", { name: "Send private request" }));
 	let thread = view.container.querySelector('[data-jira-activity-entry-id="invocation-private-test"]');
 	assert.equal(thread.textContent.includes("Please review this"), true);
 	assert.equal(thread.textContent.includes("Only visible to you"), true);
-	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 3400)); });
+	assert.equal(thread.textContent.includes("👀"), false);
+	await act(async () => { await new Promise((resolve) => setTimeout(resolve, 2200)); });
 	thread = view.container.querySelector('[data-jira-activity-entry-id="invocation-private-test"]');
 	assert.equal(thread.textContent.includes("👀"), true);
+	assert.equal(thread.textContent.includes("I've received your request"), false);
+	const earlierReply = [...thread.querySelectorAll('[aria-label="Replies"] > div')].find((row) => row.textContent.includes("Earlier response"));
+	assert.equal(Boolean(earlierReply?.closest("[hidden]")), true);
+	assert.equal(Boolean(thread.querySelector('[role="progressbar"][aria-label="Agent is preparing a reply"]')), false);
+	assert.equal(thread.querySelectorAll('[aria-label="Replies"] > div').length, 3);
+	await view.click(view.getByRole("button", { name: "Toggle progress" }));
 	assert.equal(Boolean(thread.querySelector('[role="progressbar"][aria-label="Agent is preparing a reply"]')), true);
+	await view.click(view.getByRole("button", { name: "Toggle progress" }));
+	assert.equal(Boolean(thread.querySelector('[role="progressbar"][aria-label="Agent is preparing a reply"]')), false);
 	const replyDeadline = Date.now() + 20000;
 	do {
 		await act(async () => { await new Promise((resolve) => setTimeout(resolve, 100)); });
@@ -325,6 +363,7 @@ test("owned session replies stay private until the agent response is added publi
 	const replyCount = replyRows().length;
 	const humanReply = replyRows().find((row) => row.textContent.includes("Please review this"));
 	const agentReply = replyRows().find((row) => row.textContent.includes("I've received your request"));
+	assert.equal(agentReply.closest("[hidden]") === null, true);
 	assert.equal(humanReply.textContent.includes("Only visible to you"), true);
 	assert.equal(humanReply.hidden, false);
 	await view.click([...agentReply.querySelectorAll("button")].find((button) => button.textContent === "Add reply"));

@@ -180,11 +180,14 @@ export function ProjectButterCommentEditor({ agents, ariaLabel = "Comment editor
 	});
 	const contentState = useEditorState({
 		editor,
-		selector: ({ editor }) => ({
-			isEmpty: editor?.isEmpty ?? true,
-			canSubmit: Boolean(editor && (replyAgent ? getTextWithoutAgentMention(editor, replyAgent.name) : editor.getText().trim())),
-			showInstructionPlaceholder: Boolean(editor && !editor.isEmpty && placeholderAgent && !getTextWithoutAgentMention(editor, placeholderAgent) && editor.state.doc.childCount === 1 && !editor.state.doc.firstChild?.content.content.some((node) => node.type.name === "hardBreak")),
-		}),
+		selector: ({ editor }) => {
+			if (!editor || editor.isDestroyed) return { isEmpty: true, canSubmit: false, showInstructionPlaceholder: false };
+			return {
+				isEmpty: editor.isEmpty,
+				canSubmit: Boolean(replyAgent ? getTextWithoutAgentMention(editor, replyAgent.name) : editor.getText().trim()),
+				showInstructionPlaceholder: Boolean(!editor.isEmpty && placeholderAgent && !getTextWithoutAgentMention(editor, placeholderAgent) && editor.state.doc.childCount === 1 && !editor.state.doc.firstChild?.content.content.some((node) => node.type.name === "hardBreak")),
+			};
+		},
 	});
 	function reportMentions(activeEditor: Editor) {
 		const names: string[] = [];

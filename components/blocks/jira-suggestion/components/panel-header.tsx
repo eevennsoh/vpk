@@ -1,23 +1,27 @@
 "use client";
 
 import { useEffect, useState, type ReactNode, type Ref } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import CollapseVerticalIcon from "@atlaskit/icon/core/collapse-vertical";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import ListBulletedIcon from "@atlaskit/icon/core/list-bulleted";
 import RefreshIcon from "@atlaskit/icon/core/refresh";
 import StatusWorkflowStoppedIcon from "@atlaskit/icon-lab/core/status-workflow-stopped";
+import StatusSuccessIcon from "@atlaskit/icon/core/status-success";
+import UndoIcon from "@atlaskit/icon/core/undo";
 
 import type { SuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Shimmer } from "@/components/ui/shimmer";
 import { cn } from "@/lib/utils";
+import { motionDuration, motionEase } from "@/lib/motion";
 import { LIST_HEADER_TOP_INSET } from "./constants";
 import { SuggestionsStatusIcon } from "./suggestions-status-icon";
 
 export type ViewMode = "stack" | "list";
 
 const ICON_BUTTON =
-	"flex size-7 any-pointer-coarse:size-8 items-center justify-center rounded-md text-icon-subtle outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered hover:text-icon active:bg-bg-neutral-subtle-pressed focus-visible:ring-2 focus-visible:ring-ring aria-disabled:cursor-default aria-disabled:hover:bg-transparent aria-disabled:hover:text-icon-subtle aria-disabled:active:bg-transparent";
+	"flex size-7 any-pointer-coarse:size-8 items-center justify-center rounded-md text-icon-subtle outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered active:bg-bg-neutral-subtle-pressed focus-visible:ring-2 focus-visible:ring-ring aria-disabled:cursor-default aria-disabled:hover:bg-transparent aria-disabled:active:bg-transparent";
 
 /** How long ago a run finished: "just now", "5 min ago", "2 hr ago". */
 export function runAge(at: number, now: number): string {
@@ -62,7 +66,7 @@ export function headline(feed: SuggestionFeed, now: number): string {
 	return "Suggestions for you";
 }
 
-function HeaderButton({ label, tip, disabled = false, onClick, buttonRef, children, portalOutsidePanel }: Readonly<{ label: string; tip: ReactNode; disabled?: boolean; onClick: () => void; buttonRef?: Ref<HTMLButtonElement>; children: ReactNode; portalOutsidePanel?: boolean }>) {
+export function HeaderButton({ label, tip, disabled = false, onClick, buttonRef, children, portalOutsidePanel }: Readonly<{ label: string; tip: ReactNode; disabled?: boolean; onClick: () => void; buttonRef?: Ref<HTMLButtonElement>; children: ReactNode; portalOutsidePanel?: boolean }>) {
 	const tooltip = (
 		<Tooltip>
 			<TooltipTrigger render={<button aria-disabled={disabled || undefined} aria-label={label} className={cn(ICON_BUTTON, "group/header-button")} onClick={disabled ? undefined : onClick} ref={buttonRef} type="button" />}>
@@ -72,6 +76,10 @@ function HeaderButton({ label, tip, disabled = false, onClick, buttonRef, childr
 		</Tooltip>
 	);
 	return portalOutsidePanel ? <TooltipProvider>{tooltip}</TooltipProvider> : tooltip;
+}
+
+export function PanelHeaderLayout({ children, floating, inset = false, view }: Readonly<{ children: ReactNode; floating: boolean; inset?: boolean; view: ViewMode }>) {
+	return <header className={cn("flex h-11 shrink-0 items-center gap-2 pl-4", view === "list" ? "pr-4" : "pr-2", floating ? "relative z-10" : null)} style={{ marginTop: inset ? LIST_HEADER_TOP_INSET : undefined }}>{children}</header>;
 }
 
 /** The refresh arrow turns while the agent re-runs, finishing its turn before settling upright. */
@@ -100,26 +108,34 @@ export interface PanelHeaderProps {
 	onClose: () => void;
 	toggleRef: Ref<HTMLButtonElement>;
 	rerunRef?: Ref<HTMLButtonElement>;
+	compact?: Readonly<{ label: string; undoLabel: string | null; onUndo: () => void; checkRef: Ref<HTMLButtonElement> }>;
 }
 
-export function PanelHeader({ feed, title, titleId, view, floating, onToggleView, onRerun, onCancelRerun, onClose, toggleRef, rerunRef }: Readonly<PanelHeaderProps>) {
+export function PanelHeader({ feed, title, titleId, view, floating, onToggleView, onRerun, onCancelRerun, onClose, toggleRef, rerunRef, compact }: Readonly<PanelHeaderProps>) {
 	const running = feed.status === "running";
+	const reducedMotion = useReducedMotion();
 	const now = useNow(30_000);
 	const lastRun = feed.runs.at(-1);
 	return (
-		<header
-			className={cn("flex h-11 shrink-0 items-center gap-2 pl-4", view === "list" ? "pr-4" : "pr-2", floating ? "relative z-10" : null)}
-			style={{ marginTop: view === "list" ? LIST_HEADER_TOP_INSET : undefined }}
-		>
-			<h2 className="min-w-0 flex-1 text-sm" id={titleId}>
+		<PanelHeaderLayout floating={floating} inset={view === "list" && !onCancelRerun && !compact} view={view}>
+			<h2 className="flex min-w-0 flex-1 items-center gap-2 text-sm" id={titleId}>
 				<span className="sr-only">Work item suggestions. </span>
-				{running ? (
-					<Shimmer as="span" className="text-sm font-medium text-text-subtle">Checking for suggestions…</Shimmer>
-				) : (
-					<span aria-live="polite" className="font-medium text-text">{title ?? headline(feed, now)}</span>
-				)}
+				{compact && !running ? (
+					<motion.span
+						animate={{ opacity: 1, scale: 1 }}
+						aria-hidden
+						className="inline-flex shrink-0 items-center text-icon-success"
+						initial={{ opacity: 0, scale: reducedMotion ? 1 : 0.75 }}
+						style={{ willChange: "transform, opacity" }}
+						transition={{ duration: motionDuration.normal, ease: motionEase.outPractical, delay: reducedMotion ? 0 : motionDuration.slower - motionDuration.fast }}
+					>
+						<StatusSuccessIcon color="currentColor" label="" size="medium" spacing="none" />
+					</motion.span>
+				) : null}
+				<span aria-live="polite" className={cn("min-w-0 font-medium", compact || running ? "text-text-subtle" : "text-text")}>{running ? <Shimmer as="span" className="text-sm font-medium text-text-subtle">Checking for suggestions</Shimmer> : compact?.label ?? title ?? headline(feed, now)}</span>
 			</h2>
 			<div className="flex items-center gap-1">
+				{compact?.undoLabel && !running ? <HeaderButton label={compact.undoLabel} onClick={compact.onUndo} portalOutsidePanel={floating} tip="Undo"><UndoIcon color="currentColor" label="" size="medium" /></HeaderButton> : null}
 				{onToggleView ? (
 					<HeaderButton buttonRef={toggleRef} label={view === "stack" ? "Show as list" : "Show as stack"} onClick={onToggleView} tip={view === "stack" ? "Show all" : "Stack"}>
 						{view === "stack" ? <ListBulletedIcon color="currentColor" label="" size="small" /> : <CollapseVerticalIcon color="currentColor" label="" size="small" />}
@@ -141,12 +157,12 @@ export function PanelHeader({ feed, title, titleId, view, floating, onToggleView
 						</HeaderButton>
 				) : onRerun ? (
 						<HeaderButton
-							buttonRef={rerunRef}
+							buttonRef={compact?.checkRef ?? rerunRef}
 							disabled={running}
-							label={running ? "Checking for new suggestions" : "Check for new suggestions"}
+							label={running ? "Checking for new suggestions" : compact ? "Check again" : "Check for new suggestions"}
 							onClick={onRerun}
 							portalOutsidePanel={floating}
-							tip={running ? "Checking for new suggestions…" : lastRun ? <LastRun at={lastRun.at} /> : "Check again"}
+							tip={running ? "Checking for new suggestions…" : compact ? "Check again" : lastRun ? <LastRun at={lastRun.at} /> : "Check again"}
 						>
 							{floating ? <SuggestionsStatusIcon state={running ? "loading" : "done"} /> : <RefreshGlyph running={running} />}
 						</HeaderButton>
@@ -155,6 +171,6 @@ export function PanelHeader({ feed, title, titleId, view, floating, onToggleView
 					<CrossIcon color="currentColor" label="" size="medium" />
 				</HeaderButton>
 			</div>
-		</header>
+		</PanelHeaderLayout>
 	);
 }

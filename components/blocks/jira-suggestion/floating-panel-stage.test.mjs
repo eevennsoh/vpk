@@ -16,8 +16,9 @@ test("a measured panel holds the list's full height through the unpack, like the
 	assert.equal(settleMeasuredStage({ phase: "closed" }, 312), null);
 });
 
-test("an empty panel closes unless it is caught up or closing", () => {
-	assert.deepEqual(reconcileFloatingPanelStage({ phase: "list" }, 0, false, false), { phase: "closed" });
+test("an open empty panel stays open to show the caught-up confirmation", () => {
+	assert.deepEqual(reconcileFloatingPanelStage({ phase: "list" }, 0, false, false), { phase: "caught-up" });
+	assert.equal(reconcileFloatingPanelStage({ phase: "closed" }, 0, false, false), null);
 	assert.equal(reconcileFloatingPanelStage({ phase: "closing" }, 0, false, false), null);
 	assert.equal(reconcileFloatingPanelStage({ phase: "unpacking", height: 312 }, 5, false, false), null);
 });
@@ -28,4 +29,11 @@ test("a check stays folded until it ends, then reopens before unpacking", () => 
 	assert.deepEqual(reconcileFloatingPanelStage({ phase: "checking", step: "folded", height: 420 }, 7, false, false), { phase: "reopening", height: 420 });
 	assert.deepEqual(reconcileFloatingPanelStage({ phase: "checking", step: "folding", height: 420 }, 7, false, false), { phase: "reopening", height: 420 });
 	assert.deepEqual(reconcileFloatingPanelStage({ phase: "checking", step: "folded", height: 420 }, 5, true, false), { phase: "list" });
+});
+
+test("a caught-up check stays compact and returns to the right state", () => {
+	assert.equal(reconcileFloatingPanelStage({ phase: "checking-caught-up" }, 0, false, true), null);
+	assert.deepEqual(reconcileFloatingPanelStage({ phase: "checking-caught-up" }, 0, false, false), { phase: "caught-up" });
+	assert.deepEqual(reconcileFloatingPanelStage({ phase: "checking-caught-up" }, 2, false, false), { phase: "measuring", then: "unpacking" });
+	assert.deepEqual(reconcileFloatingPanelStage({ phase: "checking-caught-up" }, 2, true, false), { phase: "list" });
 });

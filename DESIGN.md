@@ -450,6 +450,8 @@ elevation shadow, including shared primitive defaults, must never add a visible
 decorative outer border, ring, or additional perimeter shadow. The elevation
 shadow already defines the edge, so an added perimeter creates a double outline.
 Keep distinct focus or selection indicators when they communicate state.
+Raw Base UI popovers use `rounded-lg` and `shadow-2xl`; `shadcn/no-restyle` and
+`vpk-tokens/no-popover-perimeter` check their radius, shadow, and resting edge.
 <!-- 2026-11-15: "this extra 1px border on the card" -->
 <!-- 2026-11-16: "we don't add this extra 1px border stroke on menu overlays because the overlay shadow already visually mimic that" -->
 
