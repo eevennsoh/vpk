@@ -1,7 +1,6 @@
 "use client";
 
 import ClockIcon from "@atlaskit/icon/core/clock";
-import VideoPlayIcon from "@atlaskit/icon/core/video-play";
 
 import type { SuggestionConfidence, SuggestionEvidence, WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
 import { ConfluenceIcon, JiraIcon, LoomIcon } from "@/components/ui/logo";
@@ -60,44 +59,12 @@ function ConfidenceMeter({ confidence }: Readonly<{ confidence: SuggestionConfid
 	);
 }
 
-/**
- * Who, when and how long, each part kept whole and spaced rather than dotted, so a wrap never strands a separator.
- * The author reads a step stronger than the date, and a Loom's length sits in a small play chip so it reads as video.
- */
-function SourceMeta({ evidence }: Readonly<{ evidence: SuggestionEvidence }>) {
-	const parts = evidence.meta.split(" · ").filter((part) => part !== evidence.duration);
-	return (
-		<p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-4 text-text-subtlest">
-			{parts.map((part, index) => (
-				<span className={cn("min-w-0 max-w-full break-words tabular-nums", index === 0 && parts.length > 1 ? "text-text-subtle" : null)} key={part}>
-					{part.split(/([A-Z][A-Z0-9]+-\d+)/u).map((text, tokenIndex) => /^[A-Z][A-Z0-9]+-\d+$/u.test(text) ? <span className="whitespace-nowrap" key={`${tokenIndex}-${text}`}>{text}</span> : text)}
-				</span>
-			))}
-			{evidence.duration ? (
-				<span className="inline-flex h-4 items-center gap-0.5 rounded-sm bg-bg-neutral pr-1 pl-0.5 whitespace-nowrap text-text-subtle tabular-nums">
-					<span className="flex text-icon-subtle"><VideoPlayIcon color="currentColor" label="" size="small" /></span>
-					<span className="sr-only">Video, </span>
-					{evidence.duration}
-				</span>
-			) : null}
-		</p>
-	);
-}
-
-/** One source as a quiet row: product mark, title, who/when, and the passage the agent relied on. */
+/** One source as a quiet row: product mark and title. */
 function SourceRow({ evidence }: Readonly<{ evidence: SuggestionEvidence }>) {
 	return (
 		<li className="flex gap-2.5">
 			<span className="mt-0.5 shrink-0"><EvidenceMark kind={evidence.kind} /></span>
-			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
-				<p className="text-sm leading-5 font-medium text-pretty text-text">{evidence.title}</p>
-				<SourceMeta evidence={evidence} />
-				{evidence.excerpt ? (
-					<blockquote className="mt-1.5 border-l-2 border-border pl-2.5 text-xs leading-4.5 text-pretty text-text-subtle">
-						&ldquo;{evidence.excerpt}&rdquo;
-					</blockquote>
-				) : null}
-			</div>
+			<p className="min-w-0 flex-1 text-sm leading-5 font-medium text-pretty text-text">{evidence.title}</p>
 		</li>
 	);
 }

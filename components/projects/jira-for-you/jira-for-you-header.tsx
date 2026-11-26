@@ -13,18 +13,21 @@ import { token } from "@/lib/tokens";
 
 import type { JiraForYouTab } from "./jira-for-you-types";
 
-export function JiraForYouHeader({
-	activeTabId,
-	onQueryChange,
-	onTabChange,
-	query,
-	tabs,
-}: Readonly<{
+/** Tab bar beside the heading; omit it for a feed with no tab filters. */
+export interface JiraForYouHeaderTabs {
 	activeTabId: string;
-	onQueryChange: (query: string) => void;
 	onTabChange: (tabId: string) => void;
-	query: string;
 	tabs: readonly JiraForYouTab[];
+}
+
+export function JiraForYouHeader({
+	onQueryChange,
+	query,
+	tabNavigation,
+}: Readonly<{
+	onQueryChange: (query: string) => void;
+	query: string;
+	tabNavigation?: JiraForYouHeaderTabs;
 }>) {
 	return (
 		<div
@@ -45,13 +48,13 @@ export function JiraForYouHeader({
 				<h2 className="shrink-0 text-text" style={{ font: token("font.heading.small") }}>
 					For you
 				</h2>
-				<Tabs
+				{tabNavigation ? <Tabs
 					className="min-w-0 max-w-full flex-none @max-[28rem]:w-full"
-					onValueChange={(value) => onTabChange(String(value))}
-					value={activeTabId}
+					onValueChange={(value) => tabNavigation.onTabChange(String(value))}
+					value={tabNavigation.activeTabId}
 				>
 					<TabsList className="h-auto w-max max-w-full flex-nowrap justify-start overflow-x-auto @max-[28rem]:w-full">
-						{tabs.map((tab) => (
+						{tabNavigation.tabs.map((tab) => (
 							<TabsTrigger
 								className="shrink-0 flex-none @max-[28rem]:min-w-12 @max-[28rem]:flex-[1_1_auto] @max-[28rem]:overflow-hidden"
 								key={tab.id}
@@ -62,7 +65,7 @@ export function JiraForYouHeader({
 							</TabsTrigger>
 						))}
 					</TabsList>
-				</Tabs>
+				</Tabs> : null}
 			</div>
 			<InputGroup className="min-w-0">
 				<InputGroupSearchAddon>

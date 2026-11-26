@@ -119,7 +119,7 @@ const ProjectButterDevelopmentGallery = dynamic(() => import("@/components/block
 const ButterBacklog = dynamic(() => import("./components/butter-backlog"));
 
 const WAC_DEFAULT_REPORTER = { name: WAC_CURRENT_USER.name, avatarUrl: WAC_CURRENT_USER.avatarSrc };
-const BUTTER_FILTER_ASSIGNEES = [...PROJECT_BUTTER_ASSIGNEES, BUTTER_DEFAULT_REPORTER];
+const BUTTER_FILTER_ASSIGNEES = PROJECT_BUTTER_ASSIGNEES;
 const BUTTER_FILTER_STATUSES = ["To do", "In progress", "In review", "Done"] as const;
 const WAC_FILTER_ASSIGNEES = [...PROJECT_BUTTER_ASSIGNEES, WAC_DEFAULT_REPORTER];
 const BUTTER_WORK_ITEM_TABS = getJiraTabs(false).filter((tab) => tab.view === "board" || tab.view === "list");

@@ -69,11 +69,9 @@ export function JiraForYou({
 	return (
 		<div className={cn("flex w-full flex-col gap-6", className)}>
 			<JiraForYouHeader
-				activeTabId={activeTabId}
 				onQueryChange={setQuery}
-				onTabChange={setActiveTabId}
 				query={query}
-				tabs={tabs}
+				tabNavigation={{ activeTabId, onTabChange: setActiveTabId, tabs }}
 			/>
 			{visibleSections.length > 0 ? (
 				<div className="flex flex-col gap-3">

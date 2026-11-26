@@ -1,5 +1,8 @@
 export const PROJECT_BUTTER_UNASSIGNED = { name: "Unassigned" } as const;
 
+/** The presenter persona: the "me" of every Project Butter demo, matching TopNavigation. */
+export const PROJECT_BUTTER_VIEWER = { id: "venn", name: "Venn", avatarSrc: "/avatar-user/venn/venn.png" } as const;
+
 export const PAY_STORY_PEOPLE = {
 	diego: { id: "diego-santos", name: "Diego Santos", avatarSrc: "/avatar-user/dev-rana/color/asow-dev-lime-64.png" },
 	jordan: { id: "jordan-okafor", name: "Jordan Okafor", avatarSrc: "/avatar-user/issac-varghese/color/asow-product-purple-64.png" },
@@ -7,7 +10,7 @@ export const PAY_STORY_PEOPLE = {
 	priya: { id: "priya-raman", name: "Priya Raman", avatarSrc: "/avatar-user/ting-chen/color/asow-strategy-orange-64.png" },
 } as const;
 
-const PAY_STORY_AVATARS = new Map<string, string>(Object.values(PAY_STORY_PEOPLE).map(({ name, avatarSrc }) => [name, avatarSrc]));
+const PAY_STORY_AVATARS = new Map<string, string>([PROJECT_BUTTER_VIEWER, ...Object.values(PAY_STORY_PEOPLE)].map(({ name, avatarSrc }) => [name, avatarSrc]));
 
 const PERSON_AVATAR_IDS: Readonly<Record<string, string>> = {
 	"Sarah Lim": "laila-ali--color--teamwork-blue", "Olivia Yang": "olivia-yang--color--dev-lime",
