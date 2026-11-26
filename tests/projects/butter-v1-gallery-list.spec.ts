@@ -7,11 +7,11 @@ test("Jira for you defaults to the Project Butter variant in the catalog and ful
 	await page.goto(appUrl("/components/projects/jira-for-you"));
 	const preview = page.locator("#preview");
 	await expect(preview.getByRole("heading", { name: "For you", exact: true })).toBeVisible();
-	await expect(preview.locator('[data-testid^="agent-session-row-"]')).toHaveCount(11);
+	await expect(preview.locator('[data-testid^="agent-session-row-"]')).toHaveCount(12);
 	await expect(page.getByText("Project Butter variant", { exact: false }).first()).toBeVisible();
 	await expect(page.getByRole("heading", { name: "Work item workspace" })).toBeVisible();
 	await page.goto(appUrl("/preview/projects/jira-for-you"));
-	await expect(page.locator('[data-testid^="agent-session-row-"]')).toHaveCount(11);
+	await expect(page.locator('[data-testid^="agent-session-row-"]')).toHaveCount(12);
 	await expect(page.getByRole("button", { name: "Open Rovo chat" })).toBeVisible();
 });
 
@@ -21,7 +21,10 @@ test("Jira for you groups session cards and preserves their hover actions", asyn
 	await page.getByRole("button", { name: "Select Jira for you" }).click();
 	await page.getByRole("button", { name: "Close gallery" }).click();
 	const section = page.locator("section").filter({ has: page.getByRole("heading", { name: "For you", exact: true }) });
-	await expect(section.locator('[data-testid^="agent-session-row-"]')).toHaveCount(11);
+	await expect(section.locator('[data-testid^="agent-session-row-"]')).toHaveCount(12);
+	const teammateLocalRow = section.getByTestId("agent-session-row-local-checkout-validation");
+	await expect(teammateLocalRow).toContainText("Explore checkout validation errors");
+	await expect(teammateLocalRow.getByRole("img", { name: "Claude, used by Priya Raman" })).toBeVisible();
 	const session = section.locator('[data-testid="agent-session-row-working-tests"]');
 	await session.hover();
 	await expect(session.getByRole("button", { name: "More actions for Add coverage for the onboarding flow" })).toBeVisible();
@@ -53,6 +56,7 @@ test("Jira for you groups session cards and preserves their hover actions", asyn
 	await section.getByRole("tab", { name: "My sessions" }).click();
 	await expect(section.getByRole("tab", { name: "My sessions" })).toHaveAttribute("aria-selected", "true");
 	await expect(section.locator('[data-testid^="agent-session-row-"]')).toHaveCount(6);
+	await expect(teammateLocalRow).toHaveCount(0);
 	await expect(page.getByRole("region", { name: /Chat workspace/ })).toHaveCount(0);
 });
 

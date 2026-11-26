@@ -42,6 +42,7 @@ const JIRA_FOR_YOU_SESSIONS: readonly AgentSessionItem[] = [
 	{ ...AGENT_SESSION_CLOUD_ITEMS[0], agent: AGENT_SESSION_ITEMS[0].agent, invokedBy: AGENT_SESSION_ITEMS[0].invokedBy, id: "working-quickstart", title: "Prepare the sandbox quickstart", prStatus: undefined, pullRequestChecks: undefined, sessionDetails: { host: "cloud" }, timeLabel: "25m", updatedAtMs: undefined },
 	{ ...AGENT_SESSION_ITEMS[0], invokedBy: VIEWER, id: "local-onboarding-checklist", machineName: "Venn’s MacBook Pro", prStatus: undefined, pullRequests: undefined, pullRequestChecks: undefined, sessionDetails: { host: "local" }, shortTitle: undefined, state: "running", timeLabel: "3m", title: "Spike the merchant onboarding checklist", updatedAtMs: undefined },
 	{ ...AGENT_SESSION_ITEMS[1], invokedBy: VIEWER, id: "local-sandbox-keys", machineName: "Venn’s MacBook Pro", prStatus: undefined, pullRequests: undefined, pullRequestChecks: undefined, sessionDetails: { host: "local" }, shortTitle: undefined, state: "ready-for-review", timeLabel: "2h", title: "Draft the sandbox key rotation script", updatedAtMs: undefined },
+	{ ...AGENT_SESSION_ITEMS[0], id: "local-checkout-validation", prStatus: undefined, pullRequests: undefined, pullRequestChecks: undefined, sessionDetails: { host: "local" }, shortTitle: undefined, state: "running", timeLabel: "4h", title: "Explore checkout validation errors", updatedAtMs: undefined },
 ];
 const JIRA_FOR_YOU_GROUPS = [
 	{ label: "Needs input", state: "needs-input" },
