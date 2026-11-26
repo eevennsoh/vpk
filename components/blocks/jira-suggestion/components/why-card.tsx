@@ -84,15 +84,18 @@ function SourceMeta({ evidence }: Readonly<{ evidence: SuggestionEvidence }>) {
 	);
 }
 
-/** One source as a quiet row: product mark, title, who/when, and the passage the agent relied on. */
-function SourceRow({ evidence }: Readonly<{ evidence: SuggestionEvidence }>) {
+/**
+ * One source as a quiet row: product mark, title, who/when, and the passage the agent relied on. Compact rows keep to
+ * the mark and title, for reasoning read inside the card it explains.
+ */
+function SourceRow({ evidence, compact = false }: Readonly<{ evidence: SuggestionEvidence; compact?: boolean }>) {
 	return (
 		<li className="flex gap-3">
 			<span className="mt-0.5 shrink-0"><EvidenceMark kind={evidence.kind} /></span>
 			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
 				<p className="text-sm leading-5 font-medium text-pretty text-text">{evidence.title}</p>
-				<SourceMeta evidence={evidence} />
-				{evidence.excerpt ? (
+				{compact ? null : <SourceMeta evidence={evidence} />}
+				{!compact && evidence.excerpt ? (
 					<blockquote className="mt-1.5 border-l-2 border-border pl-3 text-xs leading-4.5 text-pretty text-text-subtle">
 						&ldquo;{evidence.excerpt}&rdquo;
 					</blockquote>
@@ -103,9 +106,9 @@ function SourceRow({ evidence }: Readonly<{ evidence: SuggestionEvidence }>) {
 }
 
 /**
- * The reasoning behind one card: the headline as the title, supporting detail and confidence. In a popover it names
- * the field, titles the popup and lists its sources; inline, under the card's own label, it keeps to the reasoning
- * alone (no field, no sources) and pads like the card it expands.
+ * The reasoning behind one card: the headline as the title, supporting detail, confidence and sources. In a popover it
+ * names the field, titles the popup and gives each source its who/when and quoted passage; inline, under the card's
+ * own label, it skips the field, lists sources by title alone, and pads like the card it expands.
  */
 export function WhyCard({ suggestion, inline = false }: Readonly<{ suggestion: WorkItemSuggestion; inline?: boolean }>) {
 	const { reason } = suggestion;
@@ -130,16 +133,14 @@ export function WhyCard({ suggestion, inline = false }: Readonly<{ suggestion: W
 					</>
 				)}
 			</div>
-			{inline ? null : (
-				<section aria-label="Sources" className="flex flex-col gap-3">
-					<h3 className="text-xs font-medium text-text-subtlest">
-						{reason.evidence.length} {reason.evidence.length === 1 ? "source" : "sources"}
-					</h3>
-					<ul className="flex flex-col gap-4">
-						{reason.evidence.map((evidence) => <SourceRow evidence={evidence} key={evidence.id} />)}
-					</ul>
-				</section>
-			)}
+			<section aria-label="Sources" className="flex flex-col gap-3">
+				<h3 className="text-xs font-medium text-text-subtlest">
+					{reason.evidence.length} {reason.evidence.length === 1 ? "source" : "sources"}
+				</h3>
+				<ul className={cn("flex flex-col", inline ? "gap-2" : "gap-4")}>
+					{reason.evidence.map((evidence) => <SourceRow compact={inline} evidence={evidence} key={evidence.id} />)}
+				</ul>
+			</section>
 		</div>
 	);
 }
