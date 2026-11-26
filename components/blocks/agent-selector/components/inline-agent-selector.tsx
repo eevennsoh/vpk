@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
-import { motion, type Transition } from "motion/react";
+import { motion } from "motion/react";
 import type { AgentSelectorAgent } from "./agent-selector";
 import { FavoriteButton } from "./favorite-button";
 import { RecommendingAgentRow } from "./recommending-agent-row";
 import TextContinuity from "@/components/visual/text-continuity";
+import { DETAIL_VALUE_HANDOFF } from "@/components/blocks/jira-work-item/project-butter/details-rail";
 import { SuggestionRainbowText } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
+import { AVATAR_ENTER_FROM } from "@/components/ui/avatar-enter";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor/menus";
@@ -16,15 +18,7 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { Button } from "@/components/ui/button";
 import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
-import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
-
-/**
- * The recommended agent arriving in the slot where the AI suggestion icon just resolved: the avatar makes the pop a new
- * agent makes as it joins a work item's Agents field (ProjectButterCrew), in place, growing past full size, holding and
- * settling, while its label rises in with the suggestion reveal.
- */
-const RECOMMENDATION_AVATAR_IN: Transition = { duration: motionDuration.slowest, ease: motionEase.outPractical, times: [0, 0.4, 0.55, 1] };
 
 export interface InlineAgentAction {
 	id: string;
@@ -119,13 +113,13 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 		const hasChoices = actions.length > 1 || Boolean(additionalActions);
 		const showInline = hasChoices && activeId === agent.id;
 		const disabled = actions.length === 0 && !additionalActions;
-		const avatar = <AgentAvatarVisual appearance={agent.brandName === "openai-codex" || agent.brandName === "cursor" || agent.brandName === "github-copilot" ? "coding" : undefined} avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} logoName={agent.logoName} fallbackText={agent.name.slice(0, 2).toUpperCase()} label={agent.name} sizePx={24} />;
+		const avatar = <AgentAvatarVisual animate={!reveal} appearance={agent.brandName === "openai-codex" || agent.brandName === "cursor" || agent.brandName === "github-copilot" ? "coding" : undefined} avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} logoName={agent.logoName} fallbackText={agent.name.slice(0, 2).toUpperCase()} label={agent.name} sizePx={24} />;
 		const trigger = <button data-agent-id={agent.id} type="button" disabled={disabled} className={cn("relative flex min-w-0 flex-1 items-center gap-3 self-stretch rounded-lg text-left outline-none before:absolute before:inset-x-0 before:-inset-y-1.5 focus-visible:ring-2 focus-visible:ring-ring", !disabledLabel && "disabled:opacity-50")} aria-expanded={hasChoices ? showInline : undefined} onClick={() => {
 					if (hasChoices) { setActiveId(showInline ? null : agent.id); onActiveAgentChange?.(showInline ? null : agent); }
 					else { setActiveId(null); onActiveAgentChange?.(null); actions[0]?.onSelect(); }
 				}}>
 					{renderAgentFeedback?.(agent, avatar) ?? <>
-						<motion.span animate={reveal ? { opacity: [0, 1, 1, 1], scale: [0.6, 1.15, 1.15, 1], transition: RECOMMENDATION_AVATAR_IN } : { opacity: 1, scale: 1 }} aria-hidden className="grid size-6 shrink-0 place-items-center" initial={reveal ? { opacity: 0, scale: 0.6 } : false}>{avatar}</motion.span>
+						<motion.span animate={{ opacity: 1, scale: 1 }} aria-hidden className="grid size-6 shrink-0 place-items-center" initial={reveal ? { ...AVATAR_ENTER_FROM, scale: 0.6 } : false} style={reveal ? { willChange: "transform, opacity" } : undefined} transition={DETAIL_VALUE_HANDOFF}>{avatar}</motion.span>
 						{suffix ? (
 							<span className="menu-row-title flex min-w-0 flex-1 items-baseline gap-[0.25em] truncate">
 								{agent.name}
