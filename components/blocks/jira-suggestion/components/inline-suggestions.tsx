@@ -37,7 +37,7 @@ function findPreviewAnchor(field: SuggestionFieldId): HTMLElement | null {
 function ToolbarButton({ label, hint = label, disabled = false, onClick, children, ...aria }: Readonly<{ label: string; hint?: string; disabled?: boolean; onClick: () => void; children: React.ReactNode; "aria-expanded"?: boolean; "aria-controls"?: string }>) {
 	return (
 		<Tooltip>
-			<TooltipTrigger render={<Button {...aria} aria-label={label} className="size-7 any-pointer-coarse:size-8 aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_svg]:text-icon-subtle" disabled={disabled} onClick={onClick} shape="circle" size="icon-compact" type="button" variant="ghost" />}>
+			<TooltipTrigger render={<Button {...aria} aria-label={label} className="any-pointer-coarse:size-8 aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_svg]:text-icon-subtle" disabled={disabled} onClick={onClick} size="icon-compact" type="button" variant="ghost" />}>
 				{children}
 			</TooltipTrigger>
 			{/* Above the toolbar's own popover layer (z-650), or the tip renders behind the toolbar it labels. */}
@@ -118,7 +118,7 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 				>
 					<TooltipProvider>
 						{/* The toolbar sits right under the field it previews, so it never names the field again. */}
-						<div className="flex h-9 items-center gap-1 px-1">
+						<div className="flex h-8 items-center gap-1 p-1">
 							{hasWhy ? (
 								<ToolbarButton aria-controls={whyId} aria-expanded={expanded} hint={expanded ? "Hide" : "Why this was suggested"} label={`Why ${field} was suggested`} onClick={() => { if (!expanded) setWide(true); setWhyOpen(!expanded); }}>
 									<LightbulbIcon color="currentColor" label="" size="small" />
@@ -130,12 +130,12 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 							<ToolbarButton hint="Accept" label={`Accept ${field}`} onClick={() => decide(true)}>
 								<CheckMarkIcon color="currentColor" label="" size="small" />
 							</ToolbarButton>
-							<span aria-hidden className="mx-1 h-4 w-px bg-border" />
+							<span aria-hidden className="h-4 w-px bg-border" />
 							<ToolbarButton disabled={index === 0} label="Previous suggestion" onClick={() => page(-1)}>
 								<ChevronLeftIcon color="currentColor" label="" size="small" />
 							</ToolbarButton>
 							{/* What is left to review, not a position: the digit rolls like the Unlinked sessions column count. */}
-							<span aria-hidden className="flex min-w-4 justify-center text-xs whitespace-nowrap text-text-subtlest tabular-nums">
+							<span aria-hidden className="flex min-w-4 justify-center text-xs whitespace-nowrap text-text-subtle tabular-nums">
 								<AgentSessionColumnCountMorph count={pending.length} />
 							</span>
 							<span aria-live="polite" className="sr-only">{pending.length} {pending.length === 1 ? "suggestion" : "suggestions"} left to review</span>
