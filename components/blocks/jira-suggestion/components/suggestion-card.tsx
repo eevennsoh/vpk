@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 import { CARD_PAPER, CARD_PAPER_STYLE } from "./card-face";
 import { DecidedFace, RowFace, TopFace, TopWhy, type WhyProps } from "./card-faces";
-import { ARRIVAL_DROP, CONTENT_IN, FADE, FADE_OUT, FADE_START, FLY_DISTANCE, GATHER_CONTENT_OUT, INSTANT, LEAVE, MORPH, PARK, PARK_LANDING, PEEK_FROM, SETTLE, UNPARK, WHY_IN } from "./constants";
+import { ARRIVAL_DROP, CONTENT_IN, FADE, FADE_OUT, FADE_START, FLY_DISTANCE, GATHER_CONTENT_OUT, INSTANT, LEAVE, MORPH, PARK, PARK_LANDING, PEEK_FROM, SETTLE, UNPARK, UNPARK_CLEAR, WHY_IN } from "./constants";
 import { clamp, useCardDrag } from "./use-card-drag";
 import type { SwipeDirection } from "./use-deck";
 
@@ -89,7 +89,9 @@ export function SuggestionCard({
 	const showTopReason = top && !floating;
 	// A class, not an inline Motion style: Motion leaves a stale inline shadow behind once the value turns undefined,
 	// which kept rear sheets bordered and shadowless after they unpacked into elevated rows.
-	const floatingSheetEdge = floating && !parked && !elevated ? "inset-ring inset-ring-border" : null;
+	// The edge stays an inset ring whose colour fades, never a removed layer: an inset shadow cannot interpolate with an
+	// outer one, so dropping it as the row's elevation arrives would swap the two at once instead of easing between them.
+	const floatingSheetEdge = floating ? cn("inset-ring", !parked && !elevated ? "inset-ring-border" : "inset-ring-transparent") : null;
 
 	const { dragX, progress, dragging, handlers } = useCardDrag({
 		enabled: top && isPresent,
@@ -143,7 +145,7 @@ export function SuggestionCard({
 	// callbacks are not reliable here: an interrupted flight never reports completing.)
 	const park = useEffectEvent((isParked: boolean) => {
 		if (reduced) return animate(shown, isParked ? 0 : 1, INSTANT);
-		if (!isParked) return animate(shown, 1, UNPARK);
+		if (!isParked) return animate(shown, 1, role === "row" ? { ...UNPARK, delay: delay + UNPARK_CLEAR } : UNPARK);
 		return animate(shown, 0, morphing ? { ...PARK, delay: delay + PARK_LANDING } : PARK);
 	});
 	const parkedDone = useEffectEvent(() => onParked?.());
@@ -215,7 +217,7 @@ export function SuggestionCard({
 	const face = top
 		? <TopFace progress={progress} suggestion={suggestion} />
 		: decision === "pending"
-			? <RowFace controls={role === "row"} onDecide={onDecide} suggestion={suggestion} why={floating ? undefined : why} />
+			? <RowFace controls={role === "row"} onDecide={onDecide} suggestion={suggestion} why={why} />
 			: <DecidedFace decision={decision} onRestore={onRestore} suggestion={suggestion} />;
 
 	return (
@@ -231,9 +233,14 @@ export function SuggestionCard({
 				className={cn(
 					"relative",
 					CARD_PAPER,
-					floating ? "dark:bg-surface-overlay dark:ring-0" : "transition-shadow duration-slower ease-in-out",
-					role === "row" ? "group/suggestion-card" : null,
-					previewing ? "bg-surface-overlay-hovered dark:bg-surface-overlay-hovered" : null,
+					// Rows only take their elevation once the morph settles, so ease it (and a sheet's inset edge) in rather than snap.
+					floating ? "dark:bg-surface-overlay dark:ring-0" : null,
+					"transition-[box-shadow,background-color] duration-slower ease-in-out",
+					// List rows are raised elevation: the raised surface and shadow, and its hovered surface while the field is
+					// previewed or the card's reasoning is open (held, so an open card stays marked as the one being read).
+					role === "row" ? "group/suggestion-card bg-surface-raised dark:bg-surface-raised dark:ring-0" : null,
+					role === "row" && (previewing || whyOpen) ? "bg-surface-raised-hovered dark:bg-surface-raised-hovered" : null,
+					role !== "row" && previewing ? "bg-surface-overlay-hovered dark:bg-surface-overlay-hovered" : null,
 					parked || !elevated ? "shadow-none" : floating || role === "row" || sheet ? "shadow-sm" : null,
 					floatingSheetEdge,
 					// The paper clips its face, so while its size morphs nothing inside can hang past its rounded edge.

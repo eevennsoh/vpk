@@ -3,10 +3,8 @@
 import { useLayoutEffect, useRef } from "react";
 import { animate, useReducedMotion } from "motion/react";
 
-import { DESCRIPTION_REVEAL_WORD_LIMIT, planDescriptionReveal } from "@/components/blocks/jira-work-item/project-butter/description-reveal-plan";
-import { SUGGESTION_RAINBOW_COLORS } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
-import { resolveWaveHighlightColor } from "@/components/ui-custom/lib/shimmer-colors";
-import { motionDuration, motionEase } from "@/lib/motion";
+import { DESCRIPTION_REVEAL_WORD_LIMIT } from "@/components/blocks/jira-work-item/project-butter/description-reveal-plan";
+import { SUGGESTION_REVEAL_EASE, SUGGESTION_REVEAL_FROM, SUGGESTION_REVEAL_LINE_STAGGER, SUGGESTION_REVEAL_SECONDS, SUGGESTION_REVEAL_TO } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
 
 type RevealPart = Readonly<{ text: string; start: number; word: boolean }>;
 
@@ -34,7 +32,7 @@ function visibleParagraphs(text: string): { paragraphs: RevealPart[][]; count: n
 export function DescriptionRainbowText({ onComplete, text }: Readonly<{ onComplete?: () => void; text: string }>) {
 	const rootRef = useRef<HTMLSpanElement>(null);
 	const reduced = useReducedMotion();
-	const { paragraphs, count } = visibleParagraphs(text);
+	const { paragraphs } = visibleParagraphs(text);
 	useLayoutEffect(() => {
 		if (reduced) {
 			const timer = window.setTimeout(() => onComplete?.(), 0);
@@ -43,49 +41,29 @@ export function DescriptionRainbowText({ onComplete, text }: Readonly<{ onComple
 		const root = rootRef.current;
 		if (!root) return;
 		const words = [...root.querySelectorAll<HTMLElement>("[data-description-word]")];
-		const colorOffsets = words.map((word) => {
-			const base = word.firstElementChild;
-			const color = word.querySelector<HTMLElement>("[data-description-color]");
-			if (!base || !color) return null;
-			const baseRange = document.createRange();
-			const colorRange = document.createRange();
-			baseRange.selectNodeContents(base);
-			colorRange.selectNodeContents(color);
-			const baseRect = baseRange.getBoundingClientRect();
-			const colorRect = colorRange.getBoundingClientRect();
-			return { color, x: baseRect.left - colorRect.left, y: baseRect.top - colorRect.top };
-		});
-		const steps = planDescriptionReveal(words.length);
+		// Line by line, as Mask Reveal Up moves: words share their line's slot, read from where they wrapped.
+		// offsetTop ignores the words' starting transform, so the lines are where the settled text will sit.
+		const tops = [...new Set(words.map((word) => word.offsetTop))].sort((a, b) => a - b);
+		const lineOf = (word: HTMLElement) => tops.indexOf(word.offsetTop);
 		const animations: { finished: Promise<unknown>; stop: () => void }[] = [];
 		let active = true;
-		for (const [index, word] of words.entries()) {
-			const delay = steps[index];
-			animations.push(animate(word, { opacity: 1 }, { delay, duration: motionDuration.medium, ease: motionEase.outPractical }));
-			const offset = colorOffsets[index];
-			if (offset) {
-				offset.color.style.translate = `${offset.x}px ${offset.y}px`;
-				animations.push(animate(offset.color, { opacity: [0, 1, 1, 0] }, { delay, duration: motionDuration.slowest, ease: motionEase.inOut, times: [0, 0.2, 0.65, 1] }));
-			}
+		for (const word of words) {
+			const delay = lineOf(word) * SUGGESTION_REVEAL_LINE_STAGGER;
+			// A transform string rather than `y`, so Motion hands all three properties to the browser's animation engine.
+			animations.push(animate(word, { opacity: [SUGGESTION_REVEAL_FROM.opacity, SUGGESTION_REVEAL_TO.opacity], transform: [`translateY(${SUGGESTION_REVEAL_FROM.y})`, `translateY(${SUGGESTION_REVEAL_TO.y})`], filter: [SUGGESTION_REVEAL_FROM.filter, SUGGESTION_REVEAL_TO.filter] }, { delay, duration: SUGGESTION_REVEAL_SECONDS, ease: SUGGESTION_REVEAL_EASE }));
 		}
 		const finish = () => { if (active) onComplete?.(); };
 		void Promise.all(animations.map((animation) => animation.finished)).then(finish, finish);
 		return () => {
 			active = false;
 			for (const animation of animations) animation.stop();
-			for (const offset of colorOffsets) offset?.color.style.removeProperty("translate");
 		};
 	}, [onComplete, reduced, text]);
 	if (reduced) return <span>{text}</span>;
 
 	return <span className="whitespace-break-spaces" data-suggestion-text-reveal="" ref={rootRef}>
 		{paragraphs.map((parts, paragraph) => <span className="mb-2.5 block last:mb-0" key={paragraph}>
-			{parts.map((part, index) => part.word ? <span className="relative inline whitespace-nowrap" data-description-word="" key={index} style={{ opacity: 0 }}>
-				<span>{part.text}</span>
-				<span className="pointer-events-none absolute inset-0 bg-clip-text text-transparent" data-description-color="" style={{
-					backgroundImage: `linear-gradient(to right, ${resolveWaveHighlightColor(SUGGESTION_RAINBOW_COLORS, part.start, count)}, ${resolveWaveHighlightColor(SUGGESTION_RAINBOW_COLORS, part.start + Array.from(part.text).length - 1, count)})`,
-					opacity: 0,
-				}}>{part.text}</span>
-			</span> : part.text)}
+			{parts.map((part, index) => part.word ? <span className="inline-block whitespace-nowrap" data-description-word="" key={index} style={{ opacity: SUGGESTION_REVEAL_FROM.opacity, transform: `translateY(${SUGGESTION_REVEAL_FROM.y})`, filter: SUGGESTION_REVEAL_FROM.filter, willChange: "opacity, transform, filter" }}>{part.text}</span> : part.text)}
 		</span>)}
 	</span>;
 }

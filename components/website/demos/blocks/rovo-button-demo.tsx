@@ -31,6 +31,7 @@ function RovoButtonExample({ variant }: Readonly<{ variant: RovoButtonDemoVarian
 export function RovoButtonDemoChat() { return <RovoButtonExample variant="chat" />; }
 export function RovoButtonDemoToolbar() { return <RovoButtonExample variant="toolbar" />; }
 const demoSuggestions = WORK_ITEM_SUGGESTIONS.filter((suggestion) => suggestion.id !== "acceptanceCriteria");
+const DEMO_RUN_AT = Date.now();
 
 function RovoButtonPanelExample({ variant }: Readonly<{ variant: "button" | "dot" }>) {
 	const [container, setContainer] = useState<HTMLDivElement | null>(null);
@@ -39,7 +40,7 @@ function RovoButtonPanelExample({ variant }: Readonly<{ variant: "button" | "dot
 		<RovoChatProvider>
 			<div className="relative h-[600px] w-full" ref={setContainer}>
 				{container ? <JiraFloatingSuggestions
-					feed={{ review, status: "idle", runs: [{ number: 1, ranAt: "Just now", ids: [] }], newIds: new Set(), acknowledgeNew: () => {}, rerun: () => {}, hasMore: false }}
+					feed={{ review, status: "idle", runs: [{ number: 1, at: DEMO_RUN_AT, ids: [] }], newIds: new Set(), acknowledgeNew: () => {}, rerun: () => {}, cancelRerun: () => {}, hasMore: false }}
 					panelTransition={variant}
 					portalContainer={container}
 					workItemKey={SUGGESTION_WORK_ITEM.key}

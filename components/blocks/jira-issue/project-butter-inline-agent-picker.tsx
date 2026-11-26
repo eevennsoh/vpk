@@ -67,7 +67,7 @@ export function ProjectButterAgentPreviewBoundary({ agents, children, ref }: Rea
 	}}>{children}</div>;
 }
 
-export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseAgents, onCreateAgent, status, recommendationReason, issueTriggerRef, cardTilt = true }: Readonly<{
+export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseAgents, onCreateAgent, status, recommendationReason, issueTriggerRef, cardTilt = true, recommendAfterMs, recentAgentId }: Readonly<{
 	extraAgents?: readonly AgentSelectorAgent[];
 	onAssign: (agent: AgentSelectorAgent) => void;
 	onBrowseAgents?: () => void;
@@ -78,14 +78,26 @@ export function ProjectButterCloudAgentPicker({ extraAgents, onAssign, onBrowseA
 	issueTriggerRef?: RefObject<HTMLElement | null>;
 	/** The preview card tilts toward the picker while the pointer is over the card; pass false to keep it flat. */
 	cardTilt?: boolean;
+	/** Work out the recommendation in front of the user: its slot shows "Recommending agent" for this long first. */
+	recommendAfterMs?: number;
+	/** The agent last used here, listed first; when it is also the recommendation, the two meet in one row. */
+	recentAgentId?: string;
 }>) {
 	const [handle] = useState(() => createHoverCardHandle<AgentSelectorAgent>());
 	const pickerRef = useRef<HTMLDivElement>(null);
+	const [recommending, setRecommending] = useState(recommendAfterMs !== undefined);
+	useEffect(() => {
+		if (recommendAfterMs === undefined) return undefined;
+		const timer = window.setTimeout(() => setRecommending(false), recommendAfterMs);
+		return () => window.clearTimeout(timer);
+	}, [recommendAfterMs]);
 	const reason = recommendationReason?.trim() || DEFAULT_RECOMMENDATION_REASON;
 	const agents = extraAgents?.length ? [...CLOUD_AGENTS, ...extraAgents.filter((agent) => !CLOUD_AGENTS.some((candidate) => candidate.id === agent.id))] : CLOUD_AGENTS;
 	return <ProjectButterAgentPreviewBoundary agents={agents} ref={pickerRef}><InlineAgentSelector
 		agents={agents}
 		recommendedAgentId={RECOMMENDED_AGENT_ID}
+		recommendationPending={recommending}
+		recentAgentId={recentAgentId}
 		softwareAgentIds={SOFTWARE_IDS}
 		initialSoftwareLimit={3}
 		getActions={(agent) => [{ id: "cloud", label: "Start a new session", icon: <Icon render={<CloudIcon label="" />} />, onSelect: () => onAssign(agent) }]}

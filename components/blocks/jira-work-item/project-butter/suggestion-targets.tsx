@@ -3,6 +3,7 @@
 import { createContext, use, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion } from "motion/react";
 import type { SuggestionFieldId, WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
+import { JIRA_DROPZONE_ANTS_STROKE_CLASS } from "@/components/blocks/jira-dropzone/lib/jira-dropzone-ants";
 import { getShimmerWaveEndTime } from "@/components/ui-custom/lib/shimmer-wave-timing";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -115,10 +116,30 @@ export function useIsSuggestionTarget(field: string) {
 	return use(TargetState)?.id === field;
 }
 
+/** The field a suggestion is being previewed in, if any. */
+export function useSuggestionTargetField(): SuggestionFieldId | null {
+	return use(TargetState)?.id ?? null;
+}
+
+/** The suggested value previewed in this field right now, or null when nothing previews here. */
+export function useSuggestionPreviewText(field: string): string | null {
+	const preview = use(TargetState);
+	return preview?.id === field ? preview.valueText : null;
+}
+
+/** The preview's corner radius, which the shared dropzone stroke (drawn for a radius-lg well) takes inline. */
+const PREVIEW_STROKE_SHAPE = {
+	rx: "calc(var(--radius-md) - 0.5px)",
+	ry: "calc(var(--radius-md) - 0.5px)",
+	// There is no dashed CSS border underneath to fall back on, so reduced motion keeps these dashes, still.
+	visibility: "visible",
+} as const;
+
+/** The board's create dropzone outline: its 1px 3-on-3-off dashes in the border colour, marching the same way. */
 function PreviewStroke() {
 	return (
-		<svg aria-hidden className="pointer-events-none absolute inset-0 size-full" data-suggestion-preview-outline>
-			<rect className="h-[calc(100%_-_1px)] w-[calc(100%_-_1px)] stroke-border-disabled [rx:var(--radius-md)]" fill="none" strokeDasharray="5 4" x="0.5" y="0.5" />
+		<svg aria-hidden className="pointer-events-none absolute inset-0 size-full overflow-visible" data-suggestion-preview-outline>
+			<rect className={cn(JIRA_DROPZONE_ANTS_STROKE_CLASS, "stroke-border")} style={PREVIEW_STROKE_SHAPE} />
 		</svg>
 	);
 }

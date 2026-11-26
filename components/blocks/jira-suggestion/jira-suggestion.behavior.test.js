@@ -227,7 +227,7 @@ const triggerName = () => {
 	const trigger = document.querySelector("button[aria-labelledby]");
 	return document.getElementById(trigger.getAttribute("aria-labelledby")).textContent;
 };
-const waitForRun = () => act(() => new Promise((resolve) => setTimeout(resolve, 2200)));
+const waitForRun = () => act(() => new Promise((resolve) => setTimeout(resolve, 3600)));
 
 test("a check from the caught-up state runs in place and says when it found nothing new", async () => {
 	const view = await renderComponent({ source: SOURCE });

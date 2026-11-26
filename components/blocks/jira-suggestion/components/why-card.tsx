@@ -62,31 +62,46 @@ function ConfidenceMeter({ confidence }: Readonly<{ confidence: SuggestionConfid
 /** One source as a quiet row: product mark and title. */
 function SourceRow({ evidence }: Readonly<{ evidence: SuggestionEvidence }>) {
 	return (
-		<li className="flex gap-2.5">
+		<li className="flex gap-3">
 			<span className="mt-0.5 shrink-0"><EvidenceMark kind={evidence.kind} /></span>
 			<p className="min-w-0 flex-1 text-sm leading-5 font-medium text-pretty text-text">{evidence.title}</p>
 		</li>
 	);
 }
 
-/** The reasoning behind one card: the headline as the title, supporting detail, confidence and sources. */
-export function WhyCard({ suggestion }: Readonly<{ suggestion: WorkItemSuggestion }>) {
+/**
+ * The reasoning behind one card: the headline as the title, supporting detail, confidence and sources. In a popover it
+ * names the field and titles the popup; inline, under the card's own label, it skips the field and pads like the card it
+ * expands. Sources are listed by mark and title.
+ */
+export function WhyCard({ suggestion, inline = false, showField = !inline }: Readonly<{ suggestion: WorkItemSuggestion; inline?: boolean; /** Name the field; left out wherever the reasoning already sits on that field. */ showField?: boolean }>) {
 	const { reason } = suggestion;
+	const headline = "text-sm leading-5 font-semibold text-pretty text-text";
+	const detail = "text-sm leading-5 text-pretty text-text-subtle";
 	return (
-		<div className="flex min-h-0 flex-col gap-4 overflow-y-auto overscroll-contain px-4 pt-3.5 pb-4">
+		<div className={cn("flex min-h-0 flex-col gap-4", inline ? "p-4 pt-3" : "overflow-y-auto overscroll-contain px-4 pt-4 pb-4")}>
 			<div className="flex flex-col gap-1.5">
 				<div className="flex items-center justify-between gap-3">
-					<span className="text-xs text-text-subtlest">{suggestion.label}</span>
+					{showField ? <span className="text-xs text-text-subtlest">{suggestion.label}</span> : null}
 					<ConfidenceMeter confidence={suggestion.confidence} />
 				</div>
-				<PopoverTitle className="text-sm leading-5 font-semibold text-pretty text-text">{reason.headline}</PopoverTitle>
-				<PopoverDescription className="text-sm leading-5 text-pretty text-text-subtle">{reason.detail}</PopoverDescription>
+				{inline ? (
+					<>
+						<p className={headline}>{reason.headline}</p>
+						<p className={detail}>{reason.detail}</p>
+					</>
+				) : (
+					<>
+						<PopoverTitle className={headline}>{reason.headline}</PopoverTitle>
+						<PopoverDescription className={detail}>{reason.detail}</PopoverDescription>
+					</>
+				)}
 			</div>
 			<section aria-label="Sources" className="flex flex-col gap-3">
 				<h3 className="text-xs font-medium text-text-subtlest">
 					{reason.evidence.length} {reason.evidence.length === 1 ? "source" : "sources"}
 				</h3>
-				<ul className="flex flex-col gap-3.5">
+				<ul className="flex flex-col gap-2">
 					{reason.evidence.map((evidence) => <SourceRow evidence={evidence} key={evidence.id} />)}
 				</ul>
 			</section>

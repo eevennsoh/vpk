@@ -25,7 +25,7 @@ function Receipt({ receipt }: Readonly<{ receipt: DeckReceipt }>) {
 /**
  * Under a full-width hairline: "1 of 6 reviewed" on the left (briefly replaced by a receipt for the latest change),
  * then Discard all as quiet text and Accept all as the one primary action, while anything is pending. It folds away
- * when everything is caught up, where the body owns the summary.
+ * when everything is caught up, where the body owns the summary, and while a check runs, when the panel folds to its header.
  */
 export function StackFooter({ deck, animateEntrance }: Readonly<{ deck: Deck; animateEntrance: boolean }>) {
 	const reviewed = deck.reviewed.length;

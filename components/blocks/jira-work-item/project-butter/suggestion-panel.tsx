@@ -79,13 +79,13 @@ export function ProjectButterSuggestionPanel({ fill, profile = "default", showIn
 	if (additions.length) setSaved(suggestions);
 	const cards = [...fill.suggestions, ...suggestions.filter((item) => !fill.suggestions.some((current) => current.field === item.field))].map((suggestion) => toCard(suggestion, profile));
 	const review = useSuggestionReview(cards);
-	const [runs, setRuns] = useState<readonly SuggestionRun[]>([{ number: 1, ranAt: "Just now", ids: [] }]);
+	const [runs, setRuns] = useState<readonly SuggestionRun[]>(() => [{ number: 1, at: Date.now(), ids: [] }]);
 	const [checking, setChecking] = useState(false);
 	const [newIds, setNewIds] = useState<ReadonlySet<SuggestionFieldId>>(() => new Set());
 	const checkTimer = useRef<number | undefined>(undefined);
 	useEffect(() => () => window.clearTimeout(checkTimer.current), []);
 	const finishCheck = (ids: readonly SuggestionFieldId[]) => {
-		setRuns((current) => [...current, { number: current.length + 1, ranAt: "Just now", ids }]);
+		setRuns((current) => [...current, { number: current.length + 1, at: Date.now(), ids }]);
 		setNewIds(new Set(ids));
 	};
 	const rerun = () => {
@@ -101,6 +101,11 @@ export function ProjectButterSuggestionPanel({ fill, profile = "default", showIn
 			checkTimer.current = undefined;
 			setChecking(false);
 		}, SUGGESTION_RERUN_MS);
+	};
+	const cancelRerun = () => {
+		window.clearTimeout(checkTimer.current);
+		checkTimer.current = undefined;
+		setChecking(false);
 	};
 	const available = new Set(fill.suggestions.map((suggestion) => suggestion.field));
 	const pending = review.pending.filter((suggestion) => fill.suggestions.some((item) => item.field === suggestion.id));
@@ -157,6 +162,7 @@ export function ProjectButterSuggestionPanel({ fill, profile = "default", showIn
 		newIds: new Set(pending.filter(({ id }) => newIds.has(id)).map(({ id }) => id)),
 		acknowledgeNew: () => setNewIds(new Set()),
 		rerun,
+		cancelRerun,
 		hasMore: fill.hasMoreSuggestions,
 	};
 

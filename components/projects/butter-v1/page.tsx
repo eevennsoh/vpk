@@ -72,6 +72,7 @@ import { cn } from "@/lib/utils";
 import { token } from "@/lib/tokens";
 import { ButterList } from "./components/butter-list";
 import { ButterAgentSelectorGallery } from "./components/butter-agent-selector-gallery";
+import { ButterAiSuggestionsControls, ButterAiSuggestionsGallery, type ButterAiSuggestionsView } from "./components/butter-ai-suggestions-gallery";
 import { ButterGalleryWorkItem } from "./components/butter-gallery-work-item";
 import { ButterGalleryAgentSessions, ButterGalleryBoardCard, ButterSessionPermissionControls, type ButterSessionPermission } from "./components/butter-gallery-showcases";
 import { JiraForYouProjectButter } from "@/components/projects/jira-for-you";
@@ -180,6 +181,7 @@ function ButterPageContent(): React.ReactElement {
 	const [workItemResetKey, setWorkItemResetKey] = useState(0);
 	const [jiraForYouResetKey, setJiraForYouResetKey] = useState(0);
 	const [suggestionsResetKey, setSuggestionsResetKey] = useState(0);
+	const [suggestionsView, setSuggestionsView] = useState<ButterAiSuggestionsView>("global");
 	const [pullRequestStatus, setPullRequestStatus] = useState<ButterPullRequestStatus>("open");
 	const journeyActive = selectedId === "e2e-journey";
 	const suggestionsActive = selectedId === "ai-suggestions";
@@ -237,7 +239,8 @@ function ButterPageContent(): React.ReactElement {
 			<ToggleGroupItem value="multiple">Multiple PRs</ToggleGroupItem>
 		</ToggleGroup>
 		: selectedId === "agent-sessions" ? <ButterSessionPermissionControls permission={sessionPermission} onPermissionChange={setSessionPermission} />
-		: selectedId === "board-card" ? <ButterBoardCardControls value={boardCardState} onChange={setBoardCardState} /> : null;
+		: selectedId === "board-card" ? <ButterBoardCardControls value={boardCardState} onChange={setBoardCardState} />
+		: suggestionsActive ? <ButterAiSuggestionsControls onViewChange={setSuggestionsView} view={suggestionsView} /> : null;
 	return (
 		<div className="relative h-dvh w-full overflow-hidden bg-surface">
 			<Gallery
@@ -251,7 +254,7 @@ function ButterPageContent(): React.ReactElement {
 				title="Project Butter v1"
 				showTopBarBorder
 				stagePosition="center"
-				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board" || item.id === "list") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "jira-for-you") { setJiraForYouResetKey((current) => current + 1); } else if (item.id === "agent-selector") { setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "agent-sessions") { setSessionPermission("mine"); setAgentSessionsResetKey((current) => current + 1); } else if (item.id === "board-card") { setBoardCardState("default"); setBoardCardResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "ai-suggestions") { setSuggestionsResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestStatus("open"); setPullRequestResetKey((current) => current + 1); } else if (item.id === "development-panel") { setDevelopmentResetKey((current) => current + 1); } }}
+				onReset={(item) => { if (item.id === "e2e-journey" || item.id === "board" || item.id === "list") { setCollapsedBoardColumns(new Set()); reset(); } else if (item.id === "jira-for-you") { setJiraForYouResetKey((current) => current + 1); } else if (item.id === "agent-selector") { setAgentSelectorResetKey((current) => current + 1); } else if (item.id === "duplicative-sessions") { setDuplicativeSessionsResetKey((current) => current + 1); } else if (item.id === "agent-sessions") { setAgentSessionsResetKey((current) => current + 1); } else if (item.id === "board-card") { setBoardCardResetKey((current) => current + 1); } else if (item.id === "work-item") { setWorkItemResetKey((current) => current + 1); } else if (item.id === "ai-suggestions") { setSuggestionsResetKey((current) => current + 1); } else if (item.id === "pull-request") { setPullRequestResetKey((current) => current + 1); } else if (item.id === "development-panel") { setDevelopmentResetKey((current) => current + 1); } }}
 				topBarCenter={journeyActive ? <MerchantJourneyControls {...controls} /> : galleryControls}
 				topBarCenterCompact={journeyActive ? <MerchantJourneyCompactControls {...controls} /> : galleryControls}
 				renderSelectedItem={(item) => item.id === "jira-for-you" ? null : item.id === "development-panel" ? (
@@ -295,7 +298,7 @@ function ButterPageContent(): React.ReactElement {
 				<ButterGalleryWorkItem key={workItemResetKey} initialSessions={BUTTER_WORK_ITEM_SESSIONS} open={selectedId === "work-item"} onClose={() => selectGalleryItem("board")} />
 			</RetainedView>
 			<RetainedView active={suggestionsActive} retain>
-				<ButterGalleryWorkItem key={suggestionsResetKey} showAiSuggestions open={suggestionsActive} onClose={() => selectGalleryItem("board")} />
+				<ButterAiSuggestionsGallery key={suggestionsResetKey} onClose={() => selectGalleryItem("board")} open={suggestionsActive} view={suggestionsView} />
 			</RetainedView>
 			<RetainedView active={selectedId === "pull-request"} retain>
 				<div key={pullRequestResetKey} className="absolute inset-x-0 top-12 bottom-0 transform-gpu overflow-hidden">

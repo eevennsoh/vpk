@@ -14,6 +14,7 @@ import { DevelopmentPanel } from "@/components/blocks/development-panel/developm
 import { ProjectButterDevelopmentJourney, type ProjectButterDevelopmentJourneyProps } from "@/components/blocks/jira-work-item/project-butter/project-butter-development-journey";
 import { PROJECT_BUTTER_DETAIL_FIELDS, PROJECT_BUTTER_REQUIRED_DETAIL_FIELDS, type ProjectButterDetailFieldId } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { ProjectButterSuggestionPanel } from "@/components/blocks/jira-work-item/project-butter/suggestion-panel";
+import { useSuggestionTargetField } from "@/components/blocks/jira-work-item/project-butter/suggestion-targets";
 import type { ProjectButterSuggestionProfile } from "@/components/blocks/jira-work-item/project-butter/suggestion-model";
 import { useProjectButterSuggestionFill } from "@/components/blocks/jira-work-item/project-butter/use-suggestion-fill";
 import { ProjectButterSortablePanel } from "@/components/blocks/jira-work-item/project-butter/project-butter-sortable-panel";
@@ -52,6 +53,12 @@ export function ProjectButterDetails({ agentField, agentFieldHasSessions = false
 		setMoreFields(true);
 		return !detailsOpen || !moreFields;
 	};
+	// A suggestion previewed in a field the collapsed panel hides (past its first two) opens the panel, so the preview
+	// and anything anchored to it, such as the Inline toolbar, have a field on screen to sit in.
+	const previewField = useSuggestionTargetField();
+	const shownCollapsed = content.detailFields.order.filter((field) => field !== "status" && field !== "agents" && !content.detailFields.hidden.includes(field)).slice(0, 2);
+	const previewHidden = previewField !== null && (content.detailFields.order as readonly string[]).includes(previewField) && !(shownCollapsed as readonly string[]).includes(previewField);
+	if (previewHidden && (!detailsOpen || !moreFields)) expandDetails();
 	const fill = useProjectButterSuggestionFill(content, suggestion, expandDetails, suggestionProfile, onDescriptionSuggested, !renderSuggestions);
 	const order = panelOrder.filter((panel) => panel !== "apps" || !empty || sidePanel);
 	function panelActions(panel: ProjectButterPanelId) {

@@ -29,7 +29,7 @@ export function ButterAgentSelectorControls({ presentation, onPresentationChange
 	</ToggleGroup>;
 }
 
-export function ButterAgentSelectorGallery({ presentation = "inline", label, cloudOnly = false, cardTilt = true }: Readonly<{ presentation?: ButterAgentPresentation; label?: string; cloudOnly?: boolean; cardTilt?: boolean }>) {
+export function ButterAgentSelectorGallery({ presentation = "inline", label, cloudOnly = false, cardTilt = true, recommendAfterMs, recentAgentId }: Readonly<{ presentation?: ButterAgentPresentation; label?: string; cloudOnly?: boolean; cardTilt?: boolean; recommendAfterMs?: number; recentAgentId?: string }>) {
 	const router = useRouter();
 	const scriptedCreation = useButterScriptedCreation();
 	const [selectedAgentIds, setSelectedAgentIds] = useState<readonly string[]>([]);
@@ -48,7 +48,7 @@ export function ButterAgentSelectorGallery({ presentation = "inline", label, clo
 		<>
 			<div className="pointer-events-auto my-auto flex w-80 max-w-full shrink-0 flex-col items-center gap-4">
 				<section aria-label={label ?? "Project Butter agent selector"} className={cn("w-full", useSubmenu && "overflow-hidden rounded-lg bg-popover text-popover-foreground")} style={useSubmenu ? { boxShadow: token("elevation.shadow.overlay") } : undefined}>
-					{!useSubmenu ? cloudOnly ? <ProjectButterCloudAgentPicker cardTilt={cardTilt} extraAgents={scriptedCreation?.agents} key={pickerKey} onAssign={(agent) => setCloudStatus(`Start on Cloud · ${agent.name} (preview)`)} onBrowseAgents={() => { if (process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true") setDirectoryOpen(true); else setCloudStatus("Browse agents (preview)"); }} onCreateAgent={createAgent} status={cloudStatus} /> : <InlineAgentSelectorDemo key={pickerKey} onCreateAgent={createAgent} /> : <ProjectButterInvocationProvider agents={scriptedCreation?.agents.length ? [...BUTTER_PICKER_AGENTS, ...scriptedCreation.agents] : BUTTER_PICKER_AGENTS} enabled>
+					{!useSubmenu ? cloudOnly ? <ProjectButterCloudAgentPicker cardTilt={cardTilt} recentAgentId={recentAgentId} recommendAfterMs={recommendAfterMs} extraAgents={scriptedCreation?.agents} key={pickerKey} onAssign={(agent) => setCloudStatus(`Start on Cloud · ${agent.name} (preview)`)} onBrowseAgents={() => { if (process.env.NEXT_PUBLIC_BUTTER_SCRIPTED_DEMO === "true") setDirectoryOpen(true); else setCloudStatus("Browse agents (preview)"); }} onCreateAgent={createAgent} status={cloudStatus} /> : <InlineAgentSelectorDemo key={pickerKey} onCreateAgent={createAgent} /> : <ProjectButterInvocationProvider agents={scriptedCreation?.agents.length ? [...BUTTER_PICKER_AGENTS, ...scriptedCreation.agents] : BUTTER_PICKER_AGENTS} enabled>
 						<ProjectButterAgentPickerContent
 							key={pickerKey}
 							favoriteAgentIds={favoriteAgentIds}

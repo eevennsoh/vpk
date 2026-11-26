@@ -237,12 +237,12 @@ function PrivateVisibilityMetadata({ visibility }: Readonly<{ visibility: "priva
 	const startedPrivate = useRef(visibility === "private");
 	useEffect(() => {
 		if (visibility !== "public" || !startedPrivate.current) return;
-		const exitTimer = window.setTimeout(() => setPhase("exiting"), 2000);
-		const hideTimer = window.setTimeout(() => setPhase("hidden"), 2000 + motionDuration.slower * 1000);
+		const exitTimer = window.setTimeout(() => setPhase("exiting"), 1000);
+		const hideTimer = window.setTimeout(() => setPhase("hidden"), 1000 + motionDuration.medium * 1000);
 		return () => { window.clearTimeout(exitTimer); window.clearTimeout(hideTimer); };
 	}, [visibility]);
 	if (phase === "hidden") return null;
-	return <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-normal text-text-subtlest" data-visibility-metadata><span aria-hidden className={cn("transition-opacity duration-slower ease-out-practical", phase === "exiting" ? "opacity-0" : null)}>·</span><TextContinuity>{phase === "exiting" ? "" : visibility === "private" ? "Only visible to you" : "Visible to everyone"}</TextContinuity></span>;
+	return <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-normal text-text-subtlest" data-visibility-metadata><span aria-hidden className={cn("transition-opacity duration-medium ease-out-practical", phase === "exiting" ? "opacity-0" : null)}>·</span>{/* Leaving, the label fades out whole with its dot; emptying the morph would scale each glyph out instead. */}<TextContinuity className={cn("transition-opacity duration-medium ease-out-practical", phase === "exiting" ? "opacity-0" : null)}>{visibility === "private" ? "Only visible to you" : "Visible to everyone"}</TextContinuity></span>;
 }
 
 function ThreadReplyCard({
@@ -358,7 +358,7 @@ const reactionSummaries = reactions.map((reaction) => ({
 					resolved ? (
 						onReopen ? <ReopenThreadAction onReopen={onReopen} /> : undefined
 					) : commentActions === "none" ? (footerExtra ? <div className="mt-2">{footerExtra}</div> : undefined) : hoverActions ? (
-						reactionSummaries.length > 0 || footerExtra ? <EmojiReactionBar className={footerExtra ? "mt-2" : undefined} leading={footerExtra} onToggleReaction={toggleReaction} reactions={reactionSummaries} showAddReaction={false} /> : undefined
+						reactionSummaries.length > 0 || footerExtra ? <EmojiReactionBar className="mt-2" leading={footerExtra} onToggleReaction={toggleReaction} reactions={reactionSummaries} showAddReaction={false} /> : undefined
 					) : footerExtra ? <div className="mt-2 flex flex-wrap items-center gap-1">{footerExtra}{actionRow}</div> : actionRow
 				}
 				timestamp={reply.timestamp}

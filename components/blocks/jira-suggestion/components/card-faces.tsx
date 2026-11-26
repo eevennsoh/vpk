@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode, RefObject } from "react";
-import { motion, useTransform, type MotionValue } from "motion/react";
+import { useId, type ReactNode, type RefObject } from "react";
+import { AnimatePresence, motion, useTransform, type MotionValue } from "motion/react";
+import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
 import CheckMarkIcon from "@atlaskit/icon/core/check-mark";
 import CrossIcon from "@atlaskit/icon/core/cross";
 import UndoIcon from "@atlaskit/icon/core/undo";
@@ -14,6 +15,8 @@ import { cn } from "@/lib/utils";
 
 import { CARD_ACTION_REVEAL, CardFace } from "./card-face";
 import { CardWhy } from "./card-why";
+import { SETTLE } from "./constants";
+import { WhyCard } from "./why-card";
 import type { SwipeDirection } from "./use-deck";
 
 /** A complete, short reminder of what was decided; a paragraph has no honest short form, so it gets none (never cut off). */
@@ -84,10 +87,10 @@ export function TopWhy({ suggestion, whyOpen, onWhyOpenChange, whyAnchor, whyCon
 /** Every face shares one padding, so a card changing face (row, sheet, top) never shifts its label or value. */
 const FACE_PADDING = "px-4 pt-2.5 pb-3";
 
-function RoundAction({ label, hint, className, onClick, children }: Readonly<{ label: string; hint: string; className?: string; onClick: () => void; children: ReactNode }>) {
+function RowAction({ label, hint, className, onClick, children }: Readonly<{ label: string; hint: string; className?: string; onClick: () => void; children: ReactNode }>) {
 	return (
 		<Tooltip>
-			<TooltipTrigger render={<Button aria-label={label} className={cn("any-pointer-coarse:size-8", className)} onClick={onClick} shape="circle" size="icon-compact" type="button" variant="ghost" />}>{children}</TooltipTrigger>
+			<TooltipTrigger render={<Button aria-label={label} className={cn("any-pointer-coarse:size-8", className)} onClick={onClick} size="icon-compact" type="button" variant="ghost" />}>{children}</TooltipTrigger>
 			<TooltipContent>{hint}</TooltipContent>
 		</Tooltip>
 	);
@@ -100,20 +103,63 @@ function RoundAction({ label, hint, className, onClick, children }: Readonly<{ l
  */
 export function RowFace({ suggestion, controls, onDecide, why }: Readonly<{ suggestion: WorkItemSuggestion; controls: boolean; onDecide: (direction: SwipeDirection) => void; why?: WhyProps }>) {
 	const field = suggestion.label.toLowerCase();
+	const whyId = useId();
+	const hasWhy = Boolean(why && suggestion.reason.evidence.length);
+	const expanded = hasWhy && controls && Boolean(why?.whyOpen);
 	return (
 		<CardFace
 			actions={controls ? (
 				<>
-					{why && suggestion.reason.evidence.length ? <CardWhy anchor={why.whyAnchor} appearance="icon" container={why.whyContainer} onOpenChange={why.onWhyOpenChange} open={why.whyOpen} suggestion={suggestion} /> : null}
-					<RoundAction className="size-7 hover:[&_svg]:text-icon" hint="Discard" label={`Discard ${field}`} onClick={() => onDecide("dismiss")}>
+					{why && hasWhy ? (
+						<Tooltip>
+							<TooltipTrigger
+								render={(
+									<Button
+										aria-controls={whyId}
+										aria-expanded={expanded}
+										aria-label={`Why ${field} was suggested`}
+										// No selected look when open: the expanded card already says so.
+										className="any-pointer-coarse:size-8 aria-expanded:border-transparent aria-expanded:bg-transparent aria-expanded:hover:bg-bg-neutral-subtle-hovered aria-expanded:active:bg-bg-neutral-subtle-pressed aria-expanded:[&_svg]:text-icon-subtle"
+										onClick={() => why.onWhyOpenChange(!expanded)}
+										size="icon-compact"
+										type="button"
+										variant="ghost"
+									/>
+								)}
+							>
+								<LightbulbIcon color="currentColor" label="" size="small" />
+							</TooltipTrigger>
+							<TooltipContent>{expanded ? "Hide" : "Why this was suggested"}</TooltipContent>
+						</Tooltip>
+					) : null}
+					<RowAction className="hover:[&_svg]:text-icon" hint="Discard" label={`Discard ${field}`} onClick={() => onDecide("dismiss")}>
 						<CrossIcon color="currentColor" label="" size="small" />
-					</RoundAction>
-					<RoundAction hint="Accept" label={`Accept ${field}`} onClick={() => onDecide("accept")}>
+					</RowAction>
+					<RowAction hint="Accept" label={`Accept ${field}`} onClick={() => onDecide("accept")}>
 						<CheckMarkIcon color="currentColor" label="" size="small" />
-					</RoundAction>
+					</RowAction>
 				</>
 			) : null}
 			className={FACE_PADDING}
+			footer={(
+				// The reasoning opens inside the card, under a full-width hairline, like a pull request card's details.
+				<AnimatePresence initial={false}>
+					{expanded ? (
+						<motion.div
+							animate={{ height: "auto", opacity: 1, transition: SETTLE }}
+							className="-mx-4 -mb-3 overflow-hidden"
+							exit={{ height: 0, opacity: 0, transition: SETTLE }}
+							id={whyId}
+							initial={{ height: 0, opacity: 0 }}
+							key="why"
+						>
+							<div className="mt-1.5 border-t border-border-disabled">
+								<WhyCard inline suggestion={suggestion} />
+							</div>
+						</motion.div>
+					) : null}
+				</AnimatePresence>
+			)}
 			suggestion={suggestion}
 		/>
 	);

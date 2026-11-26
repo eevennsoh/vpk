@@ -5,14 +5,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FOLLOW_UP_SUGGESTIONS, WORK_ITEM_SUGGESTIONS, type SuggestionFieldId, type WorkItemSuggestion } from "../data/suggestions";
 import { useSuggestionReview, type SuggestionReview } from "./use-suggestion-review";
 
-/** Simulated agent latency for a re-run, long enough to show a working state. */
-export const SUGGESTION_RERUN_MS = 1800;
+/** Simulated agent latency for a re-run, long enough to read as real work while the panel waits folded. */
+export const SUGGESTION_RERUN_MS = 3200;
 
 export interface SuggestionRun {
 	/** 1-based run number. */
 	number: number;
-	/** Display time, e.g. "2m ago" or "Just now". */
-	ranAt: string;
+	/** When the run finished, in epoch milliseconds. */
+	at: number;
 	/** Suggestions this run added. Empty when the run found nothing new. */
 	ids: readonly SuggestionFieldId[];
 }
@@ -32,6 +32,8 @@ export interface SuggestionFeed {
 	acknowledgeNew: () => void;
 	/** Re-run the agent and publish any suggestions it finds. */
 	rerun: () => void;
+	/** Stop a running re-run without publishing anything; the review stays as it was. */
+	cancelRerun: () => void;
 	/** True while another re-run would still find suggestions. */
 	hasMore: boolean;
 }
@@ -42,7 +44,7 @@ export interface SuggestionFeed {
  */
 export function useSuggestionFeed(): SuggestionFeed {
 	const [suggestions, setSuggestions] = useState<readonly WorkItemSuggestion[]>(WORK_ITEM_SUGGESTIONS);
-	const [runs, setRuns] = useState<readonly SuggestionRun[]>([{ number: 1, ranAt: "2m ago", ids: WORK_ITEM_SUGGESTIONS.map((suggestion) => suggestion.id) }]);
+	const [runs, setRuns] = useState<readonly SuggestionRun[]>(() => [{ number: 1, at: Date.now() - 2 * 60_000, ids: WORK_ITEM_SUGGESTIONS.map((suggestion) => suggestion.id) }]);
 	const [status, setStatus] = useState<SuggestionFeedStatus>("idle");
 	const [newIds, setNewIds] = useState<ReadonlySet<SuggestionFieldId>>(new Set());
 	const timer = useRef(0);
@@ -57,14 +59,19 @@ export function useSuggestionFeed(): SuggestionFeed {
 		timer.current = window.setTimeout(() => {
 			const added = FOLLOW_UP_SUGGESTIONS.filter((suggestion) => !suggestions.some((existing) => existing.id === suggestion.id));
 			setSuggestions((current) => [...current, ...added]);
-			setRuns((current) => [...current.map((run) => (run.ranAt === "Just now" ? { ...run, ranAt: "1m ago" } : run)), { number: current.length + 1, ranAt: "Just now", ids: added.map((suggestion) => suggestion.id) }]);
+			setRuns((current) => [...current, { number: current.length + 1, at: Date.now(), ids: added.map((suggestion) => suggestion.id) }]);
 			setNewIds(new Set(added.map((suggestion) => suggestion.id)));
 			setStatus("idle");
 		}, SUGGESTION_RERUN_MS);
 	}, [status, suggestions]);
 
+	const cancelRerun = useCallback(() => {
+		window.clearTimeout(timer.current);
+		setStatus("idle");
+	}, []);
+
 	const acknowledgeNew = useCallback(() => setNewIds(new Set()), []);
 	const unseen = new Set([...newIds].filter((id) => review.decisionOf(id) === "pending"));
 
-	return { review, status, runs, newIds: unseen, acknowledgeNew, rerun, hasMore };
+	return { review, status, runs, newIds: unseen, acknowledgeNew, rerun, cancelRerun, hasMore };
 }

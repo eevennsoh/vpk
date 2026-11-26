@@ -118,7 +118,9 @@ export function AgentLanyardCard({
 		>
 			<motion.div
 				data-slot="agent-lanyard-cutout-mask"
-				className="-m-4 p-4"
+				// The mask's 16px overhang reaches past the card (over a picker row beside it) and moves with the tilt, so it
+				// must not take the pointer: hovering it tilted the card, which swung it off the cursor and back, jittering.
+				className="pointer-events-none -m-4 p-4"
 				style={{ ...AGENT_LANYARD_CUTOUT_MASK, maskPosition: "center, center 23px" }}
 				initial={false}
 				animate={{ transform: tiltEnabled ? (hovered ? hoverTilt(tiltStrength, tiltDirection) : REST_TILT) : "none" }}
@@ -129,7 +131,7 @@ export function AgentLanyardCard({
 				style={perforated ? AGENT_LANYARD_RECOMMENDATION_SURFACE_STYLE : undefined}
 				data-slot="agent-lanyard-surface"
 				className={cn(
-					"relative flex flex-col rounded-xl",
+					"pointer-events-auto relative flex flex-col rounded-xl",
 					recommended ? null : "transition-[background-color,box-shadow] duration-normal ease-out-practical motion-reduce:transition-none",
 					hasChin ? "bg-transparent" : "bg-surface",
 					recommended ? "border-0" : "border border-border",

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Suspense, useRef, useState, type ComponentProps, type ComponentRef } from "react";
 
 import { RovoChatProvider } from "@/app/contexts/context-rovo-chat";
-import { JiraFloatingSuggestions } from "@/components/blocks/jira-suggestion";
+import { JiraFloatingSuggestions, JiraInlineSuggestions } from "@/components/blocks/jira-suggestion";
 import type { ProjectButterSessionItem } from "@/components/blocks/jira-work-item/project-butter/data";
 import { PROJECT_BUTTER_MODAL_SIZE } from "@/components/blocks/jira-work-item/project-butter/presentation";
 import { ProjectButterJiraWorkItem } from "@/components/blocks/jira-work-item/project-butter/project-butter-jira-work-item";
@@ -22,7 +22,7 @@ import { useButterScriptedCreation } from "./butter-scripted-creation";
 
 const AgentsDirectoryDialog = dynamic(() => import("@/components/blocks/agent-directory").then((module) => module.AgentsDirectoryDialog));
 
-type ButterGalleryWorkItemProps = Readonly<{ compact?: boolean; galleryOpen?: boolean; initialSessions?: readonly ProjectButterSessionItem[]; open: boolean; onClose: () => void; sessionActivityView?: boolean; showAiSuggestions?: boolean; portalContainer?: HTMLElement }>;
+type ButterGalleryWorkItemProps = Readonly<{ compact?: boolean; galleryOpen?: boolean; initialSessions?: readonly ProjectButterSessionItem[]; open: boolean; onClose: () => void; sessionActivityView?: boolean; showAiSuggestions?: boolean; /** Where the AI suggestions surface: the floating review panel (default) or inline above the details. */ aiSuggestionSurface?: "floating" | "inline"; portalContainer?: HTMLElement }>;
 
 export function ButterGalleryWorkItem(props: ButterGalleryWorkItemProps) {
 	const scriptedCreation = useButterScriptedCreation();
@@ -33,7 +33,7 @@ export function ButterGalleryWorkItem(props: ButterGalleryWorkItemProps) {
 	);
 }
 
-function ButterGalleryWorkItemContent({ compact, galleryOpen, initialSessions, open, onClose, sessionActivityView = true, showAiSuggestions = false, portalContainer }: ButterGalleryWorkItemProps) {
+function ButterGalleryWorkItemContent({ compact, galleryOpen, initialSessions, open, onClose, sessionActivityView = true, showAiSuggestions = false, aiSuggestionSurface = "floating", portalContainer }: ButterGalleryWorkItemProps) {
 	const router = useRouter();
 	const scriptedCreation = useButterScriptedCreation();
 	const suggestionPanelRef = useRef<ComponentRef<typeof JiraFloatingSuggestions>>(null);
@@ -90,7 +90,7 @@ function ButterGalleryWorkItemContent({ compact, galleryOpen, initialSessions, o
 						onCreateAgent={createAgent}
 						onOpenCloudSession={openCloudSession}
 						open={open}
-						renderSuggestions={showAiSuggestions ? (feed) => <JiraFloatingSuggestions analyzeOnMount feed={feed} notification={notification} portalContainer={portalContainer} ref={suggestionPanelRef} workItemKey={BUTTER_AI_SUGGESTION_ITEM.code} /> : undefined}
+						renderSuggestions={showAiSuggestions && aiSuggestionSurface === "inline" ? (feed) => <JiraInlineSuggestions feed={feed} /> : showAiSuggestions ? (feed) => <JiraFloatingSuggestions analyzeOnMount feed={feed} notification={notification} portalContainer={portalContainer} ref={suggestionPanelRef} workItemKey={BUTTER_AI_SUGGESTION_ITEM.code} /> : undefined}
 						sessionActivityView={sessionActivityView}
 						shell="gallery"
 						showAuditInActivity={showAiSuggestions}

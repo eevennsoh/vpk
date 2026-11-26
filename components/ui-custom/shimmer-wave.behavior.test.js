@@ -34,3 +34,14 @@ test("ShimmerWave with empty text renders the plain `as` element", async () => {
 	assert.equal(element.className, "relative inline-block [color:var(--color-muted-foreground)]");
 	assert.equal(element.textContent, "");
 });
+
+test("ShimmerWave blurs its glyphs only when blurDistance is set", async () => {
+	const glyphClasses = (view) => [...view.container.querySelectorAll("[class*=transform-gpu]")].map((glyph) => glyph.className);
+	const sharp = await renderWave({ as: "span", children: "Wave" });
+	assert.equal(glyphClasses(sharp).every((name) => name.includes("[will-change:transform]") && !name.includes("filter")), true, "no blur by default");
+	await sharp.unmount();
+
+	const blurred = await renderWave({ as: "span", blurDistance: 2, children: "Wave" });
+	assert.equal(glyphClasses(blurred).every((name) => name.includes("[will-change:transform,filter]")), true, "each glyph is prepared to blur");
+	await blurred.unmount();
+});

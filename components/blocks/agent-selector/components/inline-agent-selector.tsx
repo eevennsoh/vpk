@@ -3,8 +3,13 @@
 import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
+import { motion } from "motion/react";
 import type { AgentSelectorAgent } from "./agent-selector";
 import { FavoriteButton } from "./favorite-button";
+import { RecommendingAgentRow } from "./recommending-agent-row";
+import { DETAIL_VALUE_HANDOFF } from "@/components/blocks/jira-work-item/project-butter/details-rail";
+import { SuggestionRainbowText } from "@/components/blocks/jira-work-item/project-butter/suggestion-rainbow-text";
+import { AVATAR_ENTER_FROM } from "@/components/ui/avatar-enter";
 import { AgentAvatarVisual } from "@/components/ui-custom/agent-avatar-visual";
 import { useHasVerticalOverflow } from "@/components/hooks/use-has-vertical-overflow";
 import { RichTextCommandMenuSearchField } from "@/components/ui-custom/rich-text-editor/menus";
@@ -39,6 +44,8 @@ export type InlineAgentSelectorProps = {
 	showHeadings?: boolean;
 	recentAgentId?: string | null;
 	recommendedAgentId?: string;
+	/** The recommendation is still being worked out: its slot shows a spinner and "Recommending agent" until it lands. */
+	recommendationPending?: boolean;
 	softwareHeading?: string;
 	disabledLabel?: string;
 	compact?: boolean;
@@ -72,7 +79,7 @@ function groupInlineAgents({ agents, softwareAgentIds, favorites, showFavorites,
 	return { recommendedAgent, recentAgent, favoriteAgents, softwareAgents, otherAgents, shownSoftware };
 }
 
-export function InlineAgentSelector({ agents, softwareAgentIds, getActions, renderAdditionalActions, renderAgentAction, renderAgentFeedback, renderAgentTrigger, onActiveAgentChange, onBrowseAgents, onCreateAgent, initialSoftwareLimit = 3, showSearch = true, showFavorites = true, showHeadings = true, recentAgentId, recommendedAgentId, softwareHeading = "Software agents", disabledLabel, compact = false, className, status, favoriteAgentIds, onFavoriteAgentIdsChange }: Readonly<InlineAgentSelectorProps>) {
+export function InlineAgentSelector({ agents, softwareAgentIds, getActions, renderAdditionalActions, renderAgentAction, renderAgentFeedback, renderAgentTrigger, onActiveAgentChange, onBrowseAgents, onCreateAgent, initialSoftwareLimit = 3, showSearch = true, showFavorites = true, showHeadings = true, recentAgentId, recommendedAgentId, recommendationPending = false, softwareHeading = "Software agents", disabledLabel, compact = false, className, status, favoriteAgentIds, onFavoriteAgentIdsChange }: Readonly<InlineAgentSelectorProps>) {
 	const [query, setQuery] = useState("");
 	const [expanded, setExpanded] = useState(false);
 	const [internalFavorites, setInternalFavorites] = useState<readonly string[]>([]);
@@ -82,23 +89,48 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 	const { ref: listRef, showTopScrollMask } = useHasVerticalOverflow<HTMLDivElement>();
 	const listMaskStyle = { ...buildScrollMaskStyle({ fadeTop: showTopScrollMask, fadeBottom: false, fadeSize: "3rem" }), "--scroll-mask-top-fade-size": "3rem" };
 	const focusFrame = useRef<number | null>(null);
+	// Once the slot has waited on a recommendation, the agent that fills it arrives with motion rather than appearing.
+	const [revealRecommendation, setRevealRecommendation] = useState(recommendationPending);
+	if (recommendationPending && !revealRecommendation) setRevealRecommendation(true);
+	// When the recommendation lands, the placeholder keeps the slot until its spinner has finished its turn.
+	const [wasPending, setWasPending] = useState(recommendationPending);
+	const [settling, setSettling] = useState(false);
+	if (wasPending !== recommendationPending) {
+		setWasPending(recommendationPending);
+		setSettling(!recommendationPending);
+	}
+	const holdingRecommendation = (recommendationPending || settling) && Boolean(recommendedAgentId) && !query;
+	// The recommendation is the agent last used: the recommendation row leads and settles on "Recommendation done"
+	// rather than revealing the same agent a second time, while that agent's row below turns "(Last used)" into "(Recommended)".
+	const recommendsLastUsed = revealRecommendation && Boolean(recommendedAgentId) && recentAgentId === recommendedAgentId && !query;
 	useEffect(() => () => { if (focusFrame.current !== null) cancelAnimationFrame(focusFrame.current); }, []);
 	const { recommendedAgent, recentAgent, favoriteAgents, softwareAgents, otherAgents, shownSoftware } = groupInlineAgents({ agents, softwareAgentIds, favorites, showFavorites, recentAgentId, recommendedAgentId, query, expanded, initialSoftwareLimit });
-	const row = (agent: AgentSelectorAgent) => {
+	const row = (agent: AgentSelectorAgent, reveal = false, suffix?: string) => {
 		const favorite = favorites.includes(agent.id);
 		const actions = getActions(agent);
 		const additionalActions = renderAdditionalActions?.(agent);
 		const hasChoices = actions.length > 1 || Boolean(additionalActions);
 		const showInline = hasChoices && activeId === agent.id;
 		const disabled = actions.length === 0 && !additionalActions;
-		const avatar = <AgentAvatarVisual appearance={agent.brandName === "openai-codex" || agent.brandName === "cursor" || agent.brandName === "github-copilot" ? "coding" : undefined} avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} logoName={agent.logoName} fallbackText={agent.name.slice(0, 2).toUpperCase()} label={agent.name} sizePx={24} />;
+		const avatar = <AgentAvatarVisual animate={!reveal} appearance={agent.brandName === "openai-codex" || agent.brandName === "cursor" || agent.brandName === "github-copilot" ? "coding" : undefined} avatarSrc={agent.avatarSrc} brandName={agent.brandName} vpkLogo={agent.vpkLogo} logoName={agent.logoName} fallbackText={agent.name.slice(0, 2).toUpperCase()} label={agent.name} sizePx={24} />;
 		const trigger = <button data-agent-id={agent.id} type="button" disabled={disabled} className={cn("relative flex min-w-0 flex-1 items-center gap-3 self-stretch rounded-lg text-left outline-none before:absolute before:inset-x-0 before:-inset-y-1.5 focus-visible:ring-2 focus-visible:ring-ring", !disabledLabel && "disabled:opacity-50")} aria-expanded={hasChoices ? showInline : undefined} onClick={() => {
 					if (hasChoices) { setActiveId(showInline ? null : agent.id); onActiveAgentChange?.(showInline ? null : agent); }
 					else { setActiveId(null); onActiveAgentChange?.(null); actions[0]?.onSelect(); }
 				}}>
 					{renderAgentFeedback?.(agent, avatar) ?? <>
-						<span aria-hidden className="grid size-6 shrink-0 place-items-center">{avatar}</span>
-						<span className="menu-row-title min-w-0 flex-1 truncate">{agent.name}{agent.id === recommendedAgentId ? <span className="text-text-subtlest"> (Recommended)</span> : null}</span>
+						<motion.span animate={{ opacity: 1, scale: 1 }} aria-hidden className="grid size-6 shrink-0 place-items-center" initial={reveal ? { ...AVATAR_ENTER_FROM, scale: 0.6 } : false} style={reveal ? { willChange: "transform, opacity" } : undefined} transition={DETAIL_VALUE_HANDOFF}>{avatar}</motion.span>
+						{suffix ? (
+							<span className="menu-row-title flex min-w-0 flex-1 items-baseline gap-[0.25em] truncate">
+								{agent.name}
+								{/* "(Last used)" gives way to "(Recommended)", which rises in with the Mask Reveal Up AI suggestions use. */}
+								<span className="text-text-subtlest" key={suffix}>{suffix === "(Recommended)" ? <SuggestionRainbowText text={suffix} /> : suffix}</span>
+							</span>
+						) : reveal ? (
+							// An AI pick, so it arrives with the same reveal an accepted suggestion gets; "(Recommended)" keeps its subtlest tone.
+							<span className="menu-row-title min-w-0 flex-1 [&_[aria-hidden]>span:last-child]:text-text-subtlest">
+								<SuggestionRainbowText text={`${agent.name} (Recommended)`} truncate />
+							</span>
+						) : <span className="menu-row-title min-w-0 flex-1 truncate">{agent.name}{agent.id === recommendedAgentId ? <span className="text-text-subtlest"> (Recommended)</span> : null}</span>}
 					</>}
 					{disabled && disabledLabel ? <span className="shrink-0 text-xs text-text-subtlest">{disabledLabel}</span> : null}
 				</button>;
@@ -140,7 +172,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 	}}>Show more</button> : null}</section> : null;
 	return <div ref={root} data-overlay-surface={compact ? undefined : ""} className={cn("menu-row-spacing flex w-80 max-w-full flex-col overflow-hidden rounded-lg bg-popover text-popover-foreground", dropdownStyles.padding, compact ? "h-auto" : cn("h-[26rem] max-h-[var(--available-height,26rem)]", dropdownStyles.surface), className)}>
 		{showSearch ? <div className="-mx-(--menu-inset) -mt-(--menu-inset) shrink-0 overflow-hidden rounded-t-lg"><RichTextCommandMenuSearchField label="Search agents" value={query} onValueChange={setQuery} onClear={() => setQuery("")} /></div> : null}
-		<div ref={listRef} className="-mx-(--menu-inset) min-h-0 flex-1 overflow-y-auto overscroll-contain px-(--menu-inset)" style={listMaskStyle}>{recommendedAgent ? row(recommendedAgent) : null}{section("Favorites", favoriteAgents)}{section(softwareHeading, recentAgent ? [recentAgent, ...shownSoftware] : shownSoftware, !recentAgent, Boolean(recentAgent))}{section("Other agents", otherAgents)}{!recommendedAgent && !recentAgent && !favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
+		<div ref={listRef} className="-mx-(--menu-inset) min-h-0 flex-1 overflow-y-auto overscroll-contain px-(--menu-inset)" style={listMaskStyle}>{recommendsLastUsed && recommendedAgent ? <><RecommendingAgentRow done={!recommendationPending} doneLabel="Recommendation done" onDone={() => setSettling(false)} />{row(recommendedAgent, false, recommendationPending || settling ? "(Last used)" : "(Recommended)")}</> : holdingRecommendation ? <RecommendingAgentRow done={!recommendationPending} onDone={() => setSettling(false)} /> : recommendedAgent ? row(recommendedAgent, revealRecommendation) : null}{section("Favorites", favoriteAgents)}{section(softwareHeading, recentAgent ? [recentAgent, ...shownSoftware] : shownSoftware, !recentAgent, Boolean(recentAgent))}{section("Other agents", otherAgents)}{!holdingRecommendation && !recommendedAgent && !recentAgent && !favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
 		{onBrowseAgents || onCreateAgent ? <div className="-mx-(--menu-inset) shrink-0 px-(--menu-inset)"><DropdownMenuSeparator className="mt-0" />{onBrowseAgents ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 border-0 px-2 text-sm font-normal text-text-subtle" onClick={onBrowseAgents}><Icon aria-hidden className="size-6" render={<AiAgentIcon label="" />} />Browse agents</Button> : null}{onCreateAgent ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 border-0 px-2 text-sm font-normal text-text-subtle" onClick={onCreateAgent}><Icon aria-hidden className="size-6" render={<AddIcon label="" />} />Create agent</Button> : null}</div> : null}
 		<p role="status" className="sr-only">{status}</p>
 	</div>;

@@ -9,6 +9,7 @@ import FloatingRovoButton, { type FloatingRovoButtonSuggestion } from "@/compone
 import { motionRecipe } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
+import { CHROME_HEIGHT, FOOTER_HEIGHT, LIST_HEADER_TOP_INSET } from "./components/constants";
 import { MockDetailsRail } from "./components/mock-details-rail";
 import { reconcileFloatingPanelStage, settleMeasuredStage, type FloatingPanelStage } from "./floating-panel-stage";
 import { SUGGESTIONS_ICON_RESOLVE_MS, SuggestionsStatusIcon } from "./components/suggestions-status-icon";
@@ -31,6 +32,16 @@ export const SUGGESTION_ANALYSIS_MS = 2600;
 
 /** How long cards found while the panel is already open (Undo, Check again) rest as a stack before unpacking. */
 const IN_PLACE_UNPACK_MS = 260;
+/** How long the panel takes to fold around a check, matching its height transition (slower). */
+const CHECK_FOLD_MS = 420;
+/**
+ * How long the reopening panel shows the stack before it starts to unpack. The unpack's own hold (IN_PLACE_UNPACK_MS)
+ * follows, so the cards spread as the panel finishes growing (220 + 260 ms clears the 400 ms height transition)
+ * instead of waiting for it to settle first.
+ */
+const CHECK_REOPEN_MS = 220;
+/** The folded panel during a check: just the list header's inset and the header. */
+const CHECK_FOLDED_HEIGHT = CHROME_HEIGHT - FOOTER_HEIGHT + LIST_HEADER_TOP_INSET;
 
 /** Landing intro for the review action: finding suggestions, resolving into the icon, then ready with dot and nudge. */
 type IntroPhase = "analyzing" | "resolving" | "ready";
@@ -64,8 +75,23 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 	const isExpanding = phase === "expanding" && !reduceMotion;
 	// "unpacking" replays the open's stack→list beat in place, since no open animation will come to finish it.
 	const isUnpacking = phase === "unpacking";
-	const introHeight = panelStage.phase === "expanding" || panelStage.phase === "unpacking" ? panelStage.height : undefined;
-	const listStage = isMeasuring ? "measuring" : isExpanding || isUnpacking ? "intro" : "list";
+	// A check gathers the list into an inert stack as the panel folds to its header and footer, and reopens once it ends.
+	const isChecking = phase === "checking";
+	const isReopening = phase === "reopening";
+	const introHeight = isChecking ? CHECK_FOLDED_HEIGHT : panelStage.phase === "expanding" || panelStage.phase === "unpacking" || panelStage.phase === "reopening" ? panelStage.height : undefined;
+	// While folding, the faded cards keep their list layout; they become a stack only once the fold has finished.
+	const isFolding = panelStage.phase === "checking" && panelStage.step === "folding";
+	const listStage = isMeasuring ? "measuring" : isFolding ? "list" : isExpanding || isUnpacking || isChecking || isReopening ? "intro" : "list";
+	useEffect(() => {
+		if (!isFolding) return undefined;
+		const timer = window.setTimeout(() => setPanelStage((stage) => stage.phase === "checking" ? { ...stage, step: "folded" } : stage), CHECK_FOLD_MS);
+		return () => window.clearTimeout(timer);
+	}, [isFolding]);
+	useEffect(() => {
+		if (!isReopening) return undefined;
+		const timer = window.setTimeout(() => setPanelStage((stage) => stage.phase === "reopening" ? { phase: "unpacking", height: stage.height } : stage), CHECK_REOPEN_MS);
+		return () => window.clearTimeout(timer);
+	}, [isReopening]);
 	useEffect(() => {
 		if (!isUnpacking) return undefined;
 		const timer = window.setTimeout(() => setPanelStage((stage) => stage.phase === "unpacking" ? { phase: "list" } : stage), IN_PLACE_UNPACK_MS);
@@ -84,11 +110,18 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 		return () => cancelFrame(revealWhenSettled);
 	}, [isMeasuring]);
 
-	const nextStage = reconcileFloatingPanelStage(panelStage, count, reduceMotion ?? false);
+	const running = feed.status === "running";
+	const nextStage = reconcileFloatingPanelStage(panelStage, count, reduceMotion ?? false, running);
 	if (nextStage) setPanelStage(nextStage);
 	const show = () => {
 		feed.onOpenReview?.(panelId);
 		setPanelStage(openingStage);
+	};
+	/** Check again from the header: the list folds back into a stack and waits there until the check ends or is cancelled. */
+	const recheck = () => {
+		if (running) return;
+		feed.rerun();
+		if (phase === "list" || phase === "unpacking") setPanelStage({ phase: "checking", step: "folding", height: panelRef.current?.offsetHeight || FLOATING_PANEL_MAX_HEIGHT });
 	};
 	const finishClose = useCallback(() => {
 		setPanelStage({ phase: "closed" });
@@ -153,10 +186,14 @@ export function JiraFloatingSuggestions({ analyzeOnMount = false, feed, notifica
 							feed={feed}
 							focusOnMount
 							id={panelId}
-							introHeight={isExpanding || isUnpacking ? introHeight : undefined}
+							animateHeight={isChecking || isReopening || isUnpacking}
+							checking={isChecking}
+							folded={isChecking}
+							introHeight={isExpanding || isUnpacking || isChecking || isReopening ? introHeight : undefined}
 							listStage={listStage}
 							maxHeight={FLOATING_PANEL_MAX_HEIGHT}
 							onClose={close}
+							onRerun={recheck}
 							overlay={null}
 							panelRef={panelRef}
 							title={`Review suggestions for ${workItemKey}`}

@@ -1,0 +1,102 @@
+// Behavioral contract for the floating review panel's header check: it gathers the list into an inert stack, the
+// panel folds to its header, whose spinner stops the check, and stopping (or finishing) unpacks the list again.
+const assert = require("node:assert/strict");
+const path = require("node:path");
+const test = require("node:test");
+const { act } = require("react");
+
+const { renderComponent } = require(path.join(process.cwd(), "scripts/lib/render-component.js"));
+
+const SOURCE = `import React from "react";
+	import { RovoChatProvider } from "@/app/contexts";
+	import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+	import { JiraFloatingSuggestions } from "@/components/blocks/jira-suggestion";
+	import { useSuggestionFeed } from "@/components/blocks/jira-suggestion/hooks/use-suggestion-feed";
+	function Floating() {
+		const feed = useSuggestionFeed();
+		return <JiraFloatingSuggestions feed={feed} workItemKey="PAY-999" />;
+	}
+	export default function FloatingTest() {
+		return <ThemeWrapper><RovoChatProvider><Floating /></RovoChatProvider></ThemeWrapper>;
+	}`;
+
+const wait = (ms) => act(() => new Promise((resolve) => setTimeout(resolve, ms)));
+const listShown = (view) => view.queryByRole("list", { name: "Suggestions" }) !== null;
+/** The check, the reopen and the unpack run on timers that happy-dom stretches; wait for the list rather than guess. */
+async function waitForList(view, timeout = 8000) {
+	for (let waited = 0; waited < timeout && !listShown(view); waited += 200) await wait(200);
+}
+
+async function openPanel(view) {
+	await view.click(view.getByRole("button", { name: "Review suggestions" }));
+	await wait(1200);
+	assert.equal(view.queryByRole("dialog", { name: /Review suggestions for PAY-999/ }) !== null, true, "the panel opens");
+}
+
+test("a header check folds the panel to its header, and its spinner stops the check and unpacks the cards again", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	await openPanel(view);
+	assert.equal(listShown(view), true, "the open panel lists its suggestions");
+	const check = view.getByRole("button", { name: "Check for new suggestions" });
+
+	await view.click(check);
+	await wait(100);
+	assert.equal(document.querySelector("[data-scrollport]").inert, true, "the fading cards are inert at once");
+	// The cards fade out in their list layout; they only re-form as a stack once the fold is done, out of view.
+	// Inert rows leave the accessibility tree, so look at the DOM.
+	const listInDom = () => document.querySelector('[role="list"][aria-label="Suggestions"]') !== null;
+	assert.equal(listInDom(), true, "no card morph competes with the fold");
+	await wait(900);
+	assert.equal(listInDom(), false, "once folded, the cards wait as a stack");
+	assert.equal(view.queryByRole("button", { name: "Accept all" }) === null, true, "the bulk decisions step aside");
+	assert.equal(document.body.textContent.includes("reviewed"), false, "the footer folds away with the cards");
+	assert.equal(view.queryByRole("button", { name: "Discard all" }) === null, true);
+	const cancel = view.getByRole("button", { name: "Stop checking for suggestions" });
+
+	await view.click(cancel);
+	await waitForList(view);
+	assert.equal(listShown(view), true, "stopping reopens the panel and unpacks the list again");
+	assert.equal(view.queryByRole("button", { name: "Stop checking for suggestions" }) === null, true);
+	assert.equal(view.queryByRole("button", { name: "Accept all" }) !== null, true, "…with the decisions back");
+	assert.equal(view.isFocused(view.getByRole("button", { name: "Check for new suggestions" })), true, "focus returns to the check action");
+	const rows = () => document.querySelectorAll('[role="list"][aria-label="Suggestions"] > *').length;
+	const listed = rows();
+	await wait(3600);
+	assert.equal(rows(), listed, "a cancelled check publishes nothing");
+	await view.unmount();
+});
+
+test("a header check that finds suggestions unpacks them into the list", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	await openPanel(view);
+	const before = document.querySelectorAll('[role="list"][aria-label="Suggestions"] > *').length;
+	await view.click(view.getByRole("button", { name: "Check for new suggestions" }));
+	await wait(900);
+	const panel = document.querySelector("[role=dialog][aria-labelledby]");
+	assert.equal(panel.style.height, "52px", "the panel folds to just its header while the check runs");
+	await waitForList(view);
+	assert.equal(listShown(view), true, "the finished check unpacks the stack");
+	assert.equal(view.queryByRole("button", { name: "Stop checking for suggestions" }) === null, true);
+	const after = document.querySelectorAll('[role="list"][aria-label="Suggestions"] > *').length;
+	assert.equal(after > before, true, `the new finds join the list (${before} → ${after})`);
+	await view.unmount();
+});
+
+test("a running check hides the last check's receipt and spins the check action", async () => {
+	const view = await renderComponent({ source: SOURCE });
+	await openPanel(view);
+	// The first check brings the follow-ups; the second finds nothing and says so in the footer.
+	for (let run = 0; run < 2; run += 1) {
+		await view.click(view.getByRole("button", { name: "Check for new suggestions" }));
+		await wait(400);
+		await waitForList(view);
+	}
+	assert.equal(view.queryByText("No new suggestions") !== null, true, "a quiet check leaves its receipt");
+	await view.click(view.getByRole("button", { name: "Check for new suggestions" }));
+	// The footer, receipt and all, folds away with the cards; let that fold finish.
+	await wait(700);
+	assert.equal(view.queryByText("No new suggestions") === null, true, "the next check does not repeat the old receipt");
+	assert.equal(document.querySelector('[aria-label="Stop checking for suggestions"] svg[data-state]')?.getAttribute("data-state"), "loading", "the check action spins while it runs, and is the way to stop it");
+	await wait(3600);
+	await view.unmount();
+});
