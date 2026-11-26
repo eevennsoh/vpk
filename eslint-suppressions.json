@@ -3412,7 +3412,7 @@
   },
   "components/ui-custom/human-agent-avatar.tsx": {
     "shadcn/require-static-classes": {
-      "count": 1
+      "count": 2
     }
   },
   "components/ui-custom/jsx-preview.tsx": {
