@@ -5,6 +5,7 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import LightbulbIcon from "@atlaskit/icon/core/lightbulb";
 
 import type { WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { token } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +34,7 @@ export interface CardWhyProps {
 const TRIGGER: Readonly<Record<CardWhyProps["appearance"], string>> = {
 	line: "-mx-1.5 h-6 any-pointer-coarse:min-h-8 gap-1 rounded-md px-1.5 text-xs text-text-subtlest hover:text-text-subtle focus-visible:text-text-subtle data-popup-open:text-text-subtle",
 	icon: "size-7 any-pointer-coarse:size-8 justify-center rounded-full text-icon-subtlest hover:text-icon-subtle focus-visible:text-icon-subtle",
-	toolbar: "size-6 any-pointer-coarse:size-8 justify-center rounded-md text-icon-subtle",
+	toolbar: "size-6 any-pointer-coarse:size-8 justify-center rounded-md text-icon-subtle data-popup-open:bg-bg-selected data-popup-open:text-icon-selected data-popup-open:hover:bg-bg-selected-hovered",
 };
 
 /**
@@ -41,13 +42,16 @@ const TRIGGER: Readonly<Record<CardWhyProps["appearance"], string>> = {
  * Escape closes it and keeps focus on the trigger without reopening it; focus has to leave and come back first.
  */
 export function CardWhy({ suggestion, open, onOpenChange, anchor, container, appearance, side = "left" }: Readonly<CardWhyProps>) {
+	// The toolbar sits on the field it explains: its lightbulb opens on a click and shows as selected, while hover only
+	// names it with a tooltip. The deck's triggers open on hover or keyboard focus.
+	const clickOnly = appearance === "toolbar";
 	const reopenOnFocus = useRef(true);
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const popupRef = useRef<HTMLDivElement>(null);
 	const sources = suggestion.reason.evidence.length;
 
 	const onFocus = (event: FocusEvent<HTMLButtonElement>) => {
-		if (reopenOnFocus.current && event.currentTarget.matches(":focus-visible")) onOpenChange(true);
+		if (!clickOnly && reopenOnFocus.current && event.currentTarget.matches(":focus-visible")) onOpenChange(true);
 	};
 	const onBlur = (event: FocusEvent<HTMLButtonElement>) => {
 		const next = event.relatedTarget as Node | null;
@@ -65,8 +69,7 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container, app
 		onOpenChange(next);
 	};
 
-	return (
-		<PopoverPrimitive.Root onOpenChange={changeOpen} open={open}>
+	const trigger = (
 			<PopoverPrimitive.Trigger
 				aria-label={`Why ${suggestion.label.toLowerCase()} was suggested`}
 				className={cn("inline-flex shrink-0 items-center outline-none transition-colors duration-xxshort ease-out-practical hover:bg-bg-neutral-subtle-hovered focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-bg-neutral-subtle-hovered", TRIGGER[appearance])}
@@ -74,7 +77,7 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container, app
 				delay={WHY_OPEN_DELAY}
 				onBlur={onBlur}
 				onFocus={onFocus}
-				openOnHover
+				openOnHover={!clickOnly}
 				ref={triggerRef}
 				type="button"
 			>
@@ -87,6 +90,17 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container, app
 					</>
 				) : <LightbulbIcon color="currentColor" label="" size="small" />}
 			</PopoverPrimitive.Trigger>
+	);
+
+	return (
+		<PopoverPrimitive.Root onOpenChange={changeOpen} open={open}>
+			{clickOnly ? (
+				<Tooltip>
+					<TooltipTrigger render={trigger} />
+					{/* Above the toolbar's popover layer (z-650), or the tip renders behind the toolbar it labels. */}
+					<TooltipContent positionerClassName="z-[700]">{open ? "Hide" : "Why this was suggested"}</TooltipContent>
+				</Tooltip>
+			) : trigger}
 			<PopoverPrimitive.Portal container={container ?? undefined}>
 				<PopoverPrimitive.Positioner
 					align={side === "bottom" ? "end" : "start"}
@@ -105,7 +119,7 @@ export function CardWhy({ suggestion, open, onOpenChange, anchor, container, app
 						ref={popupRef}
 						style={{ boxShadow: token("elevation.shadow.overlay") }}
 					>
-						<WhyCard compactSources={appearance === "toolbar"} suggestion={suggestion} />
+						<WhyCard compactSources={clickOnly} showField={!clickOnly} suggestion={suggestion} />
 					</PopoverPrimitive.Popup>
 				</PopoverPrimitive.Positioner>
 			</PopoverPrimitive.Portal>

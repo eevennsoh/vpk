@@ -110,7 +110,7 @@ function SourceRow({ evidence, compact = false }: Readonly<{ evidence: Suggestio
  * names the field, titles the popup and gives each source its who/when and quoted passage; inline, under the card's
  * own label, it skips the field, lists sources by title alone, and pads like the card it expands.
  */
-export function WhyCard({ suggestion, inline = false, compactSources = inline }: Readonly<{ suggestion: WorkItemSuggestion; inline?: boolean; /** Sources by title alone (the inline suggestion toolbar's popover too). */ compactSources?: boolean }>) {
+export function WhyCard({ suggestion, inline = false, compactSources = inline, showField = !inline }: Readonly<{ suggestion: WorkItemSuggestion; inline?: boolean; /** Name the field; left out wherever the reasoning already sits on that field. */ showField?: boolean; /** Sources by title alone (the inline suggestion toolbar's popover too). */ compactSources?: boolean }>) {
 	const { reason } = suggestion;
 	const headline = "text-sm leading-5 font-semibold text-pretty text-text";
 	const detail = "text-sm leading-5 text-pretty text-text-subtle";
@@ -118,7 +118,7 @@ export function WhyCard({ suggestion, inline = false, compactSources = inline }:
 		<div className={cn("flex min-h-0 flex-col gap-4", inline ? "p-4 pt-3" : "overflow-y-auto overscroll-contain px-4 pt-4 pb-4")}>
 			<div className="flex flex-col gap-1.5">
 				<div className="flex items-center justify-between gap-3">
-					{inline ? null : <span className="text-xs text-text-subtlest">{suggestion.label}</span>}
+					{showField ? <span className="text-xs text-text-subtlest">{suggestion.label}</span> : null}
 					<ConfidenceMeter confidence={suggestion.confidence} />
 				</div>
 				{inline ? (
