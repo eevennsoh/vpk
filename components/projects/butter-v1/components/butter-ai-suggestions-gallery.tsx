@@ -48,5 +48,6 @@ export function ButterAiSuggestionsGallery({ view, open, onClose }: Readonly<{ v
 			</div>
 		);
 	}
-	return <ButterGalleryWorkItem key={view} aiSuggestionSurface={view === "inline" ? "inline" : "global"} open={open} onClose={onClose} showAiSuggestions />;
+	// Inline starts as an exact copy of Global (its own instance, so each tab replays from the start).
+	return <ButterGalleryWorkItem key={view} open={open} onClose={onClose} showAiSuggestions />;
 }
