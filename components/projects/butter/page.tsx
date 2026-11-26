@@ -429,7 +429,7 @@ function ButterApp({ ref, phase, pullRequestVisible, setPhase, journeySession, s
 			host: "cloud",
 			startedAtMs: Date.now(),
 			timeLabel: "Just now",
-			invokedBy: { name: "Annie Cook", avatarSrc: "/avatar-user/maia-ma/color/asow-dev-lime.png" },
+			invokedBy: { name: BUTTER_PAY_CURRENT_USER.name, avatarSrc: BUTTER_PAY_CURRENT_USER.avatarSrc },
 		};
 		startAgentSession(card.code, { ...toButterAgentActivityFromSession(session), waitingForPrompt: true });
 	}, [startAgentSession]);
