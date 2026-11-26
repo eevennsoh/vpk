@@ -114,7 +114,7 @@ export function JiraInlineSuggestions({ feed }: Readonly<{ feed: SuggestionFeed 
 						{/* The toolbar sits right under the field it previews, so it never names the field again. */}
 						<div className="flex h-9 items-center gap-1 px-1">
 							{hasWhy ? (
-								<ToolbarButton aria-controls={whyId} aria-expanded={expanded} hint={expanded ? "Hide why" : "Why this was suggested"} label={`Why ${field} was suggested`} onClick={() => setWhyOpen(!expanded)}>
+								<ToolbarButton aria-controls={whyId} aria-expanded={expanded} hint={expanded ? "Hide" : "Why this was suggested"} label={`Why ${field} was suggested`} onClick={() => setWhyOpen(!expanded)}>
 									<LightbulbIcon color="currentColor" label="" size="small" />
 								</ToolbarButton>
 							) : null}

@@ -129,7 +129,7 @@ export function RowFace({ suggestion, controls, onDecide, why }: Readonly<{ sugg
 							>
 								<LightbulbIcon color="currentColor" label="" size="small" />
 							</TooltipTrigger>
-							<TooltipContent>{expanded ? "Hide why" : "Why this was suggested"}</TooltipContent>
+							<TooltipContent>{expanded ? "Hide" : "Why this was suggested"}</TooltipContent>
 						</Tooltip>
 					) : null}
 					<RowAction className="hover:[&_svg]:text-icon" hint="Discard" label={`Discard ${field}`} onClick={() => onDecide("dismiss")}>
