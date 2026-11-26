@@ -181,7 +181,7 @@ function OverflowMenu({
 			/>
 			<PopoverContent
 				align="start"
-				className="w-auto min-w-36 gap-0 p-1.5 shadow-xl"
+				className="w-auto min-w-36 gap-0 p-1.5 shadow-2xl"
 				sideOffset={6}
 			>
 				<ul aria-label={`More ${label}`} className="flex flex-col gap-1">{children}</ul>
