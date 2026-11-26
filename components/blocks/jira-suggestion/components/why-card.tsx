@@ -103,9 +103,9 @@ function SourceRow({ evidence }: Readonly<{ evidence: SuggestionEvidence }>) {
 }
 
 /**
- * The reasoning behind one card: the headline as the title, supporting detail, confidence and sources. In a popover
- * it names the field and titles the popup; inline, under the card's own label, it skips the field and pads like the
- * card it expands.
+ * The reasoning behind one card: the headline as the title, supporting detail and confidence. In a popover it names
+ * the field, titles the popup and lists its sources; inline, under the card's own label, it keeps to the reasoning
+ * alone (no field, no sources) and pads like the card it expands.
  */
 export function WhyCard({ suggestion, inline = false }: Readonly<{ suggestion: WorkItemSuggestion; inline?: boolean }>) {
 	const { reason } = suggestion;
@@ -130,14 +130,16 @@ export function WhyCard({ suggestion, inline = false }: Readonly<{ suggestion: W
 					</>
 				)}
 			</div>
-			<section aria-label="Sources" className="flex flex-col gap-3">
-				<h3 className="text-xs font-medium text-text-subtlest">
-					{reason.evidence.length} {reason.evidence.length === 1 ? "source" : "sources"}
-				</h3>
-				<ul className="flex flex-col gap-4">
-					{reason.evidence.map((evidence) => <SourceRow evidence={evidence} key={evidence.id} />)}
-				</ul>
-			</section>
+			{inline ? null : (
+				<section aria-label="Sources" className="flex flex-col gap-3">
+					<h3 className="text-xs font-medium text-text-subtlest">
+						{reason.evidence.length} {reason.evidence.length === 1 ? "source" : "sources"}
+					</h3>
+					<ul className="flex flex-col gap-4">
+						{reason.evidence.map((evidence) => <SourceRow evidence={evidence} key={evidence.id} />)}
+					</ul>
+				</section>
+			)}
 		</div>
 	);
 }
