@@ -75,7 +75,7 @@ import { ButterAgentSelectorGallery } from "./components/butter-agent-selector-g
 import { ButterAiSuggestionsControls, ButterAiSuggestionsGallery, type ButterAiSuggestionsView } from "./components/butter-ai-suggestions-gallery";
 import { ButterGalleryWorkItem } from "./components/butter-gallery-work-item";
 import { ButterGalleryAgentSessions, ButterGalleryBoardCard, ButterSessionPermissionControls, type ButterSessionPermission } from "./components/butter-gallery-showcases";
-import { JiraForYouProjectButter } from "@/components/projects/jira-for-you";
+import { JiraForYouProjectButter } from "@/components/projects/jira-for-you/jira-for-you-project-butter";
 import { ButterBoardCardControls, type ButterBoardCardState } from "./components/butter-board-card-controls";
 import type { ButterPullRequestStatus } from "./components/butter-gallery-pull-request";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
