@@ -103,6 +103,29 @@ test("Claude's journey uses the embedded session card and shows its acknowledgme
 	await view.unmount();
 });
 
+test("Claude's status change sits between the acknowledgment and the later PR reply", async () => {
+	const view = await renderComponent({ source: `import React from "react";
+		import { ThemeWrapper } from "@/components/utils/theme-wrapper";
+		import { ProjectButterActivity } from "@/components/blocks/jira-work-item/project-butter/project-butter-activity";
+		import { useProjectButterContent } from "@/components/blocks/jira-work-item/project-butter/use-project-butter-content";
+		import { projectMerchantJourney } from "@/components/blocks/jira-work-item/project-butter/merchant-journey-activity";
+		const venn = { name: "Venn", avatarUrl: "/avatar-user/venn/venn.png" };
+		const session = { id: "journey-session", title: "Merchant onboarding", state: "running", host: "cloud", message: "Working", agent: { id: "claude", name: "Claude", brandName: "claude" }, invokedBy: { name: "Venn" }, timeLabel: "Just now" };
+		export default function Harness() {
+			const content = useProjectButterContent("empty", { code: "PAY-999", title: "Merchant onboarding" }, [session], undefined, venn, { currentUser: venn, showAuditInActivity: true });
+			const projected = projectMerchantJourney({ content, sessions: [session], phase: "pr", session, autoAssignTo: venn });
+			return <ThemeWrapper><ProjectButterActivity content={{ ...projected.content, activitySort: "oldest" }} sessions={projected.sessions} sidePanel={false} singleView onOpenSession={() => undefined} /></ThemeWrapper>;
+		}` });
+	const thread = document.querySelector('[data-jira-activity-entry-id="invocation-journey-session"]');
+	const text = thread?.textContent ?? "";
+	const acknowledgment = text.indexOf("I'm looking into this issue now.");
+	const status = text.indexOf("changed status from To do → In progress");
+	const pr = text.indexOf("I added the guided SDK v2 quickstart");
+	assert.equal(acknowledgment >= 0 && status > acknowledgment && pr > status, true, `order: ack ${acknowledgment}, status ${status}, pr ${pr}`);
+	assert.equal(document.querySelectorAll('[data-jira-activity-entry-id="merchant-status-journey-session"]').length, 1);
+	await view.unmount();
+});
+
 test("direct jumps synthesize a session and rewind removes future progress without storing it", async () => {
 	const view = await renderJourney({ journeyPhase: "merged" });
 	assert.equal(field("sessions").includes("journey-session:Merchant onboarding:complete"), true);

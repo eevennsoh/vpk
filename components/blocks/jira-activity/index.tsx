@@ -77,6 +77,8 @@ export interface JiraActivityProps {
 	renderReplyFooter?: (reply: JiraActivityReply) => ReactNode;
 	/** Replace a reply card while retaining its thread position and visibility. */
 	renderReply?: (reply: JiraActivityReply) => ReactNode | undefined;
+	/** Host content placed in the thread directly before a reply, sharing its visibility. */
+	renderBeforeReply?: (entry: JiraActivityCommentEntry, reply: JiraActivityReply) => ReactNode;
 	/** Optional persisted reply drafts keyed by the parent comment entry id. */
 	replyDrafts?: Readonly<Record<string, string>>;
 	onReplyDraftChange?: (entryId: string, value: string) => void;
@@ -199,6 +201,7 @@ export function JiraActivity({
 	renderReplyBody,
 	renderReplyFooter,
 	renderReply,
+	renderBeforeReply,
 	replyDrafts,
 	onReplyDraftChange,
 	onSelectReply,
@@ -426,6 +429,7 @@ export function JiraActivity({
 								renderReplyBody={renderReplyBody}
 								renderReplyFooter={renderReplyFooter}
 								renderReply={renderReply}
+								renderBeforeReply={renderBeforeReply ? (reply) => renderBeforeReply(entry, reply) : undefined}
 								replyDraft={replyDrafts === undefined ? undefined : replyDrafts[entry.id] ?? ""}
 								onReplyDraftChange={onReplyDraftChange ? (value) => onReplyDraftChange(entry.id, value) : undefined}
 								actorsById={actorsById}

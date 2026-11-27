@@ -412,6 +412,7 @@ export function JiraActivityComment({
 	renderReplyBody,
 	renderReplyFooter,
 	renderReply,
+	renderBeforeReply,
 	replyDraft: controlledReplyDraft,
 	onReplyDraftChange,
 	onSelectReply,
@@ -453,6 +454,7 @@ export function JiraActivityComment({
 	renderReplyBody?: (reply: JiraActivityReply) => ReactNode;
 	renderReplyFooter?: (reply: JiraActivityReply) => ReactNode;
 	renderReply?: (reply: JiraActivityReply) => ReactNode | undefined;
+	renderBeforeReply?: (reply: JiraActivityReply) => ReactNode;
 	replyDraft?: string;
 	onReplyDraftChange?: (value: string) => void;
 	onSelectReply?: (targetId: string, actor: JiraActivityActor) => void;
@@ -780,7 +782,8 @@ export function JiraActivityComment({
 					>
 						{replies.map((reply, index) => {
 							const earlier = hasReplyPreview && index < replies.length - replyPreviewCount;
-							const card = <ThreadReplyCard
+							const leading = renderBeforeReply?.(reply);
+							const replyCard = <ThreadReplyCard
 								actorAvatarSize={actorAvatarSize}
 								attributedBy={reply.actor.kind === "agent" && reply.actor.id === entry.actor.id ? entry.attributedBy : undefined}
 								headerLayout={headerLayout}
@@ -818,6 +821,7 @@ export function JiraActivityComment({
 								timestampContent={renderTimestamp?.(reply)}
 								tools={renderCommentTools?.(entry, reply)}
 							/>;
+							const card = leading ? <Fragment key={reply.id}><div hidden={(earlier && !repliesExpanded && !threaded) || undefined}>{leading}</div>{replyCard}</Fragment> : replyCard;
 							return earlier && threaded ? <motion.div
 								animate={{ height: repliesExpanded ? "auto" : 0, opacity: repliesExpanded ? 1 : 0 }}
 								aria-hidden={!repliesExpanded || undefined}

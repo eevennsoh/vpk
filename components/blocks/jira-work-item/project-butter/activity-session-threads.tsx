@@ -12,7 +12,7 @@ import { AvatarGroup } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { motionDuration, motionEase } from "@/lib/motion";
-import { ProjectButterSessionStart, ProjectButterThreadEvents } from "./activity-session-start";
+import { ProjectButterSessionStart, ProjectButterThreadEvents, renderThreadEventsBeforeReply, trailingThreadEvents } from "./activity-session-start";
 import { ProjectButterPinComment } from "./activity-comment-tools";
 import { latestVisibleActivityReply, pinProjectButterComments, projectButterReplyParticipants } from "./activity-feed-model";
 import { draftThreadInstruction, SESSION_THREAD_RAIL, summarizeReplies, SUMMARIZED_THREAD, SUMMARY_TRANSITION, useWorkItemThreadSummaries } from "./activity-thread-summary";
@@ -96,7 +96,8 @@ function SessionThreadCard({ thread, summary, onDraft, onOpenSession, onTogglePi
 						{reply || !canSummarize ? null : summary.renderAction(entry.replies ?? [], collapseReplies)}
 					</>
 				)}
-				renderCommentReplies={(_entry, replies, expand, disclosure, expanded) => <>{canSummarize ? summary.renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraft(thread, draftThreadInstruction(sources)) : undefined, { disclosure, expanded }) : <>{disclosure}{replies}</>}<ProjectButterThreadEvents events={entry.activityEvents} /></>}
+				renderCommentReplies={(_entry, replies, expand, disclosure, expanded) => <>{canSummarize ? summary.renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraft(thread, draftThreadInstruction(sources)) : undefined, { disclosure, expanded }) : <>{disclosure}{replies}</>}<ProjectButterThreadEvents events={trailingThreadEvents(entry)} /></>}
+				renderBeforeReply={renderThreadEventsBeforeReply}
 				renderEarlierRepliesLabel={renderProjectButterEarlierRepliesLabel}
 			/>
 		</div>
