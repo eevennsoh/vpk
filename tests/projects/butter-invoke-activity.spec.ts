@@ -46,6 +46,9 @@ test("Claude's PR and fix updates contain the pull request Smart Link", async ({
 	await expect(links).toHaveCount(2, { timeout: 12_000 });
 	await expect(links.first()).toHaveAttribute("href", "#pull-request-284");
 	await links.first().hover();
+	await expect(links.first()).toHaveCSS("text-decoration-line", "none");
+	await expect(links.first().locator("[data-smart-link-text]")).toHaveCSS("text-decoration-line", "underline");
+	await expect(links.first().locator("[data-slot=lozenge]")).toHaveCSS("text-decoration-line", "none");
 	const flyout = page.locator("#smart-link-card-butter-pr-284");
 	await expect(flyout).toBeVisible();
 	await expect(flyout).toContainText("rovo/pay-999-merchant-onboarding");

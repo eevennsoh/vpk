@@ -33,6 +33,39 @@ for (const surface of ["Board", "List", "Work item", "AI suggestions"] as const)
 	});
 }
 
+test("agent search centers the icon empty state and restores results when cleared", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.getByRole("group", { name: "Agents field" }).locator('[data-slot="popover-trigger"]').click();
+	const picker = page.getByRole("dialog", { name: "Add agent" });
+	await picker.getByRole("textbox", { name: "Search agents" }).fill("no matching agent");
+	const empty = picker.locator('[data-slot="empty"]');
+	await expect(empty.getByText("No agents found", { exact: true })).toBeVisible();
+	await expect(empty.getByText("Try a different search term.", { exact: true })).toBeVisible();
+	await expect(empty.locator('[data-slot="empty-icon"][data-variant="icon"]')).toBeVisible();
+	const iconBox = await empty.locator('[data-slot="empty-icon"]').boundingBox();
+	const titleBox = await empty.locator('[data-slot="empty-title"]').boundingBox();
+	if (!iconBox || !titleBox) throw new Error("Expected the empty-state icon and title");
+	expect(titleBox.y - (iconBox.y + iconBox.height)).toBeCloseTo(16, 0);
+	const descriptionBox = await empty.locator('[data-slot="empty-description"]').boundingBox();
+	if (!descriptionBox) throw new Error("Expected the empty-state description");
+	expect(descriptionBox.y - (titleBox.y + titleBox.height)).toBeCloseTo(4, 0);
+	await expect(empty.getByRole("button")).toHaveCount(0);
+	const alignment = await empty.evaluate((element) => {
+		const box = element.getBoundingClientRect();
+		const container = element.parentElement?.getBoundingClientRect();
+		if (!container) throw new Error("Expected an empty-state container");
+		return Math.abs((box.top + box.bottom - container.top - container.bottom) / 2);
+	});
+	expect(alignment).toBeLessThanOrEqual(1);
+	await picker.getByRole("button", { name: "Clear search" }).click();
+	await expect(empty).toHaveCount(0);
+	await expect(picker.getByRole("button", { name: "Jira Coding Agent", exact: true })).toBeVisible();
+});
+
 test("the original Agent Selector preview offers Create agent", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/agent-selector"));
 	const preview = page.locator("#preview");
@@ -138,6 +171,31 @@ test("list agent preview stays beside the selector", async ({ page }) => {
 		if (!menu || !card) return Infinity;
 		return Math.min(Math.abs(card.x - (menu.x + menu.width)), Math.abs(menu.x - (card.x + card.width)));
 	}).toBeLessThanOrEqual(16);
+});
+
+test("the previewed agent row stays highlighted while the pointer is on its lanyard", async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.emulateMedia({ reducedMotion: "reduce" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select Work item", exact: true }).click();
+	await page.getByRole("button", { name: "Close gallery" }).click();
+	await page.getByRole("group", { name: "Agents field" }).locator('[data-slot="popover-trigger"]').click();
+	const picker = page.getByRole("dialog", { name: "Add agent" });
+	const trigger = picker.getByRole("button", { name: "Jira Coding Agent", exact: true });
+	const row = trigger.locator('xpath=ancestor::*[@data-menu-row]');
+	const other = picker.getByRole("button", { name: "Cursor", exact: true }).locator('xpath=ancestor::*[@data-menu-row]');
+	await trigger.hover();
+	const lanyard = page.locator('[data-slot="agent-lanyard"]');
+	await expect(lanyard.getByRole("heading", { name: "Jira Coding Agent" })).toBeVisible();
+	const hoverColor = await row.evaluate((element) => getComputedStyle(element).backgroundColor);
+	const restingColor = await other.evaluate((element) => getComputedStyle(element).backgroundColor);
+	expect(hoverColor).not.toBe(restingColor);
+	await lanyard.hover();
+	await expect.poll(() => row.evaluate((element) => element.matches(":hover"))).toBe(false);
+	await expect.poll(() => row.evaluate((element) => element.matches(":focus-within"))).toBe(false);
+	await expect(row).toHaveCSS("background-color", hoverColor);
+	await other.hover();
+	await expect(row).toHaveCSS("background-color", restingColor);
 });
 
 test("board agent preview follows the hovered and focused row", async ({ page }) => {

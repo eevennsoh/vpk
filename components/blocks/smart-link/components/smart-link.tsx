@@ -158,7 +158,7 @@ function SmartLinkTrigger({
 	// card uses (`item.status`), which keeps the glyph consistent everywhere.
 	const iconTone = statusIconTone(item.variant, item.variant === "goal" ? status : item.status);
 	const triggerClassName = cn(
-		"group/smart-link relative rounded-sm border border-border bg-bg-neutral-subtle py-0 align-middle font-normal text-link no-underline outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+		"group/smart-link relative rounded-sm border border-border bg-bg-neutral-subtle py-0 align-middle font-normal text-link no-underline! outline-none transition-[background-color,border-color,box-shadow] duration-fast ease-out hover:border-border-selected hover:bg-bg-neutral-subtle-hovered focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
 		wrap
 			? cn("box-decoration-clone whitespace-normal [overflow-wrap:anywhere]", onActivate ? "inline-block max-w-full text-start" : "inline", wrappingTriggerSizeClasses[size])
 			: cn("inline-flex min-w-0 shrink-0 items-center self-start overflow-hidden", triggerSizeClasses[size]),
@@ -190,6 +190,7 @@ function SmartLinkTrigger({
 			</span>
 			<span
 				className={cn(
+					"group-hover/smart-link:underline",
 					wrap ? null : "min-w-0 truncate whitespace-nowrap",
 					!wrap && size === "large" ? "[text-box:trim-both_cap_alphabetic]" : null,
 					status || wrap ? null : "grow",

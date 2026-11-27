@@ -180,7 +180,7 @@ test("Claude starts before moving the work item to In progress", async ({ page }
 	await page.clock.fastForward(2_000);
 	await expect(card).toHaveAttribute("data-board-column-title", "In progress");
 	await card.locator('[data-slot="jira-issue-card"]').click();
-	await expect(statusChange).toContainText("changed status from To do to In progress", { timeout: 6_000 });
+	await expect(statusChange).toContainText("changed status from To do → In progress", { timeout: 6_000 });
 	await expect(item.getByRole("button", { name: "Change status, In progress" })).toBeVisible();
 	await item.getByRole("button", { name: "Close Project butter work item" }).click();
 	await page.getByRole("button", { name: "Reset", exact: true }).click();

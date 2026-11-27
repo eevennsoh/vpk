@@ -602,6 +602,13 @@ export const UI_NAVIGATION_VARIANT_DEMOS: Record<string, ComponentType> = {
 			})),
 		{ ssr: false },
 	),
+	"empty-demo-compact-with-icon": dynamic(
+		() =>
+			import("../../demos/ui/empty-demo").then((mod) => ({
+				default: mod.EmptyDemoCompactWithIcon,
+			})),
+		{ ssr: false },
+	),
 	"empty-demo-with-tertiary": dynamic(
 		() =>
 			import("../../demos/ui/empty-demo").then((mod) => ({

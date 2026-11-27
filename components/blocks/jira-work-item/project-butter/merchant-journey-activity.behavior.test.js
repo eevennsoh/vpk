@@ -21,7 +21,7 @@ const mocks = {
 		<button onClick={() => content.setActivityEntries((entries) => entries.map((entry) => entry.id === "authored-comment" ? { ...entry, replies: [...(entry.replies ?? []), { id: "authored-reply", actor: { id: "venn", name: "Venn", kind: "person" }, timestamp: "Just now", body: "Keep my reply" }] } : entry))}>Reply to journey</button>
 		<button onClick={() => content.setActivityEntries((entries) => entries.map((entry) => entry.id === "invocation-journey-session" ? { ...entry, replies: [...(entry.replies ?? []), { id: "claude-thread-reply", actor: { id: "venn", name: "Venn", kind: "person" }, timestamp: "Just now", body: "Keep my thread reply" }] } : entry))}>Reply to Claude</button>
 		<button onClick={() => content.setActivityEntries((entries) => [...entries, { id: "merchant-pr", kind: "comment", actor: { id: "claude", name: "Claude", kind: "agent" }, timestamp: "Just now", body: [{ type: "text", text: "Earlier PR update" }], replies: [{ id: "legacy-reply", actor: { id: "venn", name: "Venn", kind: "person" }, timestamp: "Just now", body: "Keep my old PR reply" }] }])}>Add old PR reply</button>
-		<p data-field="activity">{content.activityEntries.map((entry) => entry.id + ":" + (entry.kind === "comment" ? (entry.headerLabel ?? "") + entry.body.map((part) => part.text).join("") + (entry.replies ?? []).map((reply) => reply.body).join("") : "audit " + entry.actor.name + " " + entry.segments.map((part) => part.text).join(""))).join("|")}</p>
+		<p data-field="activity">{content.activityEntries.map((entry) => entry.id + ":" + (entry.kind === "comment" ? (entry.headerLabel ?? "") + entry.body.map((part) => part.text).join("") + (entry.replies ?? []).map((reply) => reply.body).join("") + (entry.activityEvents ?? []).map((event) => event.id + " " + event.actor.name + " " + event.segments.map((part) => part.text).join("")).join("") : "audit " + entry.actor.name + " " + entry.segments.map((part) => part.text).join(""))).join("|")}</p>
 		<p data-field="suggestion-details">{(content.auditChanges["butter-accepted-suggestions"]?.changes ?? []).map((change) => change.label + ":" + change.after).join("|")}</p>
 		{sessions.map((session) => <button key={session.id} onClick={() => onOpenSession(session.id)}>Open {session.id}</button>)}
 		<div ref={detailsSlotRef} />
@@ -58,6 +58,21 @@ test("adding the generated acknowledgment publishes it and keeps it published", 
 	await view.unmount();
 });
 
+test("Claude's generated progress reply shows the invoking human", async () => {
+	const view = await renderComponent({
+		entry: "components/blocks/jira-work-item/project-butter/project-butter-jira-work-item.tsx",
+		exportName: "ProjectButterJiraWorkItem",
+		props: { ...props, journeyPhase: "pr" },
+		mocks: { ...mocks, "@/components/blocks/jira-work-item/project-butter/project-butter-body": `import { ProjectButterActivity } from "@/components/blocks/jira-work-item/project-butter/project-butter-activity";
+			export function ProjectButterBody({ content, sessions, detailsSlotRef }) { return <><ProjectButterActivity content={content} sessions={sessions} onOpenSession={() => {}} sidePanel={false} /><div ref={detailsSlotRef} /></>; }` },
+	});
+	const replies = document.querySelector('[data-jira-activity-entry-id="invocation-journey-session"] [aria-label="Replies"]');
+	assert.match(replies.textContent, /opened #284/u);
+	const progress = [...replies.querySelectorAll('[data-slot="jira-activity-comment-header"]')].at(-1);
+	assert.equal(progress?.querySelector('[data-slot="human-agent-avatar"]')?.getAttribute("aria-label"), "Claude, used by Venn");
+	await view.unmount();
+});
+
 test("Claude's journey uses the embedded session card and shows its acknowledgment as a reply", async () => {
 	const view = await renderComponent({ source: `import React from "react";
 		import { ThemeWrapper } from "@/components/utils/theme-wrapper";
@@ -82,8 +97,9 @@ test("Claude's journey uses the embedded session card and shows its acknowledgme
 	assert.equal(entries[0].querySelector('[aria-label="Replies"]').textContent.includes("Only visible to you"), true);
 	const statusChange = document.querySelectorAll('[data-jira-activity-entry-id="merchant-status-journey-session"]');
 	assert.equal(statusChange.length, 1);
-	assert.match(statusChange[0].textContent, /Claude\s+changed status from To do to In progress/u);
-	assert.deepEqual([...document.querySelectorAll("[data-jira-activity-entry-id]")].map((entry) => entry.getAttribute("data-jira-activity-entry-id")).filter((id) => id !== "butter-empty-created"), ["merchant-status-journey-session", "invocation-journey-session", "butter-accepted-suggestions"]);
+	assert.match(statusChange[0].textContent, /Claude\s+changed status from To do → In progress/u);
+	assert.equal(entries[0].contains(statusChange[0]), true);
+	assert.deepEqual([...document.querySelectorAll("[data-jira-activity-entry-id]")].map((entry) => entry.getAttribute("data-jira-activity-entry-id")).filter((id) => id !== "butter-empty-created"), ["invocation-journey-session", "merchant-status-journey-session", "butter-accepted-suggestions"]);
 	await view.unmount();
 });
 
@@ -112,7 +128,7 @@ test("direct jumps synthesize a session and rewind removes future progress witho
 test("Claude's status snapshot is shown once from working onward and disappears when rewound", async () => {
 	const view = await renderJourney({ journeyPhase: "working" });
 	assert.equal(field("activity").split("merchant-status-journey-session").length - 1, 1);
-	assert.match(field("activity"), /Claude changed status from To do to In progress/u);
+	assert.match(field("activity"), /Claude changed status from To do → In progress/u);
 	await view.rerender({ ...props, journeyPhase: "pr" });
 	assert.equal(field("activity").split("merchant-status-journey-session").length - 1, 1);
 	await view.rerender({ ...props, journeyPhase: "merged" });

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
 import AddIcon from "@atlaskit/icon/core/add";
 import AiAgentIcon from "@atlaskit/icon/core/ai-agent";
+import SearchIcon from "@atlaskit/icon/core/search";
 import { motion } from "motion/react";
 import type { AgentSelectorAgent } from "./agent-selector";
 import { FavoriteButton } from "./favorite-button";
@@ -17,6 +18,7 @@ import { buildScrollMaskStyle } from "@/components/visual/scroll-mask/lib";
 import { Button } from "@/components/ui/button";
 import { dropdownStyles, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui/icon";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
 
 export interface InlineAgentAction {
@@ -105,6 +107,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 	const recommendsLastUsed = revealRecommendation && Boolean(recommendedAgentId) && recentAgentId === recommendedAgentId && !query;
 	useEffect(() => () => { if (focusFrame.current !== null) cancelAnimationFrame(focusFrame.current); }, []);
 	const { recommendedAgent, recentAgent, favoriteAgents, softwareAgents, otherAgents, shownSoftware } = groupInlineAgents({ agents, softwareAgentIds, favorites, showFavorites, recentAgentId, recommendedAgentId, query, expanded, initialSoftwareLimit });
+	const noResults = !holdingRecommendation && !recommendedAgent && !recentAgent && !favoriteAgents.length && !shownSoftware.length && !otherAgents.length;
 	const row = (agent: AgentSelectorAgent, reveal = false, suffix?: string) => {
 		const favorite = favorites.includes(agent.id);
 		const actions = getActions(agent);
@@ -134,7 +137,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 					</>}
 					{disabled && disabledLabel ? <span className="shrink-0 text-xs text-text-subtlest">{disabledLabel}</span> : null}
 				</button>;
-		return <div key={agent.id} data-menu-row="" className="group/agent rounded-lg hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered">
+		return <div key={agent.id} data-menu-row="" className="group/agent rounded-lg hover:bg-bg-neutral-subtle-hovered focus-within:bg-bg-neutral-subtle-hovered has-[[data-popup-open]]:bg-bg-neutral-subtle-hovered">
 			<div className="flex items-center gap-1 py-1.5 pl-2 pr-1.5">
 				{renderAgentTrigger?.(agent, trigger) ?? trigger}
 				{renderAgentAction?.(agent)}
@@ -172,7 +175,7 @@ export function InlineAgentSelector({ agents, softwareAgentIds, getActions, rend
 	}}>Show more</button> : null}</section> : null;
 	return <div ref={root} data-overlay-surface={compact ? undefined : ""} className={cn("menu-row-spacing flex w-80 max-w-full flex-col overflow-hidden rounded-lg bg-popover text-popover-foreground", dropdownStyles.padding, compact ? "h-auto" : cn("h-[26rem] max-h-[var(--available-height,26rem)]", dropdownStyles.surface), className)}>
 		{showSearch ? <div className="-mx-(--menu-inset) -mt-(--menu-inset) shrink-0 overflow-hidden rounded-t-lg"><RichTextCommandMenuSearchField label="Search agents" value={query} onValueChange={setQuery} onClear={() => setQuery("")} /></div> : null}
-		<div ref={listRef} className="-mx-(--menu-inset) min-h-0 flex-1 overflow-y-auto overscroll-contain px-(--menu-inset)" style={listMaskStyle}>{recommendsLastUsed && recommendedAgent ? <><RecommendingAgentRow done={!recommendationPending} doneLabel="Recommendation done" onDone={() => setSettling(false)} />{row(recommendedAgent, false, recommendationPending || settling ? "(Last used)" : "(Recommended)")}</> : holdingRecommendation ? <RecommendingAgentRow done={!recommendationPending} onDone={() => setSettling(false)} /> : recommendedAgent ? row(recommendedAgent, revealRecommendation) : null}{section("Favorites", favoriteAgents)}{section(softwareHeading, recentAgent ? [recentAgent, ...shownSoftware] : shownSoftware, !recentAgent, Boolean(recentAgent))}{section("Other agents", otherAgents)}{!holdingRecommendation && !recommendedAgent && !recentAgent && !favoriteAgents.length && !shownSoftware.length && !otherAgents.length ? <p className="p-4 text-sm text-text-subtle">No agents found</p> : null}</div>
+		<div ref={listRef} className={cn("-mx-(--menu-inset) min-h-0 flex-1 overflow-y-auto overscroll-contain px-(--menu-inset)", noResults && "flex items-center justify-center")} style={listMaskStyle}>{recommendsLastUsed && recommendedAgent ? <><RecommendingAgentRow done={!recommendationPending} doneLabel="Recommendation done" onDone={() => setSettling(false)} />{row(recommendedAgent, false, recommendationPending || settling ? "(Last used)" : "(Recommended)")}</> : holdingRecommendation ? <RecommendingAgentRow done={!recommendationPending} onDone={() => setSettling(false)} /> : recommendedAgent ? row(recommendedAgent, revealRecommendation) : null}{section("Favorites", favoriteAgents)}{section(softwareHeading, recentAgent ? [recentAgent, ...shownSoftware] : shownSoftware, !recentAgent, Boolean(recentAgent))}{section("Other agents", otherAgents)}{noResults ? <Empty width="narrow"><EmptyHeader><EmptyMedia variant="icon"><SearchIcon label="" /></EmptyMedia><EmptyTitle headingSize="xsmall">No agents found</EmptyTitle><EmptyDescription>Try a different search term.</EmptyDescription></EmptyHeader></Empty> : null}</div>
 		{onBrowseAgents || onCreateAgent ? <div className="-mx-(--menu-inset) shrink-0 px-(--menu-inset)"><DropdownMenuSeparator className="mt-0" />{onBrowseAgents ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 border-0 px-2 text-sm font-normal text-text-subtle" onClick={onBrowseAgents}><Icon aria-hidden className="size-6" render={<AiAgentIcon label="" />} />Browse agents</Button> : null}{onCreateAgent ? <Button type="button" variant="ghost" className="h-8 w-full justify-start gap-3 border-0 px-2 text-sm font-normal text-text-subtle" onClick={onCreateAgent}><Icon aria-hidden className="size-6" render={<AddIcon label="" />} />Create agent</Button> : null}</div> : null}
 		<p role="status" className="sr-only">{status}</p>
 	</div>;

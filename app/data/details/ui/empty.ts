@@ -96,6 +96,11 @@ export const EMPTY_DETAIL: ComponentDetail = {
         demoSlug: "empty-demo-compact",
       },
       {
+        title: "Compact heading with icon",
+        description: "Compact search empty state with icon media and no action.",
+        demoSlug: "empty-demo-compact-with-icon",
+      },
+      {
         title: "With tertiary action",
         description: "Empty state with a link-style tertiary action.",
         demoSlug: "empty-demo-with-tertiary",

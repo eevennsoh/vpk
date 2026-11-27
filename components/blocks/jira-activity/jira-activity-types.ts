@@ -235,6 +235,8 @@ export interface JiraActivityCommentEntry extends JiraActivityEntryBase {
 	/** Optional generated image evidence attached to the comment. */
 	imageAttachment?: JiraActivityImageAttachment;
 	replies?: readonly JiraActivityReply[];
+	/** Activity events that belong to this comment's thread. */
+	activityEvents?: readonly JiraActivityEventEntry[];
 	/**
 	 * Initial expand state for replies. Top-level comments default to expanded;
 	 * comments with a `parentId` default to collapsed so only one nested level is visible.

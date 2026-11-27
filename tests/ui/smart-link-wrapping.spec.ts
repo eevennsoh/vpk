@@ -1,6 +1,16 @@
 import { expect, test } from "@playwright/test";
 import { appUrl } from "@/tests/helpers/origin";
 
+test("hover underlines the Smart Link title without underlining its status", async ({ page }) => {
+	await page.goto(appUrl("/components/blocks/smart-link"));
+	const link = page.getByText("Large · 16px", { exact: true }).first().locator("..").getByRole("link");
+	await link.evaluate((element) => element.parentElement?.classList.add("typeset-chat"));
+	await link.hover();
+	await expect(link).toHaveCSS("text-decoration-line", "none");
+	await expect(link.locator("[data-smart-link-text]")).toHaveCSS("text-decoration-line", "underline");
+	await expect(link.locator("[data-slot=lozenge]")).toHaveCSS("text-decoration-line", "none");
+});
+
 test("wrapped Smart Links keep their lines close and icons aligned at each size", async ({ page }) => {
 	await page.goto(appUrl("/components/blocks/smart-link"));
 	await page.evaluate(() => document.fonts.ready);

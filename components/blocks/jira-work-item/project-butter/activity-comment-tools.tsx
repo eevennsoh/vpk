@@ -26,13 +26,12 @@ function commentLink(id: string) {
 export function ProjectButterTimestamp({
 	item,
 }: Readonly<{ item: JiraActivityEntry | JiraActivityReply }>) {
-	const [full, setFull] = useState(false);
 	const [tooltipOpen, setTooltipOpen] = useState(false);
 	const tooltipId = useId();
-	const parsed = item.createdAtMs ?? Date.parse(item.timestamp.replace(" at ", " "));
+	const parsedLabel = Date.parse(item.timestamp.replace(" at ", " "));
+	const parsed = Number.isFinite(parsedLabel) ? parsedLabel : item.createdAtMs ?? Number.NaN;
 	const hasExactTime = Number.isFinite(parsed);
-	const showFullTime = full && hasExactTime;
-	const formatted = showFullTime
+	const formatted = hasExactTime
 		? new Intl.DateTimeFormat("en-US", {
 				dateStyle: "medium",
 				timeStyle: "short",
@@ -42,24 +41,16 @@ export function ProjectButterTimestamp({
 	if (!item.timestamp) return null;
 	const relativeLabel = describeRelativeTimeLabel(item.timestamp, parsed)
 		?? (hasExactTime ? <RelativeTime format="long" timestampMs={parsed} /> : item.timestamp);
-	const visibleTimestamp = formatted ?? toCompactRelativeTimeLabel(item.timestamp);
-	const showTooltip = tooltipOpen && !showFullTime;
+	const visibleTimestamp = Number.isFinite(parsedLabel)
+		? <RelativeTime format="compact" timestampMs={parsed} />
+		: <time dateTime={hasExactTime ? new Date(parsed).toISOString() : undefined}>{toCompactRelativeTimeLabel(item.timestamp)}</time>;
 	const triggerClassName = "whitespace-nowrap rounded-sm underline-offset-2 outline-none hover:text-text hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring";
 	return (
-		<Tooltip disabled={showFullTime} onOpenChange={setTooltipOpen} open={showTooltip}>
-			<TooltipTrigger
-				render={hasExactTime ? <button
-					aria-describedby={showTooltip ? tooltipId : undefined}
-					aria-label={`${formatted ?? item.timestamp}. Show ${showFullTime ? "relative" : "full"} timestamp`}
-					aria-pressed={showFullTime}
-					className={triggerClassName}
-					onClick={() => setFull((value) => !value)}
-					type="button"
-				/> : <span className={triggerClassName} tabIndex={0} />}
-			>
-				<time dateTime={hasExactTime ? new Date(parsed).toISOString() : undefined}>{visibleTimestamp}</time>
+		<Tooltip onOpenChange={setTooltipOpen} open={tooltipOpen}>
+			<TooltipTrigger render={<span aria-describedby={tooltipOpen ? tooltipId : undefined} className={triggerClassName} tabIndex={0} />}>
+				{visibleTimestamp}
 			</TooltipTrigger>
-			<TooltipContent id={tooltipId} positionerClassName="z-[650]" role="tooltip" side="bottom">{relativeLabel}</TooltipContent>
+			<TooltipContent id={tooltipId} positionerClassName="z-[650]" role="tooltip" side="bottom">Last run {relativeLabel}{formatted ? <> · {formatted}</> : null}</TooltipContent>
 		</Tooltip>
 	);
 }

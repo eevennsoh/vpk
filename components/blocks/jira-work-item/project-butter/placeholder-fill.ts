@@ -2,7 +2,6 @@ import type { WorkItemPerson } from "@/app/contexts/context-work-item-modal";
 import type { JiraActivityActor, JiraActivityCommentEntry } from "@/components/blocks/jira-activity/jira-activity-types";
 import type { ProjectButterAttachment } from "@/components/blocks/jira-work-item/project-butter/attachment-data";
 import { splitFileName } from "@/components/blocks/jira-work-item/project-butter/attachment-model";
-import { PROJECT_BUTTER_SESSION_EPOCH } from "@/components/blocks/jira-work-item/project-butter/data";
 import type { ProjectButterDetailFields } from "@/components/blocks/jira-work-item/project-butter/details-model";
 import { projectButterPersonAvatar } from "@/components/blocks/jira-work-item/project-butter/people";
 import type { ProjectButterRelatedItem, ProjectButterRelatedStatus } from "@/components/blocks/jira-work-item/project-butter/related-model";
@@ -119,13 +118,14 @@ export function projectButterPlaceholderRelated(placeholder: ProjectButterWorkIt
 }
 
 export function projectButterPlaceholderComments(placeholder: ProjectButterWorkItemPlaceholder): JiraActivityCommentEntry[] {
+	const now = Date.now();
 	return placeholder.comments.map((comment) => {
-		const createdAtMs = PROJECT_BUTTER_SESSION_EPOCH - comment.ageMs;
+		const createdAtMs = now - comment.ageMs;
 		return {
 			id: comment.id,
 			kind: "comment",
 			actor: personActor(comment.author),
-			timestamp: comment.timestamp,
+			timestamp: new Date(createdAtMs).toISOString(),
 			createdAtMs,
 			body: [{ type: "text", text: comment.markdown }],
 			defaultRepliesExpanded: false,
@@ -133,7 +133,7 @@ export function projectButterPlaceholderComments(placeholder: ProjectButterWorkI
 			replies: comment.replies?.map((reply, index) => ({
 				id: reply.id,
 				actor: personActor(reply.author),
-				timestamp: comment.timestamp,
+				timestamp: new Date(createdAtMs + (index + 1) * 60_000).toISOString(),
 				createdAtMs: createdAtMs + (index + 1) * 60_000,
 				body: reply.markdown,
 			})),

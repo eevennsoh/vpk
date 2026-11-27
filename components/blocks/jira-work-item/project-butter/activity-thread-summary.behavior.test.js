@@ -38,6 +38,26 @@ test("activity filter stays available while buttons switch views", async () => {
 	assert.equal(view.getByRole("button", { name: "Filter activity" }) === filter, true);
 });
 
+test("the header stack appears only when replies are hidden", async () => {
+	const view = await renderComponent({
+		source: `import React, { useState } from "react";
+			import { useWorkItemThreadSummaries } from "@/components/blocks/jira-work-item/project-butter/activity-thread-summary";
+			const reply = { id: "reply", actor: { id: "maya", name: "Maya", kind: "person" }, body: "Reply", timestamp: "now" };
+			const entry = { id: "thread", kind: "comment", actor: { id: "jordan", name: "Jordan", kind: "person" }, body: [], timestamp: "now", replies: [reply] };
+			export default function Example() {
+				const [preview, setPreview] = useState(1);
+				const summary = useWorkItemThreadSummaries()({ ...entry, replyPreviewCount: preview });
+				return <>{summary.renderAvatar(entry, <span>Jordan</span>)}<button onClick={() => setPreview(0)}>Collapse</button><button onClick={() => summary.setRepliesExpanded(true)}>Expand</button></>;
+			}`,
+	});
+	const stack = () => document.querySelector("[data-summary-avatar-stack]");
+	assert.equal(stack().getAttribute("aria-hidden"), "true");
+	await view.click(view.getByRole("button", { name: "Collapse" }));
+	assert.equal(stack().getAttribute("aria-label"), "Thread participants: Jordan, Maya");
+	await view.click(view.getByRole("button", { name: "Expand" }));
+	assert.equal(stack().getAttribute("aria-hidden"), "true");
+});
+
 test("reply actions select a target without staying pressed in either activity view", async () => {
 	const view = await renderWorkItem();
 	const feed = document.querySelector("[data-project-butter-activity-feed]");

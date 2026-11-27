@@ -80,6 +80,7 @@ const HARNESS = `import React from "react";
 			<p data-field="attachment">{content.attachments.map(attachmentDisplayName).join("|")}</p>
 			<p data-field="attachment-preview">{content.attachments.map((item) => item.previewSrc ?? "").join("|")}</p>
 			<p data-field="comment">{comments.map(commentText).join(" ")}</p>
+			{comments.map((entry) => <time key={entry.id} data-comment-id={entry.id} data-created-at={entry.createdAtMs} dateTime={entry.timestamp} />)}
 			<p data-field="reply">{replies.map((reply) => reply.body).join(" ")}</p>
 			<p data-field="session">{content.activityEntries.filter((entry) => String(entry.id).startsWith("invocation-")).map((entry) => entry.id).join(",")}</p>
 			<p data-field="parent">{content.detailFields.parent}</p>
@@ -193,6 +194,17 @@ test("opened PAY-118 fills description, child, attachment, comment, and detail f
 	assert.equal(field("asset"), "");
 	assert.equal(field("due"), "");
 	assert.equal(field("summary"), "Carry card artwork into the next wallet epic");
+});
+
+test("placeholder activity dates stay recent and agree with their timestamps", async () => {
+	const before = Date.now();
+	const view = await renderHarness({ code: "PAY-118" });
+	const comment = view.container.querySelector('[data-comment-id="pay-118-adapter-fields"]');
+	const createdAt = Number(comment?.getAttribute("data-created-at"));
+	assert.ok(createdAt >= before - 14_400_000);
+	assert.ok(createdAt <= Date.now() - 14_400_000);
+	assert.equal(Date.parse(comment?.getAttribute("datetime")), createdAt);
+	await view.unmount();
 });
 
 test("placeholder fill keeps the card due date, reporter, labels, and description when the card already has them", async () => {

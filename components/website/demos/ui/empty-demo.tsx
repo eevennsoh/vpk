@@ -186,6 +186,20 @@ export function EmptyDemoCompact() {
 	)
 }
 
+export function EmptyDemoCompactWithIcon() {
+	return (
+		<Empty width="narrow">
+			<EmptyHeader>
+				<EmptyMedia variant="icon">
+					<SearchIcon label="" />
+				</EmptyMedia>
+				<EmptyTitle headingSize="xsmall">No results</EmptyTitle>
+				<EmptyDescription>Try a different search term.</EmptyDescription>
+			</EmptyHeader>
+		</Empty>
+	)
+}
+
 export function EmptyDemoWithTertiary() {
 	return (
 		<Empty>

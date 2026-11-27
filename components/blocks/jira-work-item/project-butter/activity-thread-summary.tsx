@@ -192,11 +192,12 @@ export function useWorkItemThreadSummaries(auto?: AutoSummary) {
 		}
 	}
 
-	return function summaryFor(entry: JiraActivityCommentEntry | undefined, visible = true) {
+	return function summaryFor(entry: JiraActivityCommentEntry | undefined, visible = true, previewCount = entry?.replyPreviewCount ?? 0) {
 		const entryId = entry?.id ?? "";
 		const run = runs.get(entryId);
 		const sources = run?.showing && (auto || run.sources === entry?.replies) ? run.sources : null;
-		const showAvatarStack = Boolean(entry?.replies?.length) && !expandedReplies.has(entryId);
+		const hiddenReplyCount = (entry?.replies?.length ?? 0) - (sources ? 0 : Math.max(0, Math.floor(previewCount)));
+		const showAvatarStack = hiddenReplyCount > 0 && !expandedReplies.has(entryId);
 		const participants = entry ? threadParticipants(entry) : [];
 		const avatarWidth = AVATAR_SIZE + Math.max(0, Math.min(participants.length, 4) - 1) * AVATAR_STEP;
 		const summaryId = `${idPrefix}-${encodeURIComponent(entryId)}`;

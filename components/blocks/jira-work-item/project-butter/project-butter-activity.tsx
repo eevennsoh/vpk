@@ -40,7 +40,7 @@ import {
 	ProjectButterTimestamp,
 } from "@/components/blocks/jira-work-item/project-butter/activity-comment-tools";
 import { ProjectButterActivityFilterMenu } from "@/components/blocks/jira-work-item/project-butter/activity-filter-menu";
-import { ProjectButterSessionStart } from "@/components/blocks/jira-work-item/project-butter/activity-session-start";
+import { ProjectButterSessionStart, ProjectButterThreadEvents } from "@/components/blocks/jira-work-item/project-butter/activity-session-start";
 import { AgentReplyProgress, ProjectButterAgentReplyAction } from "@/components/blocks/jira-work-item/project-butter/activity-agent-reply";
 import { JiraWorkItemTimeline, useJiraWorkItemTimelineNavigation } from "@/components/blocks/jira-work-item-timeline";
 import { activityDateLabel, activityDayLabel, activityHeaderTimeLabel } from "@/components/blocks/jira-work-item/project-butter/activity-data";
@@ -303,17 +303,17 @@ export function ProjectButterActivity({
 					renderCommentAction={(entry) => <><ProjectButterPinComment onToggle={() => toggleTimelinePin(entry.id)} pinned={content.pinnedCommentIds.includes(entry.id)} /><ProjectButterCopyCommentLink id={entry.id} /></>}
 					renderCommentBody={(entry) => {
 						const session = sessionFor(entry.id);
-						if (session) return <ProjectButterSessionStart onOpen={onOpenSession} session={session} />;
+						if (session) return <><ProjectButterSessionStart hasReplies={Boolean(entry.replies?.length)} onOpen={onOpenSession} session={session} />{!entry.replies?.length ? <ProjectButterThreadEvents events={entry.activityEvents} /> : null}</>;
 						return entry.body.every((segment) => segment.type === "text") ? <ProjectButterReferenceCommentBody agents={activityMentionAgents} markdown={jiraActivitySegmentsToPlainText(entry.body)} pullRequestStatus={entry.id === "merchant-merged" ? pullRequestStatus : undefined} /> : undefined;
 					}}
 					renderCommentAvatar={(entry, avatar) => canSummarize(entry) ? summaryFor(entry).renderAvatar(entry, avatar) : avatar}
 					onRepliesExpandedChange={(entry, expanded) => { if (canSummarize(entry)) summaryFor(entry).setRepliesExpanded(expanded); }}
 					renderCommentTools={(entry, reply, collapseReplies) => <><ProjectButterCommentTools content={content} entry={entry} reply={reply} />{reply || !canSummarize(entry) ? null : summaryFor(entry).renderAction(entry.replies ?? [], collapseReplies)}</>}
 					renderCommentReplies={(entry, replies, expand, disclosure, expanded) => {
-						if (!canSummarize(entry)) return <>{disclosure}{replies}</>;
+						if (!canSummarize(entry)) return <>{disclosure}{replies}<ProjectButterThreadEvents events={entry.activityEvents} /></>;
 						const session = sessionFor(entry.id);
 						const canDraft = session && onDraftSessionInstruction && matchingAgentSessions({ id: session.agent.id ?? session.id, name: session.agent.name }, [session], { includeCompleted: true }).length > 0;
-						return summaryFor(entry).renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraftSessionInstruction({ entry, session }, draftThreadInstruction(sources)) : undefined, { disclosure, expanded });
+						return <>{summaryFor(entry).renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraftSessionInstruction({ entry, session }, draftThreadInstruction(sources)) : undefined, { disclosure, expanded })}<ProjectButterThreadEvents events={entry.activityEvents} /></>;
 					}}
 					renderEarlierRepliesLabel={renderProjectButterEarlierRepliesLabel}
 					replyCollapseKey={(entry) => latestReplyEntryIds?.has(entry.id) ? `reply:${latestVisibleActivityReply(entry, showAgentReplyProgress)?.id}` : content.pinnedCommentIds.includes(entry.id) ? `pinned:${entry.id}` : undefined}

@@ -12,7 +12,7 @@ import { AvatarGroup } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import { motionDuration, motionEase } from "@/lib/motion";
-import { ProjectButterSessionStart } from "./activity-session-start";
+import { ProjectButterSessionStart, ProjectButterThreadEvents } from "./activity-session-start";
 import { ProjectButterPinComment } from "./activity-comment-tools";
 import { latestVisibleActivityReply, pinProjectButterComments, projectButterReplyParticipants } from "./activity-feed-model";
 import { draftThreadInstruction, SESSION_THREAD_RAIL, summarizeReplies, SUMMARIZED_THREAD, SUMMARY_TRANSITION, useWorkItemThreadSummaries } from "./activity-thread-summary";
@@ -88,7 +88,7 @@ function SessionThreadCard({ thread, summary, onDraft, onOpenSession, onTogglePi
 				earlierRepliesAppearance="link"
 				earlierRepliesSelectedAppearance="icon-only"
 				showEarlierRepliesIcon={false}
-				renderCommentBody={() => <ProjectButterSessionStart onOpen={onOpenSession} session={session} />}
+				renderCommentBody={() => <><ProjectButterSessionStart hasReplies={Boolean(entry.replies?.length)} onOpen={onOpenSession} session={session} />{!entry.replies?.length ? <ProjectButterThreadEvents events={entry.activityEvents} /> : null}</>}
 				renderCommentAvatar={canSummarize ? summary.renderAvatar : undefined}
 				renderCommentTools={(entry, reply, collapseReplies) => (
 					<>
@@ -96,7 +96,7 @@ function SessionThreadCard({ thread, summary, onDraft, onOpenSession, onTogglePi
 						{reply || !canSummarize ? null : summary.renderAction(entry.replies ?? [], collapseReplies)}
 					</>
 				)}
-				renderCommentReplies={(_entry, replies, expand, disclosure, expanded) => canSummarize ? summary.renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraft(thread, draftThreadInstruction(sources)) : undefined, { disclosure, expanded }) : <>{disclosure}{replies}</>}
+				renderCommentReplies={(_entry, replies, expand, disclosure, expanded) => <>{canSummarize ? summary.renderReplies(replies, expand, summarizeReplies(entry.replies ?? []), canDraft ? (sources) => onDraft(thread, draftThreadInstruction(sources)) : undefined, { disclosure, expanded }) : <>{disclosure}{replies}</>}<ProjectButterThreadEvents events={entry.activityEvents} /></>}
 				renderEarlierRepliesLabel={renderProjectButterEarlierRepliesLabel}
 			/>
 		</div>
@@ -126,6 +126,11 @@ export function ProjectButterActivitySessionThreads({ entries, sessions, pinnedI
 	const mine = unpinned.filter(({ session }) => getAgentSessionRole(session) === "owner");
 	const teammates = unpinned.filter(({ session }) => getAgentSessionRole(session) !== "owner");
 	const teammatesSessions = teammates.map(({ session }) => session);
+	function sessionSummary(thread: SessionThread, visible = true) {
+		const previewLatest = props.latestReplyEntryIds?.has(thread.entry.id) && !pinnedIds.includes(thread.entry.id);
+		const previewCount = previewLatest ? (latestVisibleActivityReply(thread.entry, props.showAgentReplyProgress ?? false)?.actor.kind === "agent" ? 2 : 1) : 0;
+		return summaryFor(thread.entry, visible, previewCount);
+	}
 	function togglePin(entryId: string) {
 		if (pinnedIds.includes(entryId) && pinned.some(({ entry, session }) => entry.id === entryId && getAgentSessionRole(session) !== "owner")) setExpanded(true);
 		onTogglePin(entryId);
@@ -139,7 +144,7 @@ export function ProjectButterActivitySessionThreads({ entries, sessions, pinnedI
 		<div className="grid gap-3" ref={listRef}>
 			{[...pinned, ...mine].map((thread, index) => <Fragment key={thread.entry.id}>
 				<motion.div data-pin-motion-row layout={reduceMotion ? false : "position"} layoutId={reduceMotion ? undefined : thread.entry.id} layoutDependency={pinLayoutKey} transition={{ layout: { duration: motionDuration.slow, ease: motionEase.inOut } }}>
-					<SessionThreadCard thread={thread} summary={summaryFor(thread.entry)} pinned={pinnedIds.includes(thread.entry.id)} onTogglePin={togglePin} {...props} />
+					<SessionThreadCard thread={thread} summary={sessionSummary(thread)} pinned={pinnedIds.includes(thread.entry.id)} onTogglePin={togglePin} {...props} />
 				</motion.div>
 				{index === pinned.length - 1 && (mine.length > 0 || teammates.length > 0) ? <JiraActivityGroupSeparator className="relative my-5" label={`${pinned.length} pinned`} /> : null}
 			</Fragment>)}
@@ -158,7 +163,7 @@ export function ProjectButterActivitySessionThreads({ entries, sessions, pinnedI
 						<Icon className={expanded ? "rotate-90" : undefined} render={<ChevronRightIcon label="" size="small" />} />
 					</Button>
 					<div className={expanded ? "grid gap-3 pt-3" : undefined} hidden={!expanded} id={id}>
-						{teammates.map((thread) => <motion.div data-pin-motion-row key={thread.entry.id} layout={reduceMotion ? false : "position"} layoutId={reduceMotion ? undefined : thread.entry.id} layoutDependency={pinLayoutKey} transition={{ layout: { duration: motionDuration.slow, ease: motionEase.inOut } }}><SessionThreadCard thread={thread} summary={summaryFor(thread.entry, expanded)} pinned={false} onTogglePin={togglePin} {...props} /></motion.div>)}
+						{teammates.map((thread) => <motion.div data-pin-motion-row key={thread.entry.id} layout={reduceMotion ? false : "position"} layoutId={reduceMotion ? undefined : thread.entry.id} layoutDependency={pinLayoutKey} transition={{ layout: { duration: motionDuration.slow, ease: motionEase.inOut } }}><SessionThreadCard thread={thread} summary={sessionSummary(thread, expanded)} pinned={false} onTogglePin={togglePin} {...props} /></motion.div>)}
 					</div>
 				</div>
 			) : null}

@@ -355,7 +355,7 @@ const reactionSummaries = reactions.map((reaction) => ({
 				agentName={reply.actor.name}
 				className="rounded-none"
 				activityGroup="activity-reply"
-				headerAvatar={(reply.actor.kind === "agent" || reply.actor.kind === "person") && actorAvatarSize === 24 ? <span className="flex size-8 shrink-0 items-center justify-center"><ActivityActorAvatar actor={reply.actor} attributedBy={attributedBy} sizePx={24} /></span> : <ActivityActorAvatar actor={reply.actor} attributedBy={attributedBy} />}
+				headerAvatar={<ActivityActorAvatar actor={reply.actor} attributedBy={attributedBy} sizePx={(reply.actor.kind === "agent" || reply.actor.kind === "person") && actorAvatarSize === 24 ? 24 : undefined} />}
 				headerConnector={threaded ? <ThreadConnector centered continued={false} /> : undefined}
 				headerLayout={headerLayout}
 				item={reply.sessionItem}

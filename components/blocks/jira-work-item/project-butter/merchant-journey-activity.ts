@@ -121,24 +121,22 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 		const original = content.activityEntries.find((entry) => entry.id === `invocation-${projectedSession.id}`);
 		const initialThread = projectButterSessionInvocation(projectedSession);
 		const thread = original?.kind === "comment" ? original : initialThread;
-		if (projectedSession.agent.name === "Claude" && phase !== "starting") {
-			entries.push({
+		const statusEvent: JiraActivityEntry | undefined = projectedSession.agent.name === "Claude" && phase !== "starting" ? {
 				id: `merchant-status-${projectedSession.id}`,
 				kind: "event",
 				actor: { id: "merchant-claude", name: "Claude", kind: "agent", appearance: "coding", avatarSrc: projectedSession.agent.avatarSrc, brandName: projectedSession.agent.brandName },
 				timestamp: "Just now",
 				createdAtMs: invokedAtMs + MERCHANT_PROGRESS_DELAY_MS,
 				icon: "status",
-				segments: [{ type: "text", text: "changed status from To do to In progress" }],
-			});
-		}
+				segments: [{ type: "text", text: "changed status from To do → In progress" }],
+			} : undefined;
 		if (projectedSession.agent.name === "Claude") {
 			const id = `merchant-started-${projectedSession.id}`;
 			const previous = content.activityEntries.find((entry) => entry.id === id);
-			const updates = phase && phase !== "invoke" && phase !== "starting" && phase !== "working" ? merchantJourneyActivity(phase, invokedAtMs).filter((update) => update.id !== "merchant-merged") : [];
+			const updates = phase && phase !== "invoke" && phase !== "starting" && phase !== "working" ? merchantJourneyActivity(phase, invokedAtMs).filter((update) => update.id !== "merchant-merged").map((update) => ({ ...update, actor: thread.actor })) : [];
 			const visibleUpdates = new Set(updates.map((reply) => reply.id));
 			const acknowledgment = thread.replies?.find((reply) => reply.id === id);
-			const replies = [...(thread.replies ?? []), ...(previous?.kind === "comment" ? previous.replies ?? [] : [])].filter((reply) => reply.id !== id && reply.id !== `response-${projectedSession.id}` && (!GENERATED_IDS.has(reply.id) || visibleUpdates.has(reply.id)));
+			const replies = [...(thread.replies ?? []), ...(previous?.kind === "comment" ? previous.replies ?? [] : [])].filter((reply) => reply.id !== id && reply.id !== `response-${projectedSession.id}` && (!GENERATED_IDS.has(reply.id) || visibleUpdates.has(reply.id))).map((reply) => visibleUpdates.has(reply.id) ? { ...reply, actor: thread.actor } : reply);
 			const existingReplies = new Set(replies.map((reply) => reply.id));
 			if (showAcknowledgment) replies.unshift(acknowledgment ?? { id, actor: thread.actor, timestamp: "Just now", createdAtMs: invokedAtMs + MERCHANT_ACKNOWLEDGMENT_DELAY_MS, body: "I'm looking into this issue now. I'll report back here with updates as I make progress.", ...(getAgentSessionRole(projectedSession) === "owner" ? { visibility: "private" as const } : {}) });
 			for (const update of updates) {
@@ -148,7 +146,7 @@ export function projectMerchantJourney({ content, sessions, phase, session, auto
 					if (!existingReplies.has(reply.id)) { replies.push(reply); existingReplies.add(reply.id); }
 				}
 			}
-			entries.push({ ...thread, headerLabel: !projectedSession.prompt && (session?.selfAssignedOnStart ?? Boolean(shouldAssign)) ? `${thread.headerLabel} and self-assigned the issue` : thread.headerLabel, replies });
+			entries.push({ ...thread, headerLabel: !projectedSession.prompt && (session?.selfAssignedOnStart ?? Boolean(shouldAssign)) ? `${thread.headerLabel} and self-assigned the issue` : thread.headerLabel, replies, activityEvents: statusEvent?.kind === "event" ? [statusEvent] : [] });
 		} else entries.push(thread);
 		if (projectedSession.agent.name === "Claude" && phase === "merged") {
 			const original = content.activityEntries.find((entry) => entry.id === "merchant-merged");

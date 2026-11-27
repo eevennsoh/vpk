@@ -59,7 +59,7 @@ function Empty({
 					emptyVariants({ orientation: resolvedOrientation }),
 					widthClass,
 					"mx-auto py-12",
-					isHorizontal ? "w-full py-8" : "gap-6",
+					isHorizontal ? "w-full py-8" : "gap-4",
 					className
 				)}
 				{...props}
@@ -74,7 +74,7 @@ function EmptyHeader({ className, ...props }: React.ComponentProps<"div">) {
 		<div
 			data-slot="empty-header"
 			className={cn(
-				"flex flex-col items-center gap-2",
+				"flex flex-col items-center gap-2 [&>[data-heading-size=xsmall]+[data-slot=empty-description]]:-mt-1",
 				// Take the remaining row width so the actions sit on the far edge;
 				// recenters on very narrow containers where the layout stacks.
 				orientation === "horizontal" &&
@@ -119,7 +119,7 @@ const emptyMediaVariants = cva(
 			variant: {
 				default:
 					"bg-transparent [&_img]:max-h-40 [&_img]:max-w-40 [&_img]:object-contain",
-				icon: "bg-bg-neutral text-text flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg:not([class*='size-'])]:size-5",
+				icon: "mb-2 bg-bg-neutral text-text flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg:not([class*='size-'])]:size-5",
 			},
 		},
 		defaultVariants: {
@@ -166,6 +166,7 @@ function EmptyTitle({
 	return (
 		<Component
 			data-slot="empty-title"
+			data-heading-size={headingSize}
 			className={cn(emptyTitleVariants({ headingSize }), className)}
 			style={
 				headingSize === "medium"
