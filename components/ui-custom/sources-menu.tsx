@@ -319,7 +319,7 @@ export function SourcesMenu({
 						<>
 							<Icon aria-hidden className="size-3 [&_svg]:size-3!" render={<TeamworkGraphIcon label="" size="small" />} />
 							<span>Context</span>
-							<TWGAppstack animated={false} aria-hidden iconSize="xxsmall" sources={simpleSources ? [...new Map(simpleSources.flatMap((item) => item.source ? [[item.source.id, item.source] as const] : [])).values()] : getSourcePreviewApps(pages)} />
+							<TWGAppstack animated={false} aria-hidden iconSize="xxsmall" sources={getSourcePreviewApps(simpleSources ?? pages)} />
 						</>
 					)}
 				</PopoverTrigger>

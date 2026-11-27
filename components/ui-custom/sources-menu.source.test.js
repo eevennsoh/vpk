@@ -63,6 +63,9 @@ test("app stack represents distinct source apps", async () => {
 	assert.deepEqual(getSourcePreviewApps(SOURCE_PREVIEW_PAGES).map((app) => app.id), ["confluence"]);
 	const slack = { ...SOURCE_PREVIEW_PAGES[0], href: "https://atlassian.slack.com/archives/example" };
 	assert.deepEqual(getSourcePreviewApps([...SOURCE_PREVIEW_PAGES, slack, slack]).map((app) => app.id), ["confluence", "slack"]);
+	const history = { href: "", source: { id: "history", label: "Work history", provider: "jira", icon: "clock", iconSize: "small" } };
+	const jira = { href: "", source: { id: "jira", label: "Jira", provider: "jira" } };
+	assert.deepEqual(getSourcePreviewApps([jira, history]), [{ id: "jira", label: "Work history", provider: "jira", name: undefined }]);
 });
 
 test("preview-menu product mapping follows href host and path", async () => {

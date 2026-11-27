@@ -102,7 +102,7 @@ export function getSourcePreviewProduct(href: string): SourcePreviewProduct {
 	return "other";
 }
 
-export function getSourcePreviewApps(pages: readonly SourcePreviewPage[]): TwgToolSource[] {
+export function getSourcePreviewApps(pages: readonly Pick<SourcePreviewPage, "href" | "source">[]): TwgToolSource[] {
 	const apps = new Map<string, TwgToolSource>();
 	for (const page of pages) {
 		const product = getSourcePreviewProduct(page.href);
@@ -115,7 +115,7 @@ export function getSourcePreviewApps(pages: readonly SourcePreviewPage[]): TwgTo
 		);
 		if (source) {
 			const key = source.name ?? (source.provider === "twg" ? source.id : source.provider);
-			apps.set(key, source);
+			apps.set(key, { id: key, label: source.label, provider: source.provider, name: source.name });
 		}
 	}
 	return [...apps.values()];
