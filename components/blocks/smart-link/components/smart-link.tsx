@@ -192,7 +192,10 @@ function SmartLinkTrigger({
 				className={cn(
 					"group-hover/smart-link:underline",
 					wrap ? null : "min-w-0 truncate whitespace-nowrap",
-					!wrap && size === "large" ? "[text-box:trim-both_cap_alphabetic]" : null,
+					// The cap/alphabetic trim ends the box at the baseline, so `truncate`'s
+					// overflow clip would cut descenders; equal padding and negative margin
+					// grow the clip box without changing layout.
+					!wrap && size === "large" ? "-my-1 py-1 [text-box:trim-both_cap_alphabetic]" : null,
 					status || wrap ? null : "grow",
 					removable &&
 						!status &&
