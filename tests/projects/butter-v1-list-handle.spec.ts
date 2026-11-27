@@ -54,8 +54,8 @@ test("list PR previews use the board card's single overlay perimeter", async ({ 
 	const boardStyle = await boardPreview.evaluate(overlayPresentation);
 	await page.keyboard.press("Escape");
 	await openList(page);
-	await page.getByRole("group", { name: "Pull request #1851: Port 3DS flow", exact: true }).hover();
-	const listPreview = page.getByRole("region", { name: "Pull request #1851 details", exact: true });
+	await page.getByRole("button", { name: "Pull request #1851: Port 3DS flow", exact: true }).click();
+	const listPreview = page.getByRole("dialog", { name: "Pull request #1851 details", exact: true });
 	await expect(listPreview).toBeVisible();
 	await expect.poll(() => listPreview.evaluate(overlayPresentation)).toEqual(boardStyle);
 });
@@ -64,7 +64,7 @@ test("PR cells show the status icon and preview from the whole cell without unde
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
 	const list = await openList(page);
-	const trigger = list.getByRole("group", { name: "Pull request #1851: Port 3DS flow", exact: true });
+	const trigger = list.getByRole("button", { name: "Pull request #1851: Port 3DS flow", exact: true });
 	const cell = trigger.locator("xpath=ancestor::td");
 	const icon = trigger.getByRole("img", { name: "Pull request failed", exact: true });
 	await expect(icon).toBeVisible();
@@ -76,10 +76,12 @@ test("PR cells show the status icon and preview from the whole cell without unde
 	await expect(title).toHaveCSS("text-decoration-line", "none");
 	await expect(title).toHaveCSS("cursor", "pointer");
 	await page.mouse.move(0, 0);
-	const preview = page.getByRole("region", { name: "Pull request #1851 details", exact: true });
+	const preview = page.getByRole("dialog", { name: "Pull request #1851 details", exact: true });
 	await expect(preview).toBeHidden();
 	if (!cellBounds) throw new Error("PR cell geometry is unavailable");
-	await cell.hover({ position: { x: cellBounds.width - 2, y: 2 } });
+	await trigger.hover({ position: { x: cellBounds.width - 20, y: cellBounds.height / 2 } });
+	await expect(preview).toBeHidden();
+	await trigger.click({ position: { x: cellBounds.width - 20, y: cellBounds.height / 2 } });
 	await expect(preview).toBeVisible();
 	await expect(preview).toHaveAttribute("data-side", /^(left|right)$/u);
 	const previewBounds = await preview.boundingBox();
@@ -87,16 +89,18 @@ test("PR cells show the status icon and preview from the whole cell without unde
 	expect(previewBounds.x >= cellBounds.x + cellBounds.width || previewBounds.x + previewBounds.width <= cellBounds.x).toBe(true);
 	await expect(preview).toHaveCSS("transition-property", "none");
 	await expect(trigger.locator("a")).toHaveCount(0);
-	const nextTrigger = list.getByRole("group", { name: "Pull request #1856: Extract retry policy", exact: true });
+	const nextTrigger = list.getByRole("button", { name: "Pull request #1856: Extract retry policy", exact: true });
 	await nextTrigger.hover();
-	const nextPreview = page.getByRole("region", { name: "Pull request #1856 details", exact: true });
+	const nextPreview = page.getByRole("dialog", { name: "Pull request #1856 details", exact: true });
+	await expect(nextPreview).toBeHidden();
+	await nextTrigger.click();
 	await expect(nextPreview).toBeVisible();
-	await trigger.hover();
+	await trigger.click();
 	await expect(preview).toBeVisible();
 	await expect(nextPreview).toBeHidden();
 });
 
-test("a List work item previews multiple pull requests beside its cell on hover", async ({ page }) => {
+test("a List work item opens multiple pull requests beside its cell on click", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.setViewportSize({ width: 1800, height: 1300 });
 	await page.goto(appUrl("/butter-v1"));
@@ -105,19 +109,20 @@ test("a List work item previews multiple pull requests beside its cell on hover"
 	const preview = page.getByRole("dialog", { name: "Pull requests for PAY-109" });
 	await expect(preview).toBeHidden();
 	await trigger.hover();
+	await expect(preview).toBeHidden();
+	await trigger.click();
 	await expect(preview).toBeVisible();
 	await expect(trigger).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
 	await expect(trigger).toHaveCSS("border-top-color", "rgba(0, 0, 0, 0)");
 	await expect(preview).toHaveAttribute("data-side", /^(left|right)$/u);
 	const pullRequests = preview.getByRole("list", { name: "Pull requests" });
 	await expect(pullRequests.getByRole("listitem")).toHaveCount(3);
-	await trigger.click();
 	const open = pullRequests.getByRole("button", { name: "#1911 Validate webhook schema compatibility Open" });
 	await open.hover();
 	await open.click();
 	await expect(pullRequests.getByText("pay-109-webhook-schema-compatibility", { exact: true })).toBeVisible();
 	await expect(pullRequests.getByRole("button", { name: "#1912 Update webhook contract fixtures Merged" })).toBeVisible();
-	await page.mouse.move(0, 0);
+	await page.mouse.click(10, 10);
 	await expect(preview).toBeHidden();
 	await trigger.focus();
 	await page.keyboard.press("Shift+Tab");

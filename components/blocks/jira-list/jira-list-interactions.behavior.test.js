@@ -22,7 +22,7 @@ test("Epic grouping shows the epic tag and keeps its disclosure control", async 
 	await view.unmount();
 });
 
-test("Butter list PR titles stay non-navigating and reveal their card on keyboard focus", async () => {
+test("Butter list PR titles reveal their card on activation, not focus", async () => {
 	const view = await renderComponent({ source: `
 		import { JiraList } from "@/components/blocks/jira-list";
 		import { createListRows } from "@/components/projects/butter-v1/lib/list-rows";
@@ -41,18 +41,16 @@ test("Butter list PR titles stay non-navigating and reveal their card on keyboar
 	assert.equal(Boolean(view.getByRole("columnheader", { name: "Pull requests" })), true);
 	const trigger = view.container.querySelector('[aria-label="Pull request #1851: Port 3DS flow"]');
 	assert.equal(trigger.textContent, "#1851 Port 3DS flow");
-	assert.equal(trigger.tagName, "SPAN");
+	assert.equal(trigger.tagName, "BUTTON");
 	assert.equal(trigger.hasAttribute("href"), false);
 	assert.equal(trigger.querySelectorAll("a, button").length, 0);
 	assert.equal(trigger.contains(view.getByRole("img", { name: "Pull request failed" })), true);
 	assert.equal(view.container.querySelectorAll("tbody a").length, 0);
 	assert.equal(view.container.querySelectorAll("tbody tr")[1].querySelectorAll("a").length, 0);
-	await view.click(trigger);
-	assert.equal(window.location.href, "http://localhost/");
 	await view.focus(trigger);
-	await require("react").act(async () => {
-		await new Promise((resolve) => setTimeout(resolve, 700));
-	});
+	assert.equal(document.querySelector('[aria-label="Pull request #1851 details"]') === null, true);
+	await view.press(trigger, "Enter");
+	assert.equal(window.location.href, "http://localhost/");
 	const preview = document.querySelector('[aria-label="Pull request #1851 details"]');
 	assert.equal(Boolean(preview), true);
 	assert.equal(preview.textContent.includes("Failed"), true);
