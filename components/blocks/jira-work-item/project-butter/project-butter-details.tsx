@@ -53,12 +53,13 @@ export function ProjectButterDetails({ agentField, agentFieldHasSessions = false
 		setMoreFields(true);
 		return !detailsOpen || !moreFields;
 	};
-	// A suggestion previewed in a field the collapsed panel hides (past its first two) opens the panel, so the preview
-	// and anything anchored to it, such as the Inline toolbar, have a field on screen to sit in.
+	// A detail preview needs the panel open. Only fields past the first two also need Show more.
 	const previewField = useSuggestionTargetField();
 	const shownCollapsed = content.detailFields.order.filter((field) => field !== "status" && field !== "agents" && !content.detailFields.hidden.includes(field)).slice(0, 2);
-	const previewHidden = previewField !== null && (content.detailFields.order as readonly string[]).includes(previewField) && !(shownCollapsed as readonly string[]).includes(previewField);
-	if (previewHidden && (!detailsOpen || !moreFields)) expandDetails();
+	const previewInDetails = content.detailFields.order.some((field) => field === previewField);
+	const previewHidden = previewInDetails && !shownCollapsed.some((field) => field === previewField);
+	if (previewInDetails && !detailsOpen) setDetailsOpen(true);
+	if (previewHidden && !moreFields) setMoreFields(true);
 	const fill = useProjectButterSuggestionFill(content, suggestion, expandDetails, suggestionProfile, onDescriptionSuggested, !renderSuggestions);
 	const order = panelOrder.filter((panel) => panel !== "apps" || !empty || sidePanel);
 	function panelActions(panel: ProjectButterPanelId) {

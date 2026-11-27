@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useState, type Ref } from "react";
+import { useCallback, useEffect, useEffectEvent, useId, useLayoutEffect, useState, type Ref } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, usePresence, usePresenceData, useReducedMotion, useTransform, type MotionValue, type Transition } from "motion/react";
 
 import type { WorkItemSuggestion } from "@/components/blocks/jira-suggestion/data/suggestions";
@@ -212,6 +212,9 @@ export function SuggestionCard({
 
 	const why = { whyOpen, onWhyOpenChange, whyAnchor, whyContainer };
 	const morph = { layout: { ...MORPH, delay } };
+	const layoutId = useId();
+	// Motion reads the projection mode on mount. The layout ID hands off the card when that mode changes.
+	const settledRow = role === "row" && !morphing;
 	// A card keeps a face no taller than its paper in every role: the top card's Why line lives on the paper's edge (below),
 	// a sheet wears the row face without controls, and a decided card keeps its one-line receipt even as it gathers.
 	const face = top
@@ -239,7 +242,7 @@ export function SuggestionCard({
 					// Expanded rows use the hover surface only while the pointer is over them.
 					role === "row" ? "group/suggestion-card bg-surface-raised dark:bg-surface-raised dark:ring-0" : null,
 					// Motion can leave a scale-corrected percentage radius after the stack morph; keep settled rows at 8px.
-					role === "row" && !morphing ? "rounded-lg!" : null,
+					settledRow ? "rounded-lg!" : null,
 					role === "row" && decision === "pending" && suggestion.reason.evidence.length > 0 ? "cursor-pointer" : null,
 					role === "row" && whyOpen ? "hover:bg-surface-raised-hovered dark:hover:bg-surface-raised-hovered" : null,
 					role === "row" && previewing && !whyOpen ? "bg-surface-raised-hovered dark:bg-surface-raised-hovered" : null,
@@ -254,8 +257,11 @@ export function SuggestionCard({
 					isPresent ? null : "pointer-events-none",
 				)}
 				data-top-card={top ? "" : undefined}
-				layout={role === "row" && !morphing ? false : true}
+				key={settledRow ? "row" : "morph"}
+				layout={settledRow ? "position" : true}
 				layoutAnchor={floating ? false : undefined}
+				layoutCrossfade={false}
+				layoutId={layoutId}
 				onClick={role === "row" && decision === "pending" && suggestion.reason.evidence.length > 0 ? (event) => {
 					const selection = window.getSelection();
 					if (!(event.target instanceof Element) || event.target.closest("button, a, input, textarea, select, [contenteditable], [role=button], [role=menuitem]") || (selection && !selection.isCollapsed && event.currentTarget.contains(selection.anchorNode))) return;
@@ -263,12 +269,12 @@ export function SuggestionCard({
 				} : undefined}
 				{...(top ? handlers : null)}
 				style={{ ...CARD_PAPER_STYLE, x, y: poseY, rotate, opacity }}
-				transition={morph}
+				transition={settledRow ? { layout: reduced ? INSTANT : SETTLE } : morph}
 			>
 				<motion.div
 					data-suggestion-card-face=""
 					inert={sheet}
-					layout="position"
+					layout={settledRow ? false : "position"}
 					style={{ opacity: contentOpacity }}
 					transition={morph}
 				>

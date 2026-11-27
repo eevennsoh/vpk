@@ -94,6 +94,55 @@ test("Butter's stacked suggestions settle into rows without jumping or stretchin
 	await expect(page.locator('[data-suggestion-preview="description"]')).toBeVisible();
 });
 
+test("accepting and undoing glide neighboring cards with their content", async ({ page }) => {
+	await page.setViewportSize({ width: 1911, height: 1130 });
+	await page.emulateMedia({ reducedMotion: "no-preference" });
+	await page.goto(appUrl("/butter-v1"));
+	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
+	await page.getByRole("button", { name: "Review suggestions", exact: true }).click();
+	const panel = page.getByRole("dialog", { name: /^Work item suggestions/ });
+	const list = panel.getByRole("list", { name: "Suggestions" });
+	await expect(list).toHaveCSS("pointer-events", "auto");
+	for (const action of ["Accept description", "Undo description", "Accept assignee", "Undo assignee"]) {
+		const button = panel.getByRole("button", { name: action, exact: true });
+		const samples = await button.evaluateHandle((button) => {
+			const list = button.closest('[aria-label="Suggestions"]');
+			const neighbor = list?.querySelector('[data-suggestion-field="dueDate"] [data-suggestion-card-face]')?.parentElement;
+			if (!list || !neighbor) throw new Error("Missing suggestion cards");
+			const frames: { neighborTop: number; maxContentOffset: number }[] = [];
+			const recording = { frames, done: false };
+			button.addEventListener("click", () => {
+				const end = performance.now() + 600;
+				const sample = () => {
+					const offsets = Array.from(list.querySelectorAll("[data-suggestion-card-face]"), (face) => {
+						const content = face.getBoundingClientRect();
+						const card = face.parentElement?.getBoundingClientRect();
+						return card ? Math.max(Math.abs(content.top - card.top), Math.abs(content.bottom - card.bottom)) : Infinity;
+					});
+					frames.push({ neighborTop: neighbor.getBoundingClientRect().top, maxContentOffset: Math.max(...offsets) });
+					if (performance.now() < end) requestAnimationFrame(sample);
+					else recording.done = true;
+				};
+				sample();
+			}, { capture: true, once: true });
+			return recording;
+		});
+		await button.click();
+		await expect.poll(() => samples.evaluate(({ done }) => done)).toBe(true);
+		const { frames: values } = await samples.jsonValue();
+		const positions = values.map(({ neighborTop }) => neighborTop);
+		const start = positions[0];
+		const travel = positions[positions.length - 1] - start;
+		expect(action.startsWith("Accept") ? -travel : travel, action).toBeGreaterThan(24);
+		const intermediate = positions.filter((top) => {
+			const progress = (top - start) / travel;
+			return progress > 0.15 && progress < 0.85;
+		});
+		expect(new Set(intermediate.map(Math.round)).size, action).toBeGreaterThanOrEqual(2);
+		expect(Math.max(...values.map(({ maxContentOffset }) => maxContentOffset)), action).toBeLessThan(2);
+	}
+});
+
 test("the floating suggestions Close tooltip appears above its button", async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: "reduce" });
 	await page.goto(appUrl("/butter-v1"));

@@ -126,8 +126,16 @@ test("inline navigation reveals a collapsed details field and keeps the toolbar 
 	await page.goto(appUrl("/butter-v1"));
 	await page.getByRole("button", { name: "Select AI suggestions", exact: true }).click();
 	await page.getByRole("button", { name: "Inline", exact: true }).click();
+	const details = page.getByRole("button", { name: "Details", exact: true });
+	await details.click();
+	await expect(details).toHaveAttribute("aria-expanded", "false");
 	await page.getByRole("button", { name: "Next suggestion" }).click();
-	await expect(page.getByRole("button", { name: "Accept assignee" })).toBeVisible();
+	await expect(details).toHaveAttribute("aria-expanded", "true");
+	const assignee = page.locator('[data-field-id="assignee"] [data-project-butter-detail-value-row]');
+	const assigneeToolbar = page.getByRole("dialog", { name: "AI suggestion for assignee, 5 left to review" });
+	await expect(assignee.getByText("Robi Lopez", { exact: true }).first()).toBeVisible();
+	await expect(assigneeToolbar.getByRole("button", { name: "Accept assignee" })).toBeInViewport();
+	await expect(page.getByRole("button", { name: "Show more details" })).toBeVisible();
 	await page.getByRole("button", { name: "Next suggestion" }).click();
 	const dueDate = page.locator('[data-field-id="dueDate"] [data-project-butter-detail-value-row]');
 	const toolbar = page.locator('[aria-label^="AI suggestion for due date"]');
